@@ -25,6 +25,11 @@ import (
 	svcapitypes "github.com/aws-controllers-k8s/s3-controller/apis/v1alpha1"
 )
 
+// Hack to avoid import errors during build...
+var (
+	_ = &ackerrors.MissingNameIdentifier
+)
+
 // resource implements the `aws-controller-k8s/runtime/pkg/types.AWSResource`
 // interface
 type resource struct {
