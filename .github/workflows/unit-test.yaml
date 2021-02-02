@@ -1,4 +1,4 @@
-name: build-unit-test
+name: unit-test
 on:
   # Allow manual trigger
   workflow_dispatch:
