@@ -21,6 +21,13 @@ const (
 	AnalyticsS3ExportFileFormat_CSV AnalyticsS3ExportFileFormat = "CSV"
 )
 
+type ArchiveStatus string
+
+const (
+	ArchiveStatus_ARCHIVE_ACCESS      ArchiveStatus = "ARCHIVE_ACCESS"
+	ArchiveStatus_DEEP_ARCHIVE_ACCESS ArchiveStatus = "DEEP_ARCHIVE_ACCESS"
+)
+
 type BucketAccelerateStatus string
 
 const (
@@ -158,6 +165,20 @@ type FilterRuleName string
 const (
 	FilterRuleName_prefix FilterRuleName = "prefix"
 	FilterRuleName_suffix FilterRuleName = "suffix"
+)
+
+type IntelligentTieringAccessTier string
+
+const (
+	IntelligentTieringAccessTier_ARCHIVE_ACCESS      IntelligentTieringAccessTier = "ARCHIVE_ACCESS"
+	IntelligentTieringAccessTier_DEEP_ARCHIVE_ACCESS IntelligentTieringAccessTier = "DEEP_ARCHIVE_ACCESS"
+)
+
+type IntelligentTieringStatus string
+
+const (
+	IntelligentTieringStatus_Enabled  IntelligentTieringStatus = "Enabled"
+	IntelligentTieringStatus_Disabled IntelligentTieringStatus = "Disabled"
 )
 
 type InventoryFormat string
@@ -333,6 +354,13 @@ type QuoteFields string
 const (
 	QuoteFields_ALWAYS   QuoteFields = "ALWAYS"
 	QuoteFields_ASNEEDED QuoteFields = "ASNEEDED"
+)
+
+type ReplicaModificationsStatus string
+
+const (
+	ReplicaModificationsStatus_Enabled  ReplicaModificationsStatus = "Enabled"
+	ReplicaModificationsStatus_Disabled ReplicaModificationsStatus = "Disabled"
 )
 
 type ReplicationRuleStatus string
