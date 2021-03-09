@@ -20,7 +20,7 @@
 package v1alpha1
 
 import (
-	corev1alpha1 "github.com/aws/aws-controllers-k8s/apis/core/v1alpha1"
+	corev1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 

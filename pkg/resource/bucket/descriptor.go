@@ -16,8 +16,8 @@
 package bucket
 
 import (
-	ackcompare "github.com/aws/aws-controllers-k8s/pkg/compare"
-	acktypes "github.com/aws/aws-controllers-k8s/pkg/types"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
