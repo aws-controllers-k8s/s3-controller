@@ -37,25 +37,37 @@ spec:
             description: BucketSpec defines the desired state of Bucket
             properties:
               acl:
+                description: The canned ACL to apply to the bucket.
                 type: string
               createBucketConfiguration:
+                description: The configuration information for the bucket.
                 properties:
                   locationConstraint:
                     type: string
                 type: object
               grantFullControl:
+                description: Allows grantee the read, write, read ACP, and write ACP
+                  permissions on the bucket.
                 type: string
               grantRead:
+                description: Allows grantee to list the objects in the bucket.
                 type: string
               grantReadACP:
+                description: Allows grantee to read the bucket ACL.
                 type: string
               grantWrite:
+                description: Allows grantee to create, overwrite, and delete any object
+                  in the bucket.
                 type: string
               grantWriteACP:
+                description: Allows grantee to write the ACL for the applicable bucket.
                 type: string
               name:
+                description: The name of the bucket to create.
                 type: string
               objectLockEnabledForBucket:
+                description: Specifies whether you want S3 Object Lock to be enabled
+                  for the new bucket.
                 type: boolean
             required:
             - name
@@ -120,6 +132,9 @@ spec:
                   type: object
                 type: array
               location:
+                description: Specifies the Region where the bucket will be created.
+                  If you are creating a bucket on the US East (N. Virginia) Region
+                  (us-east-1), you do not need to specify the location.
                 type: string
             required:
             - ackResourceMetadata
