@@ -73,6 +73,8 @@ func (rm *resourceManager) sdkFind(
 				}
 			}
 			ko.Spec.Name = elem.Name
+		} else {
+			ko.Spec.Name = nil
 		}
 		found = true
 		break
@@ -118,6 +120,8 @@ func (rm *resourceManager) sdkCreate(
 
 	if resp.Location != nil {
 		ko.Status.Location = resp.Location
+	} else {
+		ko.Status.Location = nil
 	}
 
 	rm.setStatusDefaults(ko)
@@ -174,7 +178,7 @@ func (rm *resourceManager) sdkUpdate(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
-	diffReporter *ackcompare.Reporter,
+	delta *ackcompare.Delta,
 ) (*resource, error) {
 	// TODO(jaypipes): Figure this out...
 	return nil, ackerr.NotImplemented

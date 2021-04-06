@@ -22,16 +22,26 @@ import (
 
 // BucketSpec defines the desired state of Bucket
 type BucketSpec struct {
-	ACL                       *string                    `json:"acl,omitempty"`
+	// The canned ACL to apply to the bucket.
+	ACL *string `json:"acl,omitempty"`
+	// The configuration information for the bucket.
 	CreateBucketConfiguration *CreateBucketConfiguration `json:"createBucketConfiguration,omitempty"`
-	GrantFullControl          *string                    `json:"grantFullControl,omitempty"`
-	GrantRead                 *string                    `json:"grantRead,omitempty"`
-	GrantReadACP              *string                    `json:"grantReadACP,omitempty"`
-	GrantWrite                *string                    `json:"grantWrite,omitempty"`
-	GrantWriteACP             *string                    `json:"grantWriteACP,omitempty"`
+	// Allows grantee the read, write, read ACP, and write ACP permissions on the
+	// bucket.
+	GrantFullControl *string `json:"grantFullControl,omitempty"`
+	// Allows grantee to list the objects in the bucket.
+	GrantRead *string `json:"grantRead,omitempty"`
+	// Allows grantee to read the bucket ACL.
+	GrantReadACP *string `json:"grantReadACP,omitempty"`
+	// Allows grantee to create, overwrite, and delete any object in the bucket.
+	GrantWrite *string `json:"grantWrite,omitempty"`
+	// Allows grantee to write the ACL for the applicable bucket.
+	GrantWriteACP *string `json:"grantWriteACP,omitempty"`
+	// The name of the bucket to create.
 	// +kubebuilder:validation:Required
-	Name                       *string `json:"name"`
-	ObjectLockEnabledForBucket *bool   `json:"objectLockEnabledForBucket,omitempty"`
+	Name *string `json:"name"`
+	// Specifies whether you want S3 Object Lock to be enabled for the new bucket.
+	ObjectLockEnabledForBucket *bool `json:"objectLockEnabledForBucket,omitempty"`
 }
 
 // BucketStatus defines the observed state of Bucket
@@ -45,7 +55,10 @@ type BucketStatus struct {
 	// the various terminal states of the CR and its backend AWS service API
 	// resource
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
-	Location   *string                  `json:"location,omitempty"`
+	// Specifies the Region where the bucket will be created. If you are creating
+	// a bucket on the US East (N. Virginia) Region (us-east-1), you do not need
+	// to specify the location.
+	Location *string `json:"location,omitempty"`
 }
 
 // Bucket is the Schema for the Buckets API

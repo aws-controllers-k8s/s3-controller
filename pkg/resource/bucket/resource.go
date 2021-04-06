@@ -24,7 +24,7 @@ import (
 	svcapitypes "github.com/aws-controllers-k8s/s3-controller/apis/v1alpha1"
 )
 
-// resource implements the `aws-service-operator-k8s/pkg/types.AWSResource`
+// resource implements the `aws-controller-k8s/runtime/pkg/types.AWSResource`
 // interface
 type resource struct {
 	// The Kubernetes-native CR representing the resource
