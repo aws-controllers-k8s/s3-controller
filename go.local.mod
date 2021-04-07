@@ -5,10 +5,9 @@ go 1.14
 replace github.com/aws-controllers-k8s/runtime => ../runtime
 
 require (
-	github.com/aws-controllers-k8s/runtime v0.0.4
+	github.com/aws-controllers-k8s/runtime v0.0.5
 	github.com/aws/aws-sdk-go v1.37.4
 	github.com/go-logr/logr v0.1.0
-	github.com/google/go-cmp v0.3.1
 	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.18.2
 	k8s.io/apimachinery v0.18.6
