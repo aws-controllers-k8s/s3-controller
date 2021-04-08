@@ -3,13 +3,15 @@ name: ack-s3-controller
 description: A Helm chart for the ACK service controller for s3
 version: v0.0.2
 appVersion: v0.0.2
-home: https://github.com/aws/aws-controllers-k8s
+home: https://github.com/aws-controllers-k8s/s3-controller
 icon: https://raw.githubusercontent.com/aws/eks-charts/master/docs/logo/aws.png
 sources:
-  - https://github.com/aws/aws-controllers-k8s
+  - https://github.com/aws-controllers-k8s/s3-controller
 maintainers:
   - name: ACK Admins
-    url: https://github.com/orgs/aws/teams/aws-controllers-for-kubernetes-ack-admins
+    url: https://github.com/orgs/aws-controllers-k8s/teams/ack-admin
+  - name: S3 Admins
+    url:https://github.com/orgs/aws-controllers-k8s/teams/s3-maintainer
 keywords:
   - aws
   - kubernetes
