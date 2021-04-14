@@ -15,8 +15,8 @@ for them.
 """
 from dataclasses import dataclass
 
+from e2e import bootstrap_directory
 from acktest.resources import read_bootstrap_config
-from e2e import SERVICE_NAME
 
 @dataclass
 class TestBootstrapResources:
@@ -24,8 +24,10 @@ class TestBootstrapResources:
 
 _bootstrap_resources = None
 
-def get_bootstrap_resources():
+def get_bootstrap_resources(bootstrap_file_name: str = "bootstrap.yaml"):
     global _bootstrap_resources
     if _bootstrap_resources is None:
-        _bootstrap_resources = TestBootstrapResources(**read_bootstrap_config(SERVICE_NAME))
+        _bootstrap_resources = TestBootstrapResources(
+            **read_bootstrap_config(bootstrap_directory, bootstrap_file_name=bootstrap_file_name),
+        )
     return _bootstrap_resources
