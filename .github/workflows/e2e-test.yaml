@@ -11,14 +11,6 @@ on:
         description: 'Git ref for checking out the community repo. Default is main'
         required: false
         default: ''
-      codeGeneratorRepo:
-        description: 'Git repository for checking out the code-generator repo'
-        required: false
-        default: 'aws-controllers-k8s/code-generator'
-      codeGeneratorRef:
-        description: 'Git ref for checking out the code-generator repo. Default is main'
-        required: false
-        default: ''
       testInfraRepo:
         description: 'Git repository for checking out the test-infra repo'
         required: false
