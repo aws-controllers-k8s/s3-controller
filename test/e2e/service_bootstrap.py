@@ -17,6 +17,7 @@ import logging
 from pathlib import Path
 
 from acktest import resources
+from e2e import bootstrap_directory
 from e2e.bootstrap_resources import TestBootstrapResources
 
 
@@ -27,8 +28,5 @@ def service_bootstrap() -> dict:
     ).__dict__
 
 if __name__ == "__main__":
-    root_test_path = Path(__file__).parent
-    
     config = service_bootstrap()
-    # Write config to current directory by default
-    resources.write_bootstrap_config(config, root_test_path)
+    resources.write_bootstrap_config(config, bootstrap_directory)
