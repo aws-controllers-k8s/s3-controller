@@ -1,2 +1,1 @@
-acktest @ git+https://github.com/aws-controllers-k8s/test-infra.git@6c6d9dd4759c7bb2feecd11dc03e8516371812cc
-pytest-xdist==2.2.0
+acktest @ git+https://github.com/aws-controllers-k8s/test-infra.git@955d7831ee374a212250179e95a5f3b75e555fd9
