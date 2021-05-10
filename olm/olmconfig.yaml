@@ -1,6 +1,6 @@
 ---
 annotations:
-  capabilityLevel: basic install
+  capabilityLevel: Basic Install
   shortDescription: AWS S3 controller is a service controller for managing S3 resources
     in Kubernetes
 displayName: AWS Controllers for Kubernetes - Amazon S3
