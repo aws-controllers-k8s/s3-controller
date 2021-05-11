@@ -16,84 +16,125 @@
 package v1alpha1
 
 import (
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	"github.com/aws/aws-sdk-go/aws"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Hack to avoid import errors during build...
+var (
+	_ = &metav1.Time{}
+	_ = &aws.JSONValue{}
+	_ = ackv1alpha1.AWSAccountID("")
+)
+
+// Contains the elements that set the ACL permissions for an object per grantee.
 type AccessControlPolicy struct {
+	// Container for the owner's display name and ID.
 	Owner *Owner `json:"owner,omitempty"`
 }
 
+// Contains information about where to publish the analytics results.
 type AnalyticsS3BucketDestination struct {
 	Bucket          *string `json:"bucket,omitempty"`
 	BucketAccountID *string `json:"bucketAccountID,omitempty"`
 }
 
+// In terms of implementation, a Bucket is a resource. An Amazon S3 bucket name
+// is globally unique, and the namespace is shared by all AWS accounts.
 type Bucket_SDK struct {
 	CreationDate *metav1.Time `json:"creationDate,omitempty"`
 	Name         *string      `json:"name,omitempty"`
 }
 
+// The configuration information for the bucket.
 type CreateBucketConfiguration struct {
 	LocationConstraint *string `json:"locationConstraint,omitempty"`
 }
 
+// Information about the delete marker.
 type DeleteMarkerEntry struct {
+	// Container for the owner's display name and ID.
 	Owner *Owner `json:"owner,omitempty"`
 }
 
+// Specifies information about where to publish analysis or configuration results
+// for an Amazon S3 bucket and S3 Replication Time Control (S3 RTC).
 type Destination struct {
 	Account *string `json:"account,omitempty"`
 	Bucket  *string `json:"bucket,omitempty"`
 }
 
+// Container for the person being granted permissions.
 type Grantee struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	ID          *string `json:"id,omitempty"`
 }
 
+// Container element that identifies who initiated the multipart upload.
 type Initiator struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	ID          *string `json:"id,omitempty"`
 }
 
+// Contains the bucket name, file format, bucket owner (optional), and prefix
+// (optional) where inventory results are published.
 type InventoryS3BucketDestination struct {
 	AccountID *string `json:"accountID,omitempty"`
 	Bucket    *string `json:"bucket,omitempty"`
 }
 
+// A lifecycle rule for individual objects in an Amazon S3 bucket.
 type LifecycleRule struct {
 	ID *string `json:"id,omitempty"`
 }
 
+// Describes an Amazon S3 location that will receive the results of the restore
+// request.
 type Location struct {
 	BucketName *string `json:"bucketName,omitempty"`
 }
 
+// Container for the MultipartUpload for the Amazon S3 object.
 type MultipartUpload struct {
+	// Container for the owner's display name and ID.
 	Owner *Owner `json:"owner,omitempty"`
 }
 
+// An object consists of data and its descriptive metadata.
 type Object struct {
+	// Container for the owner's display name and ID.
 	Owner *Owner `json:"owner,omitempty"`
 }
 
+// The version of an object.
 type ObjectVersion struct {
+	// Container for the owner's display name and ID.
 	Owner *Owner `json:"owner,omitempty"`
 }
 
+// Describes the location where the restore job's output is stored.
 type OutputLocation struct {
+	// Describes an Amazon S3 location that will receive the results of the restore
+	// request.
 	S3 *Location `json:"s3,omitempty"`
 }
 
+// Container for the owner's display name and ID.
 type Owner struct {
 	DisplayName *string `json:"displayName,omitempty"`
 	ID          *string `json:"id,omitempty"`
 }
 
+// Specifies which Amazon S3 objects to replicate and where to store the replicas.
 type ReplicationRule struct {
 	ID *string `json:"id,omitempty"`
 }
 
+// Specifies lifecycle rules for an Amazon S3 bucket. For more information,
+// see Put Bucket Lifecycle Configuration (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTlifecycle.html)
+// in the Amazon Simple Storage Service API Reference. For examples, see Put
+// Bucket Lifecycle Configuration Examples (https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLifecycleConfiguration.html#API_PutBucketLifecycleConfiguration_Examples)
 type Rule struct {
 	ID *string `json:"id,omitempty"`
 }

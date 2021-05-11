@@ -5,7 +5,7 @@ go 1.14
 replace github.com/aws-controllers-k8s/runtime => ../runtime
 
 require (
-	github.com/aws-controllers-k8s/runtime v0.0.5
+	github.com/aws-controllers-k8s/runtime v0.1.2
 	github.com/aws/aws-sdk-go v1.37.4
 	github.com/go-logr/logr v0.1.0
 	github.com/spf13/pflag v1.0.5
