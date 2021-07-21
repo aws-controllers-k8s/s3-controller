@@ -1,0 +1,8 @@
+service:
+  full_name: "Amazon Simple Storage Service"
+  short_name: "S3"
+  link: "https://aws.amazon.com/s3/"
+  documentation: "https://docs.aws.amazon.com/AmazonS3/latest/userguide/index.html"
+api_versions:
+  - api_version: v1alpha1
+    status: available
