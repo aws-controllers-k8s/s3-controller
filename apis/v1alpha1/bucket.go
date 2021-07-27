@@ -27,19 +27,8 @@ import (
 type BucketSpec struct {
 	// The canned ACL to apply to the bucket.
 	ACL *string `json:"acl,omitempty"`
-	// Container for setting the transfer acceleration state.
-	AccelerateConfiguration *AccelerateConfiguration `json:"accelerateConfiguration,omitempty"`
-	// The configuration and any analyses for the analytics filter.
-	AnalyticsConfiguration *AnalyticsConfiguration `json:"analyticsConfiguration,omitempty"`
-	// Describes the cross-origin access configuration for objects in an Amazon
-	// S3 bucket. For more information, see Enabling Cross-Origin Resource Sharing
-	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html) in the Amazon
-	// Simple Storage Service Developer Guide.
-	Cors *CORSConfiguration `json:"cors,omitempty"`
 	// The configuration information for the bucket.
 	CreateBucketConfiguration *CreateBucketConfiguration `json:"createBucketConfiguration,omitempty"`
-
-	Encryption *ServerSideEncryptionConfiguration `json:"encryption,omitempty"`
 	// Allows grantee the read, write, read ACP, and write ACP permissions on the
 	// bucket.
 	GrantFullControl *string `json:"grantFullControl,omitempty"`
@@ -51,36 +40,13 @@ type BucketSpec struct {
 	GrantWrite *string `json:"grantWrite,omitempty"`
 	// Allows grantee to write the ACL for the applicable bucket.
 	GrantWriteACP *string `json:"grantWriteACP,omitempty"`
-	// Container for S3 Intelligent-Tiering configuration.
-	IntelligentTieringConfiguration *IntelligentTieringConfiguration `json:"intelligentTieringConfiguration,omitempty"`
-	// Specifies the inventory configuration.
-	InventoryConfiguration *InventoryConfiguration `json:"inventoryConfiguration,omitempty"`
-	// Container for lifecycle rules. You can add as many as 1,000 rules.
-	LifecycleConfiguration *BucketLifecycleConfiguration `json:"lifecycleConfiguration,omitempty"`
 	// Container for logging status information.
 	Logging *BucketLoggingStatus `json:"logging,omitempty"`
-	// Specifies the metrics configuration.
-	MetricsConfiguration *MetricsConfiguration `json:"metricsConfiguration,omitempty"`
 	// The name of the bucket to create.
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
 	// Specifies whether you want S3 Object Lock to be enabled for the new bucket.
 	ObjectLockEnabledForBucket *bool `json:"objectLockEnabledForBucket,omitempty"`
-	// The OwnershipControls (BucketOwnerPreferred or ObjectWriter) that you want
-	// to apply to this Amazon S3 bucket.
-	OwnershipControls *OwnershipControls `json:"ownershipControls,omitempty"`
-	// The bucket policy as a JSON document.
-	Policy *string `json:"policy,omitempty"`
-
-	Replication *ReplicationConfiguration `json:"replication,omitempty"`
-	// Container for Payer.
-	RequestPayment *RequestPaymentConfiguration `json:"requestPayment,omitempty"`
-	// Container for the TagSet and Tag elements.
-	Tagging *Tagging `json:"tagging,omitempty"`
-	// Container for setting the versioning state.
-	Versioning *VersioningConfiguration `json:"versioning,omitempty"`
-	// Container for the request.
-	Website *WebsiteConfiguration `json:"website,omitempty"`
 }
 
 // BucketStatus defines the observed state of Bucket
