@@ -100,7 +100,44 @@ func (rm *resourceManager) newPutBucketLoggingPayload(
 			if logging.LoggingEnabled.TargetPrefix != nil {
 				loggingEnabled.SetTargetPrefix(*logging.LoggingEnabled.TargetPrefix)
 			}
-			// TODO(RedbackThomson): Set grants?
+
+			grants := []*svcsdk.TargetGrant{}
+			for _, grant := range logging.LoggingEnabled.TargetGrants {
+				newGrant := &svcsdk.TargetGrant{}
+
+				if grant.Permission != nil {
+					newGrant.SetPermission(*grant.Permission)
+				}
+
+				if grant.Grantee != nil {
+					newGrantee := &svcsdk.Grantee{}
+
+					if grant.Grantee.DisplayName != nil {
+						newGrantee.SetDisplayName(*grant.Grantee.DisplayName)
+					}
+
+					if grant.Grantee.EmailAddress != nil {
+						newGrantee.SetEmailAddress(*grant.Grantee.EmailAddress)
+					}
+
+					if grant.Grantee.ID != nil {
+						newGrantee.SetID(*grant.Grantee.ID)
+					}
+
+					if grant.Grantee.Type != nil {
+						newGrantee.SetType(*grant.Grantee.Type)
+					}
+
+					if grant.Grantee.URI != nil {
+						newGrantee.SetURI(*grant.Grantee.URI)
+					}
+				}
+
+				grants = append(grants, newGrant)
+			}
+			if len(grants) > 0 {
+				loggingEnabled.SetTargetGrants(grants)
+			}
 
 			loggingStatus.SetLoggingEnabled(loggingEnabled)
 		}
