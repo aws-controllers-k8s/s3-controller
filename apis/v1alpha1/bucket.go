@@ -40,6 +40,8 @@ type BucketSpec struct {
 	GrantWrite *string `json:"grantWrite,omitempty"`
 	// Allows grantee to write the ACL for the applicable bucket.
 	GrantWriteACP *string `json:"grantWriteACP,omitempty"`
+	// Container for logging status information.
+	Logging *BucketLoggingStatus `json:"logging,omitempty"`
 	// The name of the bucket to create.
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`

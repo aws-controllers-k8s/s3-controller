@@ -10,6 +10,11 @@ operations:
     primary_identifier_field_name: Name
 resources:
   Bucket:
+    fields:
+      Logging:
+        from:
+          operation: PutBucketLogging
+          path: BucketLoggingStatus
     renames:
       operations:
         CreateBucket:
