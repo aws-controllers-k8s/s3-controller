@@ -20,7 +20,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// BucketSpec defines the desired state of Bucket
+// BucketSpec defines the desired state of Bucket.
+//
+// In terms of implementation, a Bucket is a resource. An Amazon S3 bucket name
+// is globally unique, and the namespace is shared by all AWS accounts.
 type BucketSpec struct {
 	// The canned ACL to apply to the bucket.
 	ACL *string `json:"acl,omitempty"`
@@ -49,15 +52,18 @@ type BucketStatus struct {
 	// All CRs managed by ACK have a common `Status.ACKResourceMetadata` member
 	// that is used to contain resource sync state, account ownership,
 	// constructed ARN for the resource
+	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
 	// All CRS managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource
+	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
 	// Specifies the Region where the bucket will be created. If you are creating
 	// a bucket on the US East (N. Virginia) Region (us-east-1), you do not need
 	// to specify the location.
+	// +kubebuilder:validation:Optional
 	Location *string `json:"location,omitempty"`
 }
 

@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
   name: buckets.s3.services.k8s.aws
 spec:
@@ -34,7 +34,9 @@ spec:
           metadata:
             type: object
           spec:
-            description: BucketSpec defines the desired state of Bucket
+            description: "BucketSpec defines the desired state of Bucket. \n In terms
+              of implementation, a Bucket is a resource. An Amazon S3 bucket name
+              is globally unique, and the namespace is shared by all AWS accounts."
             properties:
               acl:
                 description: The canned ACL to apply to the bucket.
@@ -136,9 +138,6 @@ spec:
                   If you are creating a bucket on the US East (N. Virginia) Region
                   (us-east-1), you do not need to specify the location.
                 type: string
-            required:
-            - ackResourceMetadata
-            - conditions
             type: object
         type: object
     served: true
