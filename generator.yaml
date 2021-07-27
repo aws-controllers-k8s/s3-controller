@@ -35,10 +35,10 @@ resources:
         from:
           operation: PutBucketInventoryConfiguration
           path: InventoryConfiguration # Double check about ID
-      Lifecycle:
-        from:
-          operation: PutBucketLifecycle
-          path: LifecycleConfiguration
+      # Lifecycle:
+      #   from:
+      #     operation: PutBucketLifecycle
+      #     path: LifecycleConfiguration
       LifecycleConfiguration:
         from:
           operation: PutBucketLifecycleConfiguration
@@ -51,14 +51,14 @@ resources:
         from:
           operation: PutBucketMetricsConfiguration
           path: MetricsConfiguration # Double check about ID
-      Notification:
-        from:
-          operation: PutBucketNotification
-          path: NotificationConfiguration
-      NotificationConfiguration:
-        from:
-          operation: PutBucketNotificationConfiguration
-          path: NotificationConfiguration
+      # Notification:
+      #   from:
+      #     operation: PutBucketNotification
+      #     path: NotificationConfiguration
+      # NotificationConfiguration:
+      #   from:
+      #     operation: PutBucketNotificationConfiguration
+      #     path: NotificationConfiguration
       OwnershipControls:
         from:
           operation: PutBucketOwnershipControls
@@ -78,15 +78,15 @@ resources:
       Tagging:
         from:
           operation: PutBucketTagging
-          path: 
+          path: Tagging
       Versioning:
         from:
           operation: PutBucketVersioning
-          path: 
+          path: VersioningConfiguration # Double check about MFA
       Website:
         from:
           operation: PutBucketWebsite
-          path: 
+          path: WebsiteConfiguration
     renames:
       operations:
         CreateBucket:
