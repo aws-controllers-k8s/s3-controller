@@ -25,6 +25,11 @@ import (
 	svcapitypes "github.com/aws-controllers-k8s/s3-controller/apis/v1alpha1"
 )
 
+// Hack to avoid import errors during build...
+var (
+	_ = &ackerrors.MissingNameIdentifier
+)
+
 // resource implements the `aws-controller-k8s/runtime/pkg/types.AWSResource`
 // interface
 type resource struct {
@@ -69,6 +74,11 @@ func (r *resource) Conditions() []*ackv1alpha1.Condition {
 	return r.ko.Status.Conditions
 }
 
+// ReplaceConditions sets the Conditions status field for the resource
+func (r *resource) ReplaceConditions(conditions []*ackv1alpha1.Condition) {
+	r.ko.Status.Conditions = conditions
+}
+
 // SetObjectMeta sets the ObjectMeta field for the resource
 func (r *resource) SetObjectMeta(meta metav1.ObjectMeta) {
 	r.ko.ObjectMeta = meta
@@ -77,9 +87,9 @@ func (r *resource) SetObjectMeta(meta metav1.ObjectMeta) {
 // SetIdentifiers sets the Spec or Status field that is referenced as the unique
 // resource identifier
 func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error {
-	if identifier.NameOrID == nil {
+	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Spec.Name = identifier.NameOrID
+
 	return nil
 }
