@@ -89,7 +89,7 @@ resources:
       #     path: WebsiteConfiguration
     hooks:
       sdk_create_post_set_output:
-        template_path: hooks/bucket_sdk_post_set_output.go.tpl
+        template_path: hooks/bucket_sdk_create_post_set_output.go.tpl
     renames:
       operations:
         CreateBucket:

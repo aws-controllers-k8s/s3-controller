@@ -134,12 +134,9 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-	latest := &resource{ko}
-	synced, err := rm.syncPutFields(ctx, latest)
-	if err != nil {
+	if err := rm.createPutFields(ctx, desired); err != nil {
 		return nil, err
 	}
-	ko = synced.ko
 	return &resource{ko}, nil
 }
 

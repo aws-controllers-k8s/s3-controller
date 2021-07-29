@@ -16,68 +16,18 @@ package bucket
 import (
 	"context"
 
-	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/s3"
 )
 
-func (rm *resourceManager) syncPutFields(
+func (rm *resourceManager) createPutFields(
 	ctx context.Context,
 	r *resource,
-) (synced *resource, err error) {
-	// Copy resource for later patching
-	synced = &resource{r.ko.DeepCopy()}
-
-	diff, err := rm.diffLogging(ctx, synced)
-	if err != nil {
-		return nil, err
+) error {
+	if err := rm.syncLogging(ctx, r); err != nil {
+		return err
 	}
-
-	if len(diff.Differences) > 0 {
-		rm.syncLogging(ctx, synced)
-	}
-
-	return synced, nil
-}
-
-func (rm *resourceManager) diffLogging(
-	ctx context.Context,
-	r *resource,
-) (*ackcompare.Delta, error) {
-	desired := r.ko.Spec.Logging
-
-	input := &svcsdk.GetBucketLoggingInput{
-		Bucket: r.ko.Spec.Name,
-	}
-	latest, err := rm.sdkapi.GetBucketLoggingWithContext(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-
-	delta := ackcompare.NewDelta()
-
-	if ackcompare.HasNilDifference(desired.LoggingEnabled, latest.LoggingEnabled) {
-		delta.Add("Spec.Logging.LoggingEnabled", desired.LoggingEnabled, latest.LoggingEnabled)
-	} else {
-		if ackcompare.HasNilDifference(desired.LoggingEnabled.TargetBucket, latest.LoggingEnabled.TargetBucket) {
-			delta.Add("Spec.Logging.LoggingEnabled.TargetBucket", desired.LoggingEnabled.TargetBucket, latest.LoggingEnabled.TargetBucket)
-		} else {
-			if *desired.LoggingEnabled.TargetBucket != *latest.LoggingEnabled.TargetBucket {
-				delta.Add("Spec.Logging.LoggingEnabled.TargetBucket", desired.LoggingEnabled.TargetBucket, latest.LoggingEnabled.TargetBucket)
-			}
-		}
-
-		if ackcompare.HasNilDifference(desired.LoggingEnabled.TargetPrefix, latest.LoggingEnabled.TargetPrefix) {
-			delta.Add("Spec.Logging.LoggingEnabled.TargetPrefix", desired.LoggingEnabled.TargetPrefix, latest.LoggingEnabled.TargetPrefix)
-		} else {
-			if *desired.LoggingEnabled.TargetPrefix != *latest.LoggingEnabled.TargetPrefix {
-				delta.Add("Spec.Logging.LoggingEnabled.TargetPrefix", desired.LoggingEnabled.TargetPrefix, latest.LoggingEnabled.TargetPrefix)
-			}
-		}
-	}
-
-	// TODO(RedbackThomson): Diff LoggingEnabled.TargetGrants
-	return delta, nil
+	return nil
 }
 
 func (rm *resourceManager) newPutBucketLoggingPayload(
@@ -150,22 +100,20 @@ func (rm *resourceManager) newPutBucketLoggingPayload(
 func (rm *resourceManager) syncLogging(
 	ctx context.Context,
 	r *resource,
-) (created *resource, err error) {
+) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncLogging")
 	defer exit(err)
 	input, err := rm.newPutBucketLoggingPayload(r)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	ko := r.ko.DeepCopy()
 
 	_, err = rm.sdkapi.PutBucketLogging(input)
 	rm.metrics.RecordAPICall("UPDATED", "PutBucketLogging", err)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &resource{ko}, nil
+	return nil
 }
