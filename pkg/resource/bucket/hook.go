@@ -70,7 +70,6 @@ func (rm *resourceManager) newPutBucketLoggingPayload(
 	r *resource,
 ) *svcsdk.PutBucketLoggingInput {
 	res := &svcsdk.PutBucketLoggingInput{}
-
 	res.SetBucket(*r.ko.Spec.Name)
 	if r.ko.Spec.Logging != nil {
 		res.SetBucketLoggingStatus(rm.newBucketLoggingStatus(r))

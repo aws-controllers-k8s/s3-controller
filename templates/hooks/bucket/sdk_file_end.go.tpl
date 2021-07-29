@@ -19,6 +19,24 @@ func (rm *resourceManager) new{{ $memberRefName }}(
     res := &svcsdk.{{ $memberRef.ShapeName }}{}
 
 {{ GoCodeSetOperationStruct $CRD "" "res" $memberRef "" (printf "r.ko.Spec.%s" $specFieldName) 1 }}
+
+    return res
+}
+
+{{- $describeOperationName := (printf "Get%s" (slice $operationName 3))}}
+{{- $field := (index $CRD.SpecFields $specFieldName )}}
+{{- $operation := (index $SDKAPI.API.Operations $describeOperationName)}}
+
+// setResource{{ $specFieldName }} sets the `{{ $specFieldName }}` spec field
+// given the output of a `{{ $operation.Name }}` operation.
+func (rm *resourceManager) setResource{{ $specFieldName }}(
+    r *resource,
+    resp *svcsdk.{{ $operation.OutputRef.ShapeName }},
+) *svcapitypes.{{ $memberRef.ShapeName }} {
+    res := &svcapitypes.{{ $memberRef.ShapeName }}{}
+
+{{ GoCodeSetResourceStruct $CRD "" "res" $memberRef "resp" $memberRef 1}}
+
     return res
 }
 {{- end }}

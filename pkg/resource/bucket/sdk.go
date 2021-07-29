@@ -88,6 +88,12 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	getBucketLoggingPayload := rm.newGetBucketLoggingPayload(r)
+	getBucketLoggingResponse, err := rm.sdkapi.GetBucketLoggingWithContext(ctx, getBucketLoggingPayload)
+	if err != nil {
+		return nil, err
+	}
+	ko.Spec.Logging = rm.setResourceLogging(r, getBucketLoggingResponse)
 	return &resource{ko}, nil
 }
 
@@ -373,6 +379,58 @@ func (rm *resourceManager) newBucketLoggingStatus(
 			resf0.SetTargetPrefix(*r.ko.Spec.Logging.LoggingEnabled.TargetPrefix)
 		}
 		res.SetLoggingEnabled(resf0)
+	}
+
+	return res
+}
+
+// setResourceLogging sets the `Logging` spec field
+// given the output of a `GetBucketLogging` operation.
+func (rm *resourceManager) setResourceLogging(
+	r *resource,
+	resp *svcsdk.GetBucketLoggingOutput,
+) *svcapitypes.BucketLoggingStatus {
+	res := &svcapitypes.BucketLoggingStatus{}
+
+	if resp.LoggingEnabled != nil {
+		resf0 := &svcapitypes.LoggingEnabled{}
+		if resp.LoggingEnabled.TargetBucket != nil {
+			resf0.TargetBucket = resp.LoggingEnabled.TargetBucket
+		}
+		if resp.LoggingEnabled.TargetGrants != nil {
+			resf0f1 := []*svcapitypes.TargetGrant{}
+			for _, resf0f1iter := range resp.LoggingEnabled.TargetGrants {
+				resf0f1elem := &svcapitypes.TargetGrant{}
+				if resf0f1iter.Grantee != nil {
+					resf0f1elemf0 := &svcapitypes.Grantee{}
+					if resf0f1iter.Grantee.DisplayName != nil {
+						resf0f1elemf0.DisplayName = resf0f1iter.Grantee.DisplayName
+					}
+					if resf0f1iter.Grantee.EmailAddress != nil {
+						resf0f1elemf0.EmailAddress = resf0f1iter.Grantee.EmailAddress
+					}
+					if resf0f1iter.Grantee.ID != nil {
+						resf0f1elemf0.ID = resf0f1iter.Grantee.ID
+					}
+					if resf0f1iter.Grantee.Type != nil {
+						resf0f1elemf0.Type = resf0f1iter.Grantee.Type
+					}
+					if resf0f1iter.Grantee.URI != nil {
+						resf0f1elemf0.URI = resf0f1iter.Grantee.URI
+					}
+					resf0f1elem.Grantee = resf0f1elemf0
+				}
+				if resf0f1iter.Permission != nil {
+					resf0f1elem.Permission = resf0f1iter.Permission
+				}
+				resf0f1 = append(resf0f1, resf0f1elem)
+			}
+			resf0.TargetGrants = resf0f1
+		}
+		if resp.LoggingEnabled.TargetPrefix != nil {
+			resf0.TargetPrefix = resp.LoggingEnabled.TargetPrefix
+		}
+		res.LoggingEnabled = resf0
 	}
 
 	return res
