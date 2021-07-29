@@ -34,65 +34,9 @@ func (rm *resourceManager) newPutBucketLoggingPayload(
 	r *resource,
 ) (*svcsdk.PutBucketLoggingInput, error) {
 	res := &svcsdk.PutBucketLoggingInput{}
-	logging := r.ko.Spec.Logging
 
 	res.SetBucket(*r.ko.Spec.Name)
-
-	if logging != nil {
-		loggingStatus := &svcsdk.BucketLoggingStatus{}
-
-		if logging.LoggingEnabled != nil {
-			loggingEnabled := &svcsdk.LoggingEnabled{}
-
-			if logging.LoggingEnabled.TargetBucket != nil {
-				loggingEnabled.SetTargetBucket(*logging.LoggingEnabled.TargetBucket)
-			}
-			if logging.LoggingEnabled.TargetPrefix != nil {
-				loggingEnabled.SetTargetPrefix(*logging.LoggingEnabled.TargetPrefix)
-			}
-
-			grants := []*svcsdk.TargetGrant{}
-			for _, grant := range logging.LoggingEnabled.TargetGrants {
-				newGrant := &svcsdk.TargetGrant{}
-
-				if grant.Permission != nil {
-					newGrant.SetPermission(*grant.Permission)
-				}
-
-				if grant.Grantee != nil {
-					newGrantee := &svcsdk.Grantee{}
-
-					if grant.Grantee.DisplayName != nil {
-						newGrantee.SetDisplayName(*grant.Grantee.DisplayName)
-					}
-
-					if grant.Grantee.EmailAddress != nil {
-						newGrantee.SetEmailAddress(*grant.Grantee.EmailAddress)
-					}
-
-					if grant.Grantee.ID != nil {
-						newGrantee.SetID(*grant.Grantee.ID)
-					}
-
-					if grant.Grantee.Type != nil {
-						newGrantee.SetType(*grant.Grantee.Type)
-					}
-
-					if grant.Grantee.URI != nil {
-						newGrantee.SetURI(*grant.Grantee.URI)
-					}
-				}
-
-				grants = append(grants, newGrant)
-			}
-			if len(grants) > 0 {
-				loggingEnabled.SetTargetGrants(grants)
-			}
-
-			loggingStatus.SetLoggingEnabled(loggingEnabled)
-		}
-		res.SetBucketLoggingStatus(loggingStatus)
-	}
+	res.SetBucketLoggingStatus(rm.createBucketLoggingStatus(r))
 
 	return res, nil
 }

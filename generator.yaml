@@ -90,6 +90,8 @@ resources:
     hooks:
       sdk_create_post_set_output:
         template_path: hooks/bucket_sdk_create_post_set_output.go.tpl
+      sdk_file_end:
+        template_path: hooks/bucket_sdk_file_end.go.tpl
     renames:
       operations:
         CreateBucket:
