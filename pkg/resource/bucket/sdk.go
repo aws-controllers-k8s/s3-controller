@@ -58,7 +58,7 @@ func (rm *resourceManager) sdkFind(
 	resp, err = rm.sdkapi.ListBucketsWithContext(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "ListBuckets", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchBucket" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -88,6 +88,13 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	// Describe and set bucket logging
+	getBucketLoggingPayload := rm.newGetBucketLoggingPayload(r)
+	getBucketLoggingResponse, err := rm.sdkapi.GetBucketLoggingWithContext(ctx, getBucketLoggingPayload)
+	if err != nil {
+		return nil, err
+	}
+	ko.Spec.Logging = rm.setResourceLogging(r, getBucketLoggingResponse)
 	return &resource{ko}, nil
 }
 
@@ -191,8 +198,7 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
-	// TODO(jaypipes): Figure this out...
-	return nil, ackerr.NotImplemented
+	return rm.customUpdateBucket(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API

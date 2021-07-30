@@ -16,6 +16,7 @@ package bucket
 import (
 	"context"
 
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/s3"
 )
@@ -30,15 +31,51 @@ func (rm *resourceManager) createPutFields(
 	return nil
 }
 
+// customUpdateBucket patches each of the resource properties in the backend AWS
+// service API and returns a new resource with updated fields.
+func (rm *resourceManager) customUpdateBucket(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+	delta *ackcompare.Delta,
+) (updated *resource, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.customUpdateBucket")
+	defer exit(err)
+
+	// Merge in the information we read from the API call above to the copy of
+	// the original Kubernetes object we passed to the function
+	ko := desired.ko.DeepCopy()
+
+	rm.setStatusDefaults(ko)
+
+	if delta.DifferentAt("Spec.Logging") {
+		if err := rm.syncLogging(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
+
+	return &resource{ko}, nil
+}
+
+func (rm *resourceManager) newGetBucketLoggingPayload(
+	r *resource,
+) *svcsdk.GetBucketLoggingInput {
+	res := &svcsdk.GetBucketLoggingInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
 func (rm *resourceManager) newPutBucketLoggingPayload(
 	r *resource,
 ) (*svcsdk.PutBucketLoggingInput, error) {
 	res := &svcsdk.PutBucketLoggingInput{}
 
 	res.SetBucket(*r.ko.Spec.Name)
-	res.SetBucketLoggingStatus(rm.createBucketLoggingStatus(r))
-
-	return res, nil
+	if r.ko.Spec.Logging != nil {
+		res.SetBucketLoggingStatus(rm.createBucketLoggingStatus(r))
+	}
+	return res
 }
 
 func (rm *resourceManager) syncLogging(
