@@ -68,12 +68,12 @@ func (rm *resourceManager) newGetBucketLoggingPayload(
 
 func (rm *resourceManager) newPutBucketLoggingPayload(
 	r *resource,
-) (*svcsdk.PutBucketLoggingInput, error) {
+) *svcsdk.PutBucketLoggingInput {
 	res := &svcsdk.PutBucketLoggingInput{}
 
 	res.SetBucket(*r.ko.Spec.Name)
 	if r.ko.Spec.Logging != nil {
-		res.SetBucketLoggingStatus(rm.createBucketLoggingStatus(r))
+		res.SetBucketLoggingStatus(rm.newBucketLoggingStatus(r))
 	}
 	return res
 }
@@ -85,10 +85,7 @@ func (rm *resourceManager) syncLogging(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncLogging")
 	defer exit(err)
-	input, err := rm.newPutBucketLoggingPayload(r)
-	if err != nil {
-		return err
-	}
+	input := rm.newPutBucketLoggingPayload(r)
 
 	_, err = rm.sdkapi.PutBucketLogging(input)
 	rm.metrics.RecordAPICall("UPDATED", "PutBucketLogging", err)

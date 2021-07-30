@@ -93,7 +93,7 @@ resources:
           code: NoSuchBucket
     hooks:
       sdk_create_post_set_output:
-        template_path: hooks/bucket_sdk_create_post_set_output.go.tpl
+        template_path: hooks/bucket/sdk_create_post_set_output.go.tpl
       sdk_file_end:
         template_path: hooks/bucket/sdk_file_end.go.tpl
     update_operation:

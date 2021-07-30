@@ -11,17 +11,17 @@
 {{- range $memberRefName, $memberRef := $operation.InputRef.Shape.MemberRefs -}}
 {{- if (eq $memberRef.Shape.Type "structure") }}
 
-// create{{ $memberRefName }} returns a {{ $memberRefName }} object 
+// new{{ $memberRefName }} returns a {{ $memberRefName }} object 
 // with each the field set by the resource's corresponding spec field.
-func (rm *resourceManager) create{{ $memberRefName }}(
+func (rm *resourceManager) new{{ $memberRefName }}(
     r *resource,
 ) *svcsdk.{{ $memberRef.ShapeName }} {
     res := &svcsdk.{{ $memberRef.ShapeName }}{}
 
-{{ GoCodeSetOperationStruct $CRD "" "res" $memberRef "" (printf "r.ko.Spec.%s" $specFieldName) 1}}
+{{ GoCodeSetOperationStruct $CRD "" "res" $memberRef "" (printf "r.ko.Spec.%s" $specFieldName) 1 }}
     return res
 }
-{{- end}}
-{{- end}}
+{{- end }}
+{{- end }}
 {{- end }}
 {{- end }}

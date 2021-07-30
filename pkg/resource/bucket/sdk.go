@@ -88,13 +88,6 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
-	// Describe and set bucket logging
-	getBucketLoggingPayload := rm.newGetBucketLoggingPayload(r)
-	getBucketLoggingResponse, err := rm.sdkapi.GetBucketLoggingWithContext(ctx, getBucketLoggingPayload)
-	if err != nil {
-		return nil, err
-	}
-	ko.Spec.Logging = rm.setResourceLogging(r, getBucketLoggingResponse)
 	return &resource{ko}, nil
 }
 
@@ -334,9 +327,9 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	return false
 }
 
-// createBucketLoggingStatus returns a BucketLoggingStatus object
+// newBucketLoggingStatus returns a BucketLoggingStatus object
 // with each the field set by the resource's corresponding spec field.
-func (rm *resourceManager) createBucketLoggingStatus(
+func (rm *resourceManager) newBucketLoggingStatus(
 	r *resource,
 ) *svcsdk.BucketLoggingStatus {
 	res := &svcsdk.BucketLoggingStatus{}
