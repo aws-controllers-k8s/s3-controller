@@ -58,7 +58,7 @@ func (rm *resourceManager) sdkFind(
 	resp, err = rm.sdkapi.ListBucketsWithContext(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "ListBuckets", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchBucket" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -88,6 +88,13 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	// Describe and set bucket logging
+	getBucketLoggingPayload := rm.newGetBucketLoggingPayload(r)
+	getBucketLoggingResponse, err := rm.sdkapi.GetBucketLoggingWithContext(ctx, getBucketLoggingPayload)
+	if err != nil {
+		return nil, err
+	}
+	ko.Spec.Logging = rm.setResourceLogging(r, getBucketLoggingResponse)
 	return &resource{ko}, nil
 }
 
@@ -134,6 +141,9 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	if err := rm.createPutFields(ctx, desired); err != nil {
+		return nil, err
+	}
 	return &resource{ko}, nil
 }
 
@@ -188,8 +198,7 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
-	// TODO(jaypipes): Figure this out...
-	return nil, ackerr.NotImplemented
+	return rm.customUpdateBucket(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
@@ -323,4 +332,107 @@ func (rm *resourceManager) updateConditions(
 func (rm *resourceManager) terminalAWSError(err error) bool {
 	// No terminal_errors specified for this resource in generator config
 	return false
+}
+
+// newBucketLoggingStatus returns a BucketLoggingStatus object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newBucketLoggingStatus(
+	r *resource,
+) *svcsdk.BucketLoggingStatus {
+	res := &svcsdk.BucketLoggingStatus{}
+
+	if r.ko.Spec.Logging.LoggingEnabled != nil {
+		resf0 := &svcsdk.LoggingEnabled{}
+		if r.ko.Spec.Logging.LoggingEnabled.TargetBucket != nil {
+			resf0.SetTargetBucket(*r.ko.Spec.Logging.LoggingEnabled.TargetBucket)
+		}
+		if r.ko.Spec.Logging.LoggingEnabled.TargetGrants != nil {
+			resf0f1 := []*svcsdk.TargetGrant{}
+			for _, resf0f1iter := range r.ko.Spec.Logging.LoggingEnabled.TargetGrants {
+				resf0f1elem := &svcsdk.TargetGrant{}
+				if resf0f1iter.Grantee != nil {
+					resf0f1elemf0 := &svcsdk.Grantee{}
+					if resf0f1iter.Grantee.DisplayName != nil {
+						resf0f1elemf0.SetDisplayName(*resf0f1iter.Grantee.DisplayName)
+					}
+					if resf0f1iter.Grantee.EmailAddress != nil {
+						resf0f1elemf0.SetEmailAddress(*resf0f1iter.Grantee.EmailAddress)
+					}
+					if resf0f1iter.Grantee.ID != nil {
+						resf0f1elemf0.SetID(*resf0f1iter.Grantee.ID)
+					}
+					if resf0f1iter.Grantee.Type != nil {
+						resf0f1elemf0.SetType(*resf0f1iter.Grantee.Type)
+					}
+					if resf0f1iter.Grantee.URI != nil {
+						resf0f1elemf0.SetURI(*resf0f1iter.Grantee.URI)
+					}
+					resf0f1elem.SetGrantee(resf0f1elemf0)
+				}
+				if resf0f1iter.Permission != nil {
+					resf0f1elem.SetPermission(*resf0f1iter.Permission)
+				}
+				resf0f1 = append(resf0f1, resf0f1elem)
+			}
+			resf0.SetTargetGrants(resf0f1)
+		}
+		if r.ko.Spec.Logging.LoggingEnabled.TargetPrefix != nil {
+			resf0.SetTargetPrefix(*r.ko.Spec.Logging.LoggingEnabled.TargetPrefix)
+		}
+		res.SetLoggingEnabled(resf0)
+	}
+
+	return res
+}
+
+// setResourceLogging sets the `Logging` spec field
+// given the output of a `GetBucketLogging` operation.
+func (rm *resourceManager) setResourceLogging(
+	r *resource,
+	resp *svcsdk.GetBucketLoggingOutput,
+) *svcapitypes.BucketLoggingStatus {
+	res := &svcapitypes.BucketLoggingStatus{}
+
+	if resp.LoggingEnabled != nil {
+		resf0 := &svcapitypes.LoggingEnabled{}
+		if resp.LoggingEnabled.TargetBucket != nil {
+			resf0.TargetBucket = resp.LoggingEnabled.TargetBucket
+		}
+		if resp.LoggingEnabled.TargetGrants != nil {
+			resf0f1 := []*svcapitypes.TargetGrant{}
+			for _, resf0f1iter := range resp.LoggingEnabled.TargetGrants {
+				resf0f1elem := &svcapitypes.TargetGrant{}
+				if resf0f1iter.Grantee != nil {
+					resf0f1elemf0 := &svcapitypes.Grantee{}
+					if resf0f1iter.Grantee.DisplayName != nil {
+						resf0f1elemf0.DisplayName = resf0f1iter.Grantee.DisplayName
+					}
+					if resf0f1iter.Grantee.EmailAddress != nil {
+						resf0f1elemf0.EmailAddress = resf0f1iter.Grantee.EmailAddress
+					}
+					if resf0f1iter.Grantee.ID != nil {
+						resf0f1elemf0.ID = resf0f1iter.Grantee.ID
+					}
+					if resf0f1iter.Grantee.Type != nil {
+						resf0f1elemf0.Type = resf0f1iter.Grantee.Type
+					}
+					if resf0f1iter.Grantee.URI != nil {
+						resf0f1elemf0.URI = resf0f1iter.Grantee.URI
+					}
+					resf0f1elem.Grantee = resf0f1elemf0
+				}
+				if resf0f1iter.Permission != nil {
+					resf0f1elem.Permission = resf0f1iter.Permission
+				}
+				resf0f1 = append(resf0f1, resf0f1elem)
+			}
+			resf0.TargetGrants = resf0f1
+		}
+		if resp.LoggingEnabled.TargetPrefix != nil {
+			resf0.TargetPrefix = resp.LoggingEnabled.TargetPrefix
+		}
+		res.LoggingEnabled = resf0
+	}
+
+	return res
 }

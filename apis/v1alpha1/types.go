@@ -40,6 +40,15 @@ type AnalyticsS3BucketDestination struct {
 	BucketAccountID *string `json:"bucketAccountID,omitempty"`
 }
 
+// Container for logging status information.
+type BucketLoggingStatus struct {
+	// Describes where logs are stored and the prefix that Amazon S3 assigns to
+	// all log object keys for a bucket. For more information, see PUT Bucket logging
+	// (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTlogging.html)
+	// in the Amazon Simple Storage Service API Reference.
+	LoggingEnabled *LoggingEnabled `json:"loggingEnabled,omitempty"`
+}
+
 // In terms of implementation, a Bucket is a resource. An Amazon S3 bucket name
 // is globally unique, and the namespace is shared by all AWS accounts.
 type Bucket_SDK struct {
@@ -65,10 +74,19 @@ type Destination struct {
 	Bucket  *string `json:"bucket,omitempty"`
 }
 
+// Container for grant information.
+type Grant struct {
+	// Container for the person being granted permissions.
+	Grantee *Grantee `json:"grantee,omitempty"`
+}
+
 // Container for the person being granted permissions.
 type Grantee struct {
-	DisplayName *string `json:"displayName,omitempty"`
-	ID          *string `json:"id,omitempty"`
+	DisplayName  *string `json:"displayName,omitempty"`
+	EmailAddress *string `json:"emailAddress,omitempty"`
+	ID           *string `json:"id,omitempty"`
+	Type         *string `json:"type_,omitempty"`
+	URI          *string `json:"uRI,omitempty"`
 }
 
 // Container element that identifies who initiated the multipart upload.
@@ -93,6 +111,16 @@ type LifecycleRule struct {
 // request.
 type Location struct {
 	BucketName *string `json:"bucketName,omitempty"`
+}
+
+// Describes where logs are stored and the prefix that Amazon S3 assigns to
+// all log object keys for a bucket. For more information, see PUT Bucket logging
+// (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTlogging.html)
+// in the Amazon Simple Storage Service API Reference.
+type LoggingEnabled struct {
+	TargetBucket *string        `json:"targetBucket,omitempty"`
+	TargetGrants []*TargetGrant `json:"targetGrants,omitempty"`
+	TargetPrefix *string        `json:"targetPrefix,omitempty"`
 }
 
 // Container for the MultipartUpload for the Amazon S3 object.
@@ -137,4 +165,11 @@ type ReplicationRule struct {
 // Bucket Lifecycle Configuration Examples (https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLifecycleConfiguration.html#API_PutBucketLifecycleConfiguration_Examples)
 type Rule struct {
 	ID *string `json:"id,omitempty"`
+}
+
+// Container for granting information.
+type TargetGrant struct {
+	// Container for the person being granted permissions.
+	Grantee    *Grantee `json:"grantee,omitempty"`
+	Permission *string  `json:"permission,omitempty"`
 }

@@ -10,6 +10,96 @@ operations:
     primary_identifier_field_name: Name
 resources:
   Bucket:
+    fields:
+      # AccelerateConfiguration:
+      #   from:
+      #     operation: PutBucketAccelerateConfiguration
+      #     path: AccelerateConfiguration
+      # AnalyticsConfiguration:
+      #   from:
+      #     operation: PutBucketAnalyticsConfiguration
+      #     path: AnalyticsConfiguration # Double check about ID
+      # Cors:
+      #   from:
+      #     operation: PutBucketCors
+      #     path: CORSConfiguration
+      # Encryption:
+      #   from:
+      #     operation: PutBucketEncryption
+      #     path: ServerSideEncryptionConfiguration
+      # IntelligentTieringConfiguration:
+      #   from:
+      #     operation: PutBucketIntelligentTieringConfiguration
+      #     path: IntelligentTieringConfiguration # Double check about ID
+      # InventoryConfiguration:
+      #   from:
+      #     operation: PutBucketInventoryConfiguration
+      #     path: InventoryConfiguration # Double check about ID
+      # # Lifecycle:
+      # #   from:
+      # #     operation: PutBucketLifecycle
+      # #     path: LifecycleConfiguration
+      # LifecycleConfiguration:
+      #   from:
+      #     operation: PutBucketLifecycleConfiguration
+      #     path: LifecycleConfiguration
+      Logging:
+        from:
+          operation: PutBucketLogging
+          path: BucketLoggingStatus
+      # MetricsConfiguration:
+      #   from:
+      #     operation: PutBucketMetricsConfiguration
+      #     path: MetricsConfiguration # Double check about ID
+      # # Notification:
+      # #   from:
+      # #     operation: PutBucketNotification
+      # #     path: NotificationConfiguration
+      # # NotificationConfiguration:
+      # #   from:
+      # #     operation: PutBucketNotificationConfiguration
+      # #     path: NotificationConfiguration
+      # OwnershipControls:
+      #   from:
+      #     operation: PutBucketOwnershipControls
+      #     path: OwnershipControls
+      # Policy:
+      #   from:
+      #     operation: PutBucketPolicy
+      #     path: Policy # Double check about ConfirmRemoveSelfBucketAccess
+      # Replication:
+      #   from:
+      #     operation: PutBucketReplication
+      #     path: ReplicationConfiguration # Double check about Token
+      # RequestPayment:
+      #   from:
+      #     operation: PutBucketRequestPayment
+      #     path: RequestPaymentConfiguration
+      # Tagging:
+      #   from:
+      #     operation: PutBucketTagging
+      #     path: Tagging
+      # Versioning:
+      #   from:
+      #     operation: PutBucketVersioning
+      #     path: VersioningConfiguration # Double check about MFA
+      # Website:
+      #   from:
+      #     operation: PutBucketWebsite
+      #     path: WebsiteConfiguration
+    exceptions:
+      errors:
+        404:
+          code: NoSuchBucket
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/bucket/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/bucket/sdk_read_many_post_set_output.go.tpl
+      sdk_file_end:
+        template_path: hooks/bucket/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateBucket
     renames:
       operations:
         CreateBucket:

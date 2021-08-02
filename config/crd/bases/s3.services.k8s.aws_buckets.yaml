@@ -64,6 +64,44 @@ spec:
               grantWriteACP:
                 description: Allows grantee to write the ACL for the applicable bucket.
                 type: string
+              logging:
+                description: Container for logging status information.
+                properties:
+                  loggingEnabled:
+                    description: Describes where logs are stored and the prefix that
+                      Amazon S3 assigns to all log object keys for a bucket. For more
+                      information, see PUT Bucket logging (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTlogging.html)
+                      in the Amazon Simple Storage Service API Reference.
+                    properties:
+                      targetBucket:
+                        type: string
+                      targetGrants:
+                        items:
+                          description: Container for granting information.
+                          properties:
+                            grantee:
+                              description: Container for the person being granted
+                                permissions.
+                              properties:
+                                displayName:
+                                  type: string
+                                emailAddress:
+                                  type: string
+                                id:
+                                  type: string
+                                type_:
+                                  type: string
+                                uRI:
+                                  type: string
+                              type: object
+                            permission:
+                              type: string
+                          type: object
+                        type: array
+                      targetPrefix:
+                        type: string
+                    type: object
+                type: object
               name:
                 description: The name of the bucket to create.
                 type: string
