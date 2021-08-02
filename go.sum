@@ -27,6 +27,8 @@ github.com/aws-controllers-k8s/runtime v0.1.2 h1:prqFY6tlmgsGMZizHvHqDqT1zECRqll
 github.com/aws-controllers-k8s/runtime v0.1.2/go.mod h1:xA2F18PJerBHaqrS4de1lpP7skeSMeStkmh+3x5sWvw=
 github.com/aws-controllers-k8s/runtime v0.7.1 h1:iA7x1EBVRffg9aI7vhshWXLYkrd0ySw0qDmGG/10FFg=
 github.com/aws-controllers-k8s/runtime v0.7.1/go.mod h1:xA2F18PJerBHaqrS4de1lpP7skeSMeStkmh+3x5sWvw=
+github.com/aws-controllers-k8s/runtime v0.8.0 h1:zVlcHsZ1UkzZQ3467l1h9xiC8YHirWFbAou2VbFku58=
+github.com/aws-controllers-k8s/runtime v0.8.0/go.mod h1:xA2F18PJerBHaqrS4de1lpP7skeSMeStkmh+3x5sWvw=
 github.com/aws/aws-sdk-go v1.37.4 h1:tWxrpMK/oRSXVnjUzhGeCWLR00fW0WF4V4sycYPPrJ8=
 github.com/aws/aws-sdk-go v1.37.4/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
