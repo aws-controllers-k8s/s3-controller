@@ -18,7 +18,7 @@ func (rm *resourceManager) new{{ $memberRefName }}(
 ) *svcsdk.{{ $memberRef.ShapeName }} {
     res := &svcsdk.{{ $memberRef.ShapeName }}{}
 
-{{ GoCodeSetOperationStruct $CRD "" "res" $memberRef "" (printf "r.ko.Spec.%s" $specFieldName) 1 }}
+{{ GoCodeSetSDKForStruct $CRD "" "res" $memberRef "" (printf "r.ko.Spec.%s" $specFieldName) 1 }}
 
     return res
 }
@@ -35,7 +35,7 @@ func (rm *resourceManager) setResource{{ $specFieldName }}(
 ) *svcapitypes.{{ $memberRef.ShapeName }} {
     res := &svcapitypes.{{ $memberRef.ShapeName }}{}
 
-{{ GoCodeSetResourceStruct $CRD "" "res" $memberRef "resp" $memberRef 1}}
+{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp" $memberRef 1}}
 
     return res
 }
