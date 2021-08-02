@@ -18,6 +18,7 @@ import (
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	svcapitypes "github.com/aws-controllers-k8s/s3-controller/apis/v1alpha1"
 	svcsdk "github.com/aws/aws-sdk-go/service/s3"
 )
 
@@ -58,6 +59,18 @@ func (rm *resourceManager) customUpdateBucket(
 	return &resource{ko}, nil
 }
 
+// customPreCompare ensures that default values of nil-able types are
+// appropriately replaced with empty maps or structs depending on the default
+// output of the SDK.
+func customPreCompare(
+	a *resource,
+	b *resource,
+) {
+	if a.ko.Spec.Logging == nil && b.ko.Spec.Logging != nil {
+		a.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
+	}
+}
+
 func (rm *resourceManager) newGetBucketLoggingPayload(
 	r *resource,
 ) *svcsdk.GetBucketLoggingInput {
@@ -73,6 +86,8 @@ func (rm *resourceManager) newPutBucketLoggingPayload(
 	res.SetBucket(*r.ko.Spec.Name)
 	if r.ko.Spec.Logging != nil {
 		res.SetBucketLoggingStatus(rm.newBucketLoggingStatus(r))
+	} else {
+		res.SetBucketLoggingStatus(&svcsdk.BucketLoggingStatus{})
 	}
 	return res
 }

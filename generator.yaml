@@ -92,6 +92,8 @@ resources:
         404:
           code: NoSuchBucket
     hooks:
+      delta_pre_compare:
+        code: customPreCompare(a, b)
       sdk_create_post_set_output:
         template_path: hooks/bucket/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
