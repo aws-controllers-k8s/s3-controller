@@ -88,13 +88,9 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
-	// Describe and set bucket logging
-	getBucketLoggingPayload := rm.newGetBucketLoggingPayload(r)
-	getBucketLoggingResponse, err := rm.sdkapi.GetBucketLoggingWithContext(ctx, getBucketLoggingPayload)
-	if err != nil {
+	if err := rm.addPutFieldsToSpec(ctx, r, ko); err != nil {
 		return nil, err
 	}
-	ko.Spec.Logging = rm.setResourceLogging(r, getBucketLoggingResponse)
 	return &resource{ko}, nil
 }
 
@@ -334,6 +330,214 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	return false
 }
 
+// newAccelerateConfiguration returns a AccelerateConfiguration object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newAccelerateConfiguration(
+	r *resource,
+) *svcsdk.AccelerateConfiguration {
+	res := &svcsdk.AccelerateConfiguration{}
+
+	if r.ko.Spec.AccelerateConfiguration.Status != nil {
+		res.SetStatus(*r.ko.Spec.AccelerateConfiguration.Status)
+	}
+
+	return res
+}
+
+// setResourceAccelerateConfiguration sets the `AccelerateConfiguration` spec field
+// given the output of a `GetBucketAccelerateConfiguration` operation.
+func (rm *resourceManager) setResourceAccelerateConfiguration(
+	r *resource,
+	resp *svcsdk.GetBucketAccelerateConfigurationOutput,
+) *svcapitypes.AccelerateConfiguration {
+	res := &svcapitypes.AccelerateConfiguration{}
+	if resp.Status != nil {
+		res.Status = resp.Status
+	}
+
+	return res
+}
+
+// newCORSConfiguration returns a CORSConfiguration object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newCORSConfiguration(
+	r *resource,
+) *svcsdk.CORSConfiguration {
+	res := &svcsdk.CORSConfiguration{}
+
+	if r.ko.Spec.CORS.CORSRules != nil {
+		resf0 := []*svcsdk.CORSRule{}
+		for _, resf0iter := range r.ko.Spec.CORS.CORSRules {
+			resf0elem := &svcsdk.CORSRule{}
+			if resf0iter.AllowedHeaders != nil {
+				resf0elemf0 := []*string{}
+				for _, resf0elemf0iter := range resf0iter.AllowedHeaders {
+					var resf0elemf0elem string
+					resf0elemf0elem = *resf0elemf0iter
+					resf0elemf0 = append(resf0elemf0, &resf0elemf0elem)
+				}
+				resf0elem.SetAllowedHeaders(resf0elemf0)
+			}
+			if resf0iter.AllowedMethods != nil {
+				resf0elemf1 := []*string{}
+				for _, resf0elemf1iter := range resf0iter.AllowedMethods {
+					var resf0elemf1elem string
+					resf0elemf1elem = *resf0elemf1iter
+					resf0elemf1 = append(resf0elemf1, &resf0elemf1elem)
+				}
+				resf0elem.SetAllowedMethods(resf0elemf1)
+			}
+			if resf0iter.AllowedOrigins != nil {
+				resf0elemf2 := []*string{}
+				for _, resf0elemf2iter := range resf0iter.AllowedOrigins {
+					var resf0elemf2elem string
+					resf0elemf2elem = *resf0elemf2iter
+					resf0elemf2 = append(resf0elemf2, &resf0elemf2elem)
+				}
+				resf0elem.SetAllowedOrigins(resf0elemf2)
+			}
+			if resf0iter.ExposeHeaders != nil {
+				resf0elemf3 := []*string{}
+				for _, resf0elemf3iter := range resf0iter.ExposeHeaders {
+					var resf0elemf3elem string
+					resf0elemf3elem = *resf0elemf3iter
+					resf0elemf3 = append(resf0elemf3, &resf0elemf3elem)
+				}
+				resf0elem.SetExposeHeaders(resf0elemf3)
+			}
+			if resf0iter.MaxAgeSeconds != nil {
+				resf0elem.SetMaxAgeSeconds(*resf0iter.MaxAgeSeconds)
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.SetCORSRules(resf0)
+	}
+
+	return res
+}
+
+// setResourceCORS sets the `CORS` spec field
+// given the output of a `GetBucketCors` operation.
+func (rm *resourceManager) setResourceCORS(
+	r *resource,
+	resp *svcsdk.GetBucketCorsOutput,
+) *svcapitypes.CORSConfiguration {
+	res := &svcapitypes.CORSConfiguration{}
+	if resp.CORSRules != nil {
+		resf0 := []*svcapitypes.CORSRule{}
+		for _, resf0iter := range resp.CORSRules {
+			resf0elem := &svcapitypes.CORSRule{}
+			if resf0iter.AllowedHeaders != nil {
+				resf0elemf0 := []*string{}
+				for _, resf0elemf0iter := range resf0iter.AllowedHeaders {
+					var resf0elemf0elem string
+					resf0elemf0elem = *resf0elemf0iter
+					resf0elemf0 = append(resf0elemf0, &resf0elemf0elem)
+				}
+				resf0elem.AllowedHeaders = resf0elemf0
+			}
+			if resf0iter.AllowedMethods != nil {
+				resf0elemf1 := []*string{}
+				for _, resf0elemf1iter := range resf0iter.AllowedMethods {
+					var resf0elemf1elem string
+					resf0elemf1elem = *resf0elemf1iter
+					resf0elemf1 = append(resf0elemf1, &resf0elemf1elem)
+				}
+				resf0elem.AllowedMethods = resf0elemf1
+			}
+			if resf0iter.AllowedOrigins != nil {
+				resf0elemf2 := []*string{}
+				for _, resf0elemf2iter := range resf0iter.AllowedOrigins {
+					var resf0elemf2elem string
+					resf0elemf2elem = *resf0elemf2iter
+					resf0elemf2 = append(resf0elemf2, &resf0elemf2elem)
+				}
+				resf0elem.AllowedOrigins = resf0elemf2
+			}
+			if resf0iter.ExposeHeaders != nil {
+				resf0elemf3 := []*string{}
+				for _, resf0elemf3iter := range resf0iter.ExposeHeaders {
+					var resf0elemf3elem string
+					resf0elemf3elem = *resf0elemf3iter
+					resf0elemf3 = append(resf0elemf3, &resf0elemf3elem)
+				}
+				resf0elem.ExposeHeaders = resf0elemf3
+			}
+			if resf0iter.MaxAgeSeconds != nil {
+				resf0elem.MaxAgeSeconds = resf0iter.MaxAgeSeconds
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.CORSRules = resf0
+	}
+
+	return res
+}
+
+// newServerSideEncryptionConfiguration returns a ServerSideEncryptionConfiguration object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newServerSideEncryptionConfiguration(
+	r *resource,
+) *svcsdk.ServerSideEncryptionConfiguration {
+	res := &svcsdk.ServerSideEncryptionConfiguration{}
+
+	if r.ko.Spec.Encryption.Rules != nil {
+		resf0 := []*svcsdk.ServerSideEncryptionRule{}
+		for _, resf0iter := range r.ko.Spec.Encryption.Rules {
+			resf0elem := &svcsdk.ServerSideEncryptionRule{}
+			if resf0iter.ApplyServerSideEncryptionByDefault != nil {
+				resf0elemf0 := &svcsdk.ServerSideEncryptionByDefault{}
+				if resf0iter.ApplyServerSideEncryptionByDefault.KMSMasterKeyID != nil {
+					resf0elemf0.SetKMSMasterKeyID(*resf0iter.ApplyServerSideEncryptionByDefault.KMSMasterKeyID)
+				}
+				if resf0iter.ApplyServerSideEncryptionByDefault.SSEAlgorithm != nil {
+					resf0elemf0.SetSSEAlgorithm(*resf0iter.ApplyServerSideEncryptionByDefault.SSEAlgorithm)
+				}
+				resf0elem.SetApplyServerSideEncryptionByDefault(resf0elemf0)
+			}
+			if resf0iter.BucketKeyEnabled != nil {
+				resf0elem.SetBucketKeyEnabled(*resf0iter.BucketKeyEnabled)
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.SetRules(resf0)
+	}
+
+	return res
+}
+
+// setResourceEncryption sets the `Encryption` spec field
+// given the output of a `GetBucketEncryption` operation.
+func (rm *resourceManager) setResourceEncryption(
+	r *resource,
+	resp *svcsdk.GetBucketEncryptionOutput,
+) *svcapitypes.ServerSideEncryptionConfiguration {
+	res := &svcapitypes.ServerSideEncryptionConfiguration{}
+	if resp.ServerSideEncryptionConfiguration.Rules != nil {
+		resf0 := []*svcapitypes.ServerSideEncryptionRule{}
+		for _, resf0iter := range resp.ServerSideEncryptionConfiguration.Rules {
+			resf0elem := &svcapitypes.ServerSideEncryptionRule{}
+			if resf0iter.ApplyServerSideEncryptionByDefault != nil {
+				resf0elemf0 := &svcapitypes.ServerSideEncryptionByDefault{}
+				if resf0iter.ApplyServerSideEncryptionByDefault.KMSMasterKeyID != nil {
+					resf0elemf0.KMSMasterKeyID = resf0iter.ApplyServerSideEncryptionByDefault.KMSMasterKeyID
+				}
+				if resf0iter.ApplyServerSideEncryptionByDefault.SSEAlgorithm != nil {
+					resf0elemf0.SSEAlgorithm = resf0iter.ApplyServerSideEncryptionByDefault.SSEAlgorithm
+				}
+				resf0elem.ApplyServerSideEncryptionByDefault = resf0elemf0
+			}
+			if resf0iter.BucketKeyEnabled != nil {
+				resf0elem.BucketKeyEnabled = resf0iter.BucketKeyEnabled
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.Rules = resf0
+	}
+
+	return res
+}
+
 // newBucketLoggingStatus returns a BucketLoggingStatus object
 // with each the field set by the resource's corresponding spec field.
 func (rm *resourceManager) newBucketLoggingStatus(
@@ -392,7 +596,6 @@ func (rm *resourceManager) setResourceLogging(
 	resp *svcsdk.GetBucketLoggingOutput,
 ) *svcapitypes.BucketLoggingStatus {
 	res := &svcapitypes.BucketLoggingStatus{}
-
 	if resp.LoggingEnabled != nil {
 		resf0 := &svcapitypes.LoggingEnabled{}
 		if resp.LoggingEnabled.TargetBucket != nil {
@@ -432,6 +635,272 @@ func (rm *resourceManager) setResourceLogging(
 			resf0.TargetPrefix = resp.LoggingEnabled.TargetPrefix
 		}
 		res.LoggingEnabled = resf0
+	}
+
+	return res
+}
+
+// newOwnershipControls returns a OwnershipControls object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newOwnershipControls(
+	r *resource,
+) *svcsdk.OwnershipControls {
+	res := &svcsdk.OwnershipControls{}
+
+	if r.ko.Spec.OwnershipControls.Rules != nil {
+		resf0 := []*svcsdk.OwnershipControlsRule{}
+		for _, resf0iter := range r.ko.Spec.OwnershipControls.Rules {
+			resf0elem := &svcsdk.OwnershipControlsRule{}
+			if resf0iter.ObjectOwnership != nil {
+				resf0elem.SetObjectOwnership(*resf0iter.ObjectOwnership)
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.SetRules(resf0)
+	}
+
+	return res
+}
+
+// setResourceOwnershipControls sets the `OwnershipControls` spec field
+// given the output of a `GetBucketOwnershipControls` operation.
+func (rm *resourceManager) setResourceOwnershipControls(
+	r *resource,
+	resp *svcsdk.GetBucketOwnershipControlsOutput,
+) *svcapitypes.OwnershipControls {
+	res := &svcapitypes.OwnershipControls{}
+	if resp.OwnershipControls.Rules != nil {
+		resf0 := []*svcapitypes.OwnershipControlsRule{}
+		for _, resf0iter := range resp.OwnershipControls.Rules {
+			resf0elem := &svcapitypes.OwnershipControlsRule{}
+			if resf0iter.ObjectOwnership != nil {
+				resf0elem.ObjectOwnership = resf0iter.ObjectOwnership
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.Rules = resf0
+	}
+
+	return res
+}
+
+// newRequestPaymentConfiguration returns a RequestPaymentConfiguration object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newRequestPaymentConfiguration(
+	r *resource,
+) *svcsdk.RequestPaymentConfiguration {
+	res := &svcsdk.RequestPaymentConfiguration{}
+
+	if r.ko.Spec.RequestPayment.Payer != nil {
+		res.SetPayer(*r.ko.Spec.RequestPayment.Payer)
+	}
+
+	return res
+}
+
+// setResourceRequestPayment sets the `RequestPayment` spec field
+// given the output of a `GetBucketRequestPayment` operation.
+func (rm *resourceManager) setResourceRequestPayment(
+	r *resource,
+	resp *svcsdk.GetBucketRequestPaymentOutput,
+) *svcapitypes.RequestPaymentConfiguration {
+	res := &svcapitypes.RequestPaymentConfiguration{}
+	if resp.Payer != nil {
+		res.Payer = resp.Payer
+	}
+
+	return res
+}
+
+// newTagging returns a Tagging object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newTagging(
+	r *resource,
+) *svcsdk.Tagging {
+	res := &svcsdk.Tagging{}
+
+	if r.ko.Spec.Tagging.TagSet != nil {
+		resf0 := []*svcsdk.Tag{}
+		for _, resf0iter := range r.ko.Spec.Tagging.TagSet {
+			resf0elem := &svcsdk.Tag{}
+			if resf0iter.Key != nil {
+				resf0elem.SetKey(*resf0iter.Key)
+			}
+			if resf0iter.Value != nil {
+				resf0elem.SetValue(*resf0iter.Value)
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.SetTagSet(resf0)
+	}
+
+	return res
+}
+
+// setResourceTagging sets the `Tagging` spec field
+// given the output of a `GetBucketTagging` operation.
+func (rm *resourceManager) setResourceTagging(
+	r *resource,
+	resp *svcsdk.GetBucketTaggingOutput,
+) *svcapitypes.Tagging {
+	res := &svcapitypes.Tagging{}
+	if resp.TagSet != nil {
+		resf0 := []*svcapitypes.Tag{}
+		for _, resf0iter := range resp.TagSet {
+			resf0elem := &svcapitypes.Tag{}
+			if resf0iter.Key != nil {
+				resf0elem.Key = resf0iter.Key
+			}
+			if resf0iter.Value != nil {
+				resf0elem.Value = resf0iter.Value
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.TagSet = resf0
+	}
+
+	return res
+}
+
+// newWebsiteConfiguration returns a WebsiteConfiguration object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newWebsiteConfiguration(
+	r *resource,
+) *svcsdk.WebsiteConfiguration {
+	res := &svcsdk.WebsiteConfiguration{}
+
+	if r.ko.Spec.Website.ErrorDocument != nil {
+		resf0 := &svcsdk.ErrorDocument{}
+		if r.ko.Spec.Website.ErrorDocument.Key != nil {
+			resf0.SetKey(*r.ko.Spec.Website.ErrorDocument.Key)
+		}
+		res.SetErrorDocument(resf0)
+	}
+	if r.ko.Spec.Website.IndexDocument != nil {
+		resf1 := &svcsdk.IndexDocument{}
+		if r.ko.Spec.Website.IndexDocument.Suffix != nil {
+			resf1.SetSuffix(*r.ko.Spec.Website.IndexDocument.Suffix)
+		}
+		res.SetIndexDocument(resf1)
+	}
+	if r.ko.Spec.Website.RedirectAllRequestsTo != nil {
+		resf2 := &svcsdk.RedirectAllRequestsTo{}
+		if r.ko.Spec.Website.RedirectAllRequestsTo.HostName != nil {
+			resf2.SetHostName(*r.ko.Spec.Website.RedirectAllRequestsTo.HostName)
+		}
+		if r.ko.Spec.Website.RedirectAllRequestsTo.Protocol != nil {
+			resf2.SetProtocol(*r.ko.Spec.Website.RedirectAllRequestsTo.Protocol)
+		}
+		res.SetRedirectAllRequestsTo(resf2)
+	}
+	if r.ko.Spec.Website.RoutingRules != nil {
+		resf3 := []*svcsdk.RoutingRule{}
+		for _, resf3iter := range r.ko.Spec.Website.RoutingRules {
+			resf3elem := &svcsdk.RoutingRule{}
+			if resf3iter.Condition != nil {
+				resf3elemf0 := &svcsdk.Condition{}
+				if resf3iter.Condition.HTTPErrorCodeReturnedEquals != nil {
+					resf3elemf0.SetHttpErrorCodeReturnedEquals(*resf3iter.Condition.HTTPErrorCodeReturnedEquals)
+				}
+				if resf3iter.Condition.KeyPrefixEquals != nil {
+					resf3elemf0.SetKeyPrefixEquals(*resf3iter.Condition.KeyPrefixEquals)
+				}
+				resf3elem.SetCondition(resf3elemf0)
+			}
+			if resf3iter.Redirect != nil {
+				resf3elemf1 := &svcsdk.Redirect{}
+				if resf3iter.Redirect.HostName != nil {
+					resf3elemf1.SetHostName(*resf3iter.Redirect.HostName)
+				}
+				if resf3iter.Redirect.HTTPRedirectCode != nil {
+					resf3elemf1.SetHttpRedirectCode(*resf3iter.Redirect.HTTPRedirectCode)
+				}
+				if resf3iter.Redirect.Protocol != nil {
+					resf3elemf1.SetProtocol(*resf3iter.Redirect.Protocol)
+				}
+				if resf3iter.Redirect.ReplaceKeyPrefixWith != nil {
+					resf3elemf1.SetReplaceKeyPrefixWith(*resf3iter.Redirect.ReplaceKeyPrefixWith)
+				}
+				if resf3iter.Redirect.ReplaceKeyWith != nil {
+					resf3elemf1.SetReplaceKeyWith(*resf3iter.Redirect.ReplaceKeyWith)
+				}
+				resf3elem.SetRedirect(resf3elemf1)
+			}
+			resf3 = append(resf3, resf3elem)
+		}
+		res.SetRoutingRules(resf3)
+	}
+
+	return res
+}
+
+// setResourceWebsite sets the `Website` spec field
+// given the output of a `GetBucketWebsite` operation.
+func (rm *resourceManager) setResourceWebsite(
+	r *resource,
+	resp *svcsdk.GetBucketWebsiteOutput,
+) *svcapitypes.WebsiteConfiguration {
+	res := &svcapitypes.WebsiteConfiguration{}
+	if resp.ErrorDocument != nil {
+		resf0 := &svcapitypes.ErrorDocument{}
+		if resp.ErrorDocument.Key != nil {
+			resf0.Key = resp.ErrorDocument.Key
+		}
+		res.ErrorDocument = resf0
+	}
+	if resp.IndexDocument != nil {
+		resf1 := &svcapitypes.IndexDocument{}
+		if resp.IndexDocument.Suffix != nil {
+			resf1.Suffix = resp.IndexDocument.Suffix
+		}
+		res.IndexDocument = resf1
+	}
+	if resp.RedirectAllRequestsTo != nil {
+		resf2 := &svcapitypes.RedirectAllRequestsTo{}
+		if resp.RedirectAllRequestsTo.HostName != nil {
+			resf2.HostName = resp.RedirectAllRequestsTo.HostName
+		}
+		if resp.RedirectAllRequestsTo.Protocol != nil {
+			resf2.Protocol = resp.RedirectAllRequestsTo.Protocol
+		}
+		res.RedirectAllRequestsTo = resf2
+	}
+	if resp.RoutingRules != nil {
+		resf3 := []*svcapitypes.RoutingRule{}
+		for _, resf3iter := range resp.RoutingRules {
+			resf3elem := &svcapitypes.RoutingRule{}
+			if resf3iter.Condition != nil {
+				resf3elemf0 := &svcapitypes.Condition{}
+				if resf3iter.Condition.HttpErrorCodeReturnedEquals != nil {
+					resf3elemf0.HTTPErrorCodeReturnedEquals = resf3iter.Condition.HttpErrorCodeReturnedEquals
+				}
+				if resf3iter.Condition.KeyPrefixEquals != nil {
+					resf3elemf0.KeyPrefixEquals = resf3iter.Condition.KeyPrefixEquals
+				}
+				resf3elem.Condition = resf3elemf0
+			}
+			if resf3iter.Redirect != nil {
+				resf3elemf1 := &svcapitypes.Redirect{}
+				if resf3iter.Redirect.HostName != nil {
+					resf3elemf1.HostName = resf3iter.Redirect.HostName
+				}
+				if resf3iter.Redirect.HttpRedirectCode != nil {
+					resf3elemf1.HTTPRedirectCode = resf3iter.Redirect.HttpRedirectCode
+				}
+				if resf3iter.Redirect.Protocol != nil {
+					resf3elemf1.Protocol = resf3iter.Redirect.Protocol
+				}
+				if resf3iter.Redirect.ReplaceKeyPrefixWith != nil {
+					resf3elemf1.ReplaceKeyPrefixWith = resf3iter.Redirect.ReplaceKeyPrefixWith
+				}
+				if resf3iter.Redirect.ReplaceKeyWith != nil {
+					resf3elemf1.ReplaceKeyWith = resf3iter.Redirect.ReplaceKeyWith
+				}
+				resf3elem.Redirect = resf3elemf1
+			}
+			resf3 = append(resf3, resf3elem)
+		}
+		res.RoutingRules = resf3
 	}
 
 	return res

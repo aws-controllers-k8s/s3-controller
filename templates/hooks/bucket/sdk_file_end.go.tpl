@@ -35,7 +35,13 @@ func (rm *resourceManager) setResource{{ $specFieldName }}(
 ) *svcapitypes.{{ $memberRef.ShapeName }} {
     res := &svcapitypes.{{ $memberRef.ShapeName }}{}
 
-{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp" $memberRef 1}}
+{{- if (eq $operationName "PutBucketEncryption") }}
+{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp.ServerSideEncryptionConfiguration" $memberRef 1 }}
+{{- else if (eq $operationName "PutBucketOwnershipControls") }}
+{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp.OwnershipControls" $memberRef 1 }}
+{{- else }}
+{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp" $memberRef 1 }}
+{{ end }}
 
     return res
 }

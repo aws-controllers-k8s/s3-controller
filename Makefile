@@ -11,15 +11,21 @@ GO_LDFLAGS=-ldflags "-X main.version=$(VERSION) \
 			-X main.buildHash=$(GITCOMMIT) \
 			-X main.buildDate=$(BUILDDATE)"
 
-.PHONY: all test local-test
+AUTHENTICATED_ACCOUNT_ID=$(shell aws sts get-caller-identity --output text --query "Account")
+
+.PHONY: all test
 
 all: test
 
+local-run-controller: ## Run a controller image locally for SERVICE
+	@go run ./cmd/controller/main.go \
+		--aws-account-id=$(AUTHENTICATED_ACCOUNT_ID) \
+		--aws-region=us-west-2 \
+		--enable-development-logging \
+		--log-level=debug
+
 test: 				## Run code tests
 	go test -v ./...
-
-local-test: 		## Run code tests using go.local.mod file
-	go test -modfile=go.local.mod -v ./...
 
 help:           	## Show this help.
 	@grep -F -h "##" $(MAKEFILE_LIST) | grep -F -v grep | sed -e 's/\\$$//' \
