@@ -24,36 +24,53 @@ import (
 )
 
 var (
-	DEFAULT_REQUEST_PAYER = "BucketOwner"
+	DEFAULT_ACCELERATION_CONFIGURATION_STATUS = "Suspended"
+	DEFAULT_REQUEST_PAYER                     = "BucketOwner"
 )
 
 func (rm *resourceManager) createPutFields(
 	ctx context.Context,
 	r *resource,
 ) error {
-	if err := rm.syncLogging(ctx, r); err != nil {
-		return err
+	if r.ko.Spec.Logging != nil {
+		if err := rm.syncLogging(ctx, r); err != nil {
+			return err
+		}
 	}
-	if err := rm.syncAccelerateConfiguration(ctx, r); err != nil {
-		return err
+	if r.ko.Spec.AccelerateConfiguration != nil {
+		if err := rm.syncAccelerateConfiguration(ctx, r); err != nil {
+			return err
+		}
 	}
-	if err := rm.syncCORS(ctx, r); err != nil {
-		return err
+	if r.ko.Spec.CORS != nil {
+		if err := rm.syncCORS(ctx, r); err != nil {
+			return err
+		}
 	}
-	if err := rm.syncEncryption(ctx, r); err != nil {
-		return err
+	if r.ko.Spec.Encryption != nil {
+		if err := rm.syncEncryption(ctx, r); err != nil {
+			return err
+		}
 	}
-	if err := rm.syncOwnershipControls(ctx, r); err != nil {
-		return err
+	if r.ko.Spec.OwnershipControls != nil {
+		if err := rm.syncOwnershipControls(ctx, r); err != nil {
+			return err
+		}
 	}
-	if err := rm.syncRequestPayment(ctx, r); err != nil {
-		return err
+	if r.ko.Spec.RequestPayment != nil {
+		if err := rm.syncRequestPayment(ctx, r); err != nil {
+			return err
+		}
 	}
-	if err := rm.syncTagging(ctx, r); err != nil {
-		return err
+	if r.ko.Spec.Tagging != nil {
+		if err := rm.syncTagging(ctx, r); err != nil {
+			return err
+		}
 	}
-	if err := rm.syncWebsite(ctx, r); err != nil {
-		return err
+	if r.ko.Spec.Website != nil {
+		if err := rm.syncWebsite(ctx, r); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -212,7 +229,9 @@ func customPreCompare(
 		a.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
 	}
 	if a.ko.Spec.AccelerateConfiguration == nil && b.ko.Spec.AccelerateConfiguration != nil {
-		a.ko.Spec.AccelerateConfiguration = &svcapitypes.AccelerateConfiguration{}
+		a.ko.Spec.AccelerateConfiguration = &svcapitypes.AccelerateConfiguration{
+			Status: &DEFAULT_ACCELERATION_CONFIGURATION_STATUS,
+		}
 	}
 	if a.ko.Spec.CORS == nil && b.ko.Spec.CORS != nil {
 		a.ko.Spec.CORS = &svcapitypes.CORSConfiguration{}
@@ -254,6 +273,11 @@ func (rm *resourceManager) newPutBucketAccelerateConfigurationPayload(
 	} else {
 		res.SetAccelerateConfiguration(&svcsdk.AccelerateConfiguration{})
 	}
+
+	if res.AccelerateConfiguration.Status == nil {
+		res.AccelerateConfiguration.SetStatus(DEFAULT_ACCELERATION_CONFIGURATION_STATUS)
+	}
+
 	return res
 }
 
@@ -408,10 +432,13 @@ func (rm *resourceManager) newPutBucketRequestPaymentPayload(
 	if r.ko.Spec.RequestPayment != nil && r.ko.Spec.RequestPayment.Payer != nil {
 		res.SetRequestPaymentConfiguration(rm.newRequestPaymentConfiguration(r))
 	} else {
-		res.SetRequestPaymentConfiguration(&svcsdk.RequestPaymentConfiguration{
-			Payer: &DEFAULT_REQUEST_PAYER,
-		})
+		res.SetRequestPaymentConfiguration(&svcsdk.RequestPaymentConfiguration{})
 	}
+
+	if res.RequestPaymentConfiguration.Payer == nil {
+		res.RequestPaymentConfiguration.SetPayer(DEFAULT_REQUEST_PAYER)
+	}
+
 	return res
 }
 
