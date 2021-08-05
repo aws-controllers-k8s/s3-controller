@@ -1,0 +1,12 @@
+apiVersion: s3.services.k8s.aws/v1alpha1
+kind: Bucket
+metadata:
+  name: $BUCKET_NAME
+spec:
+  name: $BUCKET_NAME
+  tagging:
+    tagSet:
+    - key: "first"
+      value: "1"
+    - key: "second"
+      value: "2"
