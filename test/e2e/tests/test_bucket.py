@@ -30,6 +30,66 @@ RESOURCE_PLURAL = "buckets"
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
+def get_bucket(s3_resource, bucket_name: str):
+    return s3_resource.Bucket(bucket_name)
+
+def bucket_exists(s3_client, bucket_name: str) -> bool:
+    try:
+        resp = s3_client.list_buckets()
+    except Exception as e:
+        logging.debug(e)
+        return False
+
+    buckets = resp["Buckets"]
+    for bucket in buckets:
+        if bucket["Name"] == bucket_name:
+            return True
+
+    return False
+
+def create_bucket(s3_client, resource_file_name: str):
+    resource_name = random_suffix_name("s3-bucket", 24)
+
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["BUCKET_NAME"] = resource_name
+
+    # Load Bucket CR
+    resource_data = load_s3_resource(
+        resource_file_name,
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    # Check S3 Bucket exists
+    exists = bucket_exists(s3_client, resource_name)
+    assert exists
+
+    return (ref, resource_name, resource_data)
+
+def delete_bucket(s3_client, ref, resource_name):
+    # Delete k8s resource
+    _, deleted = k8s.delete_custom_resource(ref)
+    assert deleted is True
+
+    time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+    # Check S3 Bucket doesn't exists
+    exists = bucket_exists(s3_client, resource_name)
+    assert not exists
+
 @pytest.fixture(scope="module")
 def s3_client():
     return boto3.client("s3")
@@ -41,83 +101,23 @@ def s3_resource():
 @service_marker
 @pytest.mark.canary
 class TestBucket:
-    def get_bucket(self, s3_resource, bucket_name: str):
-        return s3_resource.Bucket(bucket_name)
-
-    def bucket_exists(self, s3_client, bucket_name: str) -> bool:
-        try:
-            resp = s3_client.list_buckets()
-        except Exception as e:
-            logging.debug(e)
-            return False
-
-        buckets = resp["Buckets"]
-        for bucket in buckets:
-            if bucket["Name"] == bucket_name:
-                return True
-
-        return False
-
-    def _create_smoke(self, s3_client, resource_file_name: str):
-        resource_name = random_suffix_name("s3-bucket", 24)
-
-        replacements = REPLACEMENT_VALUES.copy()
-        replacements["BUCKET_NAME"] = resource_name
-
-        # Load Bucket CR
-        resource_data = load_s3_resource(
-            resource_file_name,
-            additional_replacements=replacements,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
-        # Check S3 Bucket exists
-        exists = self.bucket_exists(s3_client, resource_name)
-        assert exists
-
-        return (ref, resource_name, resource_data)
-
-    def _delete_smoke(self, s3_client, ref, resource_name):
-        # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
-        assert deleted is True
-
-        time.sleep(DELETE_WAIT_AFTER_SECONDS)
-
-        # Check S3 Bucket doesn't exists
-        exists = self.bucket_exists(s3_client, resource_name)
-        assert not exists
-
-    def test_smoke(self, s3_client):
-        (ref, resource_name, _) = self._create_smoke(s3_client, "bucket")
-        self._delete_smoke(s3_client, ref, resource_name)
+    def test_basic(self, s3_client):
+        (ref, resource_name, _) = create_bucket(s3_client, "bucket")
+        delete_bucket(s3_client, ref, resource_name)
 
     def test_accelerate(self, s3_client):
-        (ref, resource_name, resource_data) = self._create_smoke(s3_client, "bucket_accelerate")
+        (ref, resource_name, resource_data) = create_bucket(s3_client, "bucket_accelerate")
         
         accelerate_configuration = s3_client.get_bucket_accelerate_configuration(Bucket=resource_name)
         assert resource_data["spec"]["accelerate"]["status"] == accelerate_configuration["Status"]
 
-        self._delete_smoke(s3_client, ref, resource_name)
+        delete_bucket(s3_client, ref, resource_name)
 
     def test_cors(self, s3_client, s3_resource):
-        (ref, resource_name, resource_data) = self._create_smoke(s3_client, "bucket_cors")
+        (ref, resource_name, resource_data) = create_bucket(s3_client, "bucket_cors")
         
         # Do checks
-        bucket = self.get_bucket(s3_resource, resource_name)
+        bucket = get_bucket(s3_resource, resource_name)
         cors = bucket.Cors()
 
         desired_rule = resource_data["spec"]["cors"]["corsRules"][0]
@@ -128,10 +128,10 @@ class TestBucket:
         assert desired_rule.get("allowedHeaders", []) == latest_rule.get("AllowedHeaders", [])
         assert desired_rule.get("exposeHeaders", []) == latest_rule.get("ExposeHeaders", [])
 
-        self._delete_smoke(s3_client, ref, resource_name)
+        delete_bucket(s3_client, ref, resource_name)
 
     def test_encryption(self, s3_client):
-        (ref, resource_name, resource_data) = self._create_smoke(s3_client, "bucket_encryption")
+        (ref, resource_name, resource_data) = create_bucket(s3_client, "bucket_encryption")
 
         encryption = s3_client.get_bucket_encryption(Bucket=resource_name)
         
@@ -141,12 +141,12 @@ class TestBucket:
         assert desired_rule["applyServerSideEncryptionByDefault"]["sseAlgorithm"] == \
             latest_rule["ApplyServerSideEncryptionByDefault"]["SSEAlgorithm"]
 
-        self._delete_smoke(s3_client, ref, resource_name)
+        delete_bucket(s3_client, ref, resource_name)
 
     def test_logging(self, s3_client, s3_resource):
-        (ref, resource_name, resource_data) = self._create_smoke(s3_client, "bucket_logging")
+        (ref, resource_name, resource_data) = create_bucket(s3_client, "bucket_logging")
         
-        bucket = self.get_bucket(s3_resource, resource_name)
+        bucket = get_bucket(s3_resource, resource_name)
         logging = bucket.Logging()
 
         desired = resource_data["spec"]["logging"]["loggingEnabled"]
@@ -155,10 +155,10 @@ class TestBucket:
         assert desired["targetBucket"] == latest["TargetBucket"]
         assert desired["targetPrefix"] == latest["TargetPrefix"]
 
-        self._delete_smoke(s3_client, ref, resource_name)
+        delete_bucket(s3_client, ref, resource_name)
 
     def test_ownership_controls(self, s3_client):
-        (ref, resource_name, resource_data) = self._create_smoke(s3_client, "bucket_ownership_controls")
+        (ref, resource_name, resource_data) = create_bucket(s3_client, "bucket_ownership_controls")
 
         ownership_controls = s3_client.get_bucket_ownership_controls(Bucket=resource_name)
         
@@ -167,12 +167,12 @@ class TestBucket:
 
         assert desired_rule["objectOwnership"] == latest_rule["ObjectOwnership"]
 
-        self._delete_smoke(s3_client, ref, resource_name)
+        delete_bucket(s3_client, ref, resource_name)
 
     def test_request_payment(self, s3_client, s3_resource):
-        (ref, resource_name, resource_data) = self._create_smoke(s3_client, "bucket_request_payment")
+        (ref, resource_name, resource_data) = create_bucket(s3_client, "bucket_request_payment")
 
-        bucket = self.get_bucket(s3_resource, resource_name)
+        bucket = get_bucket(s3_resource, resource_name)
         request_payment = bucket.RequestPayment()
 
         desired = resource_data["spec"]["requestPayment"]["payer"]
@@ -180,12 +180,12 @@ class TestBucket:
 
         assert desired == latest
 
-        self._delete_smoke(s3_client, ref, resource_name)
+        delete_bucket(s3_client, ref, resource_name)
 
     def test_tagging(self, s3_client, s3_resource):
-        (ref, resource_name, resource_data) = self._create_smoke(s3_client, "bucket_tagging")
+        (ref, resource_name, resource_data) = create_bucket(s3_client, "bucket_tagging")
 
-        bucket = self.get_bucket(s3_resource, resource_name)
+        bucket = get_bucket(s3_resource, resource_name)
         tagging = bucket.Tagging()
 
         desired = resource_data["spec"]["tagging"]["tagSet"]
@@ -195,12 +195,12 @@ class TestBucket:
             assert desired[i]["key"] == latest[i]["Key"]
             assert desired[i]["value"] == latest[i]["Value"]
 
-        self._delete_smoke(s3_client, ref, resource_name)
+        delete_bucket(s3_client, ref, resource_name)
 
     def test_website(self, s3_client, s3_resource):
-        (ref, resource_name, resource_data) = self._create_smoke(s3_client, "bucket_website")
+        (ref, resource_name, resource_data) = create_bucket(s3_client, "bucket_website")
 
-        bucket = self.get_bucket(s3_resource, resource_name)
+        bucket = get_bucket(s3_resource, resource_name)
         website = bucket.Website()
 
         desired = resource_data["spec"]["website"]
@@ -209,4 +209,4 @@ class TestBucket:
         assert desired["errorDocument"]["key"] == latest.error_document["Key"]
         assert desired["indexDocument"]["suffix"] == latest.index_document["Suffix"]
 
-        self._delete_smoke(s3_client, ref, resource_name)
+        delete_bucket(s3_client, ref, resource_name)
