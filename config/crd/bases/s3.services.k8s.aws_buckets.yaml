@@ -38,7 +38,7 @@ spec:
               of implementation, a Bucket is a resource. An Amazon S3 bucket name
               is globally unique, and the namespace is shared by all AWS accounts."
             properties:
-              accelerateConfiguration:
+              accelerate:
                 description: Container for setting the transfer acceleration state.
                 properties:
                   status:

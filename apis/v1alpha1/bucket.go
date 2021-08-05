@@ -28,7 +28,7 @@ type BucketSpec struct {
 	// The canned ACL to apply to the bucket.
 	ACL *string `json:"acl,omitempty"`
 	// Container for setting the transfer acceleration state.
-	AccelerateConfiguration *AccelerateConfiguration `json:"accelerateConfiguration,omitempty"`
+	Accelerate *AccelerateConfiguration `json:"accelerate,omitempty"`
 	// Describes the cross-origin access configuration for objects in an Amazon
 	// S3 bucket. For more information, see Enabling Cross-Origin Resource Sharing
 	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html) in the Amazon

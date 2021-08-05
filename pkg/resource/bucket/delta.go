@@ -40,14 +40,14 @@ func newResourceDelta(
 			delta.Add("Spec.ACL", a.ko.Spec.ACL, b.ko.Spec.ACL)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.AccelerateConfiguration, b.ko.Spec.AccelerateConfiguration) {
-		delta.Add("Spec.AccelerateConfiguration", a.ko.Spec.AccelerateConfiguration, b.ko.Spec.AccelerateConfiguration)
-	} else if a.ko.Spec.AccelerateConfiguration != nil && b.ko.Spec.AccelerateConfiguration != nil {
-		if ackcompare.HasNilDifference(a.ko.Spec.AccelerateConfiguration.Status, b.ko.Spec.AccelerateConfiguration.Status) {
-			delta.Add("Spec.AccelerateConfiguration.Status", a.ko.Spec.AccelerateConfiguration.Status, b.ko.Spec.AccelerateConfiguration.Status)
-		} else if a.ko.Spec.AccelerateConfiguration.Status != nil && b.ko.Spec.AccelerateConfiguration.Status != nil {
-			if *a.ko.Spec.AccelerateConfiguration.Status != *b.ko.Spec.AccelerateConfiguration.Status {
-				delta.Add("Spec.AccelerateConfiguration.Status", a.ko.Spec.AccelerateConfiguration.Status, b.ko.Spec.AccelerateConfiguration.Status)
+	if ackcompare.HasNilDifference(a.ko.Spec.Accelerate, b.ko.Spec.Accelerate) {
+		delta.Add("Spec.Accelerate", a.ko.Spec.Accelerate, b.ko.Spec.Accelerate)
+	} else if a.ko.Spec.Accelerate != nil && b.ko.Spec.Accelerate != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.Accelerate.Status, b.ko.Spec.Accelerate.Status) {
+			delta.Add("Spec.Accelerate.Status", a.ko.Spec.Accelerate.Status, b.ko.Spec.Accelerate.Status)
+		} else if a.ko.Spec.Accelerate.Status != nil && b.ko.Spec.Accelerate.Status != nil {
+			if *a.ko.Spec.Accelerate.Status != *b.ko.Spec.Accelerate.Status {
+				delta.Add("Spec.Accelerate.Status", a.ko.Spec.Accelerate.Status, b.ko.Spec.Accelerate.Status)
 			}
 		}
 	}

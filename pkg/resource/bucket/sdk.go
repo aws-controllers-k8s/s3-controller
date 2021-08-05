@@ -337,16 +337,16 @@ func (rm *resourceManager) newAccelerateConfiguration(
 ) *svcsdk.AccelerateConfiguration {
 	res := &svcsdk.AccelerateConfiguration{}
 
-	if r.ko.Spec.AccelerateConfiguration.Status != nil {
-		res.SetStatus(*r.ko.Spec.AccelerateConfiguration.Status)
+	if r.ko.Spec.Accelerate.Status != nil {
+		res.SetStatus(*r.ko.Spec.Accelerate.Status)
 	}
 
 	return res
 }
 
-// setResourceAccelerateConfiguration sets the `AccelerateConfiguration` spec field
+// setResourceAccelerate sets the `Accelerate` spec field
 // given the output of a `GetBucketAccelerateConfiguration` operation.
-func (rm *resourceManager) setResourceAccelerateConfiguration(
+func (rm *resourceManager) setResourceAccelerate(
 	r *resource,
 	resp *svcsdk.GetBucketAccelerateConfigurationOutput,
 ) *svcapitypes.AccelerateConfiguration {

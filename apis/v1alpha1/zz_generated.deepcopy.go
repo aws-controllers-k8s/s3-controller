@@ -222,8 +222,8 @@ func (in *BucketSpec) DeepCopyInto(out *BucketSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.AccelerateConfiguration != nil {
-		in, out := &in.AccelerateConfiguration, &out.AccelerateConfiguration
+	if in.Accelerate != nil {
+		in, out := &in.Accelerate, &out.Accelerate
 		*out = new(AccelerateConfiguration)
 		(*in).DeepCopyInto(*out)
 	}

@@ -37,8 +37,8 @@ func (rm *resourceManager) createPutFields(
 			return err
 		}
 	}
-	if r.ko.Spec.AccelerateConfiguration != nil {
-		if err := rm.syncAccelerateConfiguration(ctx, r); err != nil {
+	if r.ko.Spec.Accelerate != nil {
+		if err := rm.syncAccelerate(ctx, r); err != nil {
 			return err
 		}
 	}
@@ -98,8 +98,8 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, err
 		}
 	}
-	if delta.DifferentAt("Spec.AccelerateConfiguration") {
-		if err := rm.syncAccelerateConfiguration(ctx, desired); err != nil {
+	if delta.DifferentAt("Spec.Accelerate") {
+		if err := rm.syncAccelerate(ctx, desired); err != nil {
 			return nil, err
 		}
 	}
@@ -150,11 +150,11 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.Logging = rm.setResourceLogging(r, getLoggingResponse)
 
-	getAccelerateConfigurationResponse, err := rm.sdkapi.GetBucketAccelerateConfigurationWithContext(ctx, rm.newGetBucketAccelerateConfigurationPayload(r))
+	getAccelerateResponse, err := rm.sdkapi.GetBucketAccelerateConfigurationWithContext(ctx, rm.newGetBucketAcceleratePayload(r))
 	if err != nil {
 		return err
 	}
-	ko.Spec.AccelerateConfiguration = rm.setResourceAccelerateConfiguration(r, getAccelerateConfigurationResponse)
+	ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
 
 	getCORSResponse, err := rm.sdkapi.GetBucketCorsWithContext(ctx, rm.newGetBucketCORSPayload(r))
 	if err != nil {
@@ -228,8 +228,8 @@ func customPreCompare(
 	if a.ko.Spec.Logging == nil && b.ko.Spec.Logging != nil {
 		a.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
 	}
-	if a.ko.Spec.AccelerateConfiguration == nil && b.ko.Spec.AccelerateConfiguration != nil {
-		a.ko.Spec.AccelerateConfiguration = &svcapitypes.AccelerateConfiguration{
+	if a.ko.Spec.Accelerate == nil && b.ko.Spec.Accelerate != nil {
+		a.ko.Spec.Accelerate = &svcapitypes.AccelerateConfiguration{
 			Status: &DEFAULT_ACCELERATION_CONFIGURATION_STATUS,
 		}
 	}
@@ -255,7 +255,7 @@ func customPreCompare(
 	}
 }
 
-func (rm *resourceManager) newGetBucketAccelerateConfigurationPayload(
+func (rm *resourceManager) newGetBucketAcceleratePayload(
 	r *resource,
 ) *svcsdk.GetBucketAccelerateConfigurationInput {
 	res := &svcsdk.GetBucketAccelerateConfigurationInput{}
@@ -263,12 +263,12 @@ func (rm *resourceManager) newGetBucketAccelerateConfigurationPayload(
 	return res
 }
 
-func (rm *resourceManager) newPutBucketAccelerateConfigurationPayload(
+func (rm *resourceManager) newPutBucketAcceleratePayload(
 	r *resource,
 ) *svcsdk.PutBucketAccelerateConfigurationInput {
 	res := &svcsdk.PutBucketAccelerateConfigurationInput{}
 	res.SetBucket(*r.ko.Spec.Name)
-	if r.ko.Spec.AccelerateConfiguration != nil {
+	if r.ko.Spec.Accelerate != nil {
 		res.SetAccelerateConfiguration(rm.newAccelerateConfiguration(r))
 	} else {
 		res.SetAccelerateConfiguration(&svcsdk.AccelerateConfiguration{})
@@ -281,17 +281,17 @@ func (rm *resourceManager) newPutBucketAccelerateConfigurationPayload(
 	return res
 }
 
-func (rm *resourceManager) syncAccelerateConfiguration(
+func (rm *resourceManager) syncAccelerate(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncAccelerateConfiguration")
+	exit := rlog.Trace("rm.syncAccelerate")
 	defer exit(err)
-	input := rm.newPutBucketAccelerateConfigurationPayload(r)
+	input := rm.newPutBucketAcceleratePayload(r)
 
 	_, err = rm.sdkapi.PutBucketAccelerateConfiguration(input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketAccelerateConfiguration", err)
+	rm.metrics.RecordAPICall("UPDATED", "PutBucketAccelerate", err)
 	if err != nil {
 		return err
 	}

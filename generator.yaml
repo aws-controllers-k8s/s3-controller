@@ -11,7 +11,7 @@ operations:
 resources:
   Bucket:
     fields:
-      AccelerateConfiguration:
+      Accelerate:
         from:
           operation: PutBucketAccelerateConfiguration
           path: AccelerateConfiguration
