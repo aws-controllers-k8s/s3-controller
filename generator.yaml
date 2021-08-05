@@ -11,22 +11,22 @@ operations:
 resources:
   Bucket:
     fields:
-      # AccelerateConfiguration:
-      #   from:
-      #     operation: PutBucketAccelerateConfiguration
-      #     path: AccelerateConfiguration
+      Accelerate:
+        from:
+          operation: PutBucketAccelerateConfiguration
+          path: AccelerateConfiguration
       # AnalyticsConfiguration:
       #   from:
       #     operation: PutBucketAnalyticsConfiguration
       #     path: AnalyticsConfiguration # Double check about ID
-      # Cors:
-      #   from:
-      #     operation: PutBucketCors
-      #     path: CORSConfiguration
-      # Encryption:
-      #   from:
-      #     operation: PutBucketEncryption
-      #     path: ServerSideEncryptionConfiguration
+      CORS:
+        from:
+          operation: PutBucketCors
+          path: CORSConfiguration
+      Encryption:
+        from:
+          operation: PutBucketEncryption
+          path: ServerSideEncryptionConfiguration
       # IntelligentTieringConfiguration:
       #   from:
       #     operation: PutBucketIntelligentTieringConfiguration
@@ -35,14 +35,10 @@ resources:
       #   from:
       #     operation: PutBucketInventoryConfiguration
       #     path: InventoryConfiguration # Double check about ID
-      # # Lifecycle:
-      # #   from:
-      # #     operation: PutBucketLifecycle
-      # #     path: LifecycleConfiguration
       # LifecycleConfiguration:
       #   from:
       #     operation: PutBucketLifecycleConfiguration
-      #     path: LifecycleConfiguration
+      #     path: LifecycleConfiguration # Double check weird types
       Logging:
         from:
           operation: PutBucketLogging
@@ -51,18 +47,14 @@ resources:
       #   from:
       #     operation: PutBucketMetricsConfiguration
       #     path: MetricsConfiguration # Double check about ID
-      # # Notification:
-      # #   from:
-      # #     operation: PutBucketNotification
-      # #     path: NotificationConfiguration
-      # # NotificationConfiguration:
-      # #   from:
-      # #     operation: PutBucketNotificationConfiguration
-      # #     path: NotificationConfiguration
-      # OwnershipControls:
+      # NotificationConfiguration:
       #   from:
-      #     operation: PutBucketOwnershipControls
-      #     path: OwnershipControls
+      #     operation: PutBucketNotificationConfiguration
+      #     path: NotificationConfiguration # Double check the importing
+      OwnershipControls:
+        from:
+          operation: PutBucketOwnershipControls
+          path: OwnershipControls
       # Policy:
       #   from:
       #     operation: PutBucketPolicy
@@ -71,27 +63,29 @@ resources:
       #   from:
       #     operation: PutBucketReplication
       #     path: ReplicationConfiguration # Double check about Token
-      # RequestPayment:
-      #   from:
-      #     operation: PutBucketRequestPayment
-      #     path: RequestPaymentConfiguration
-      # Tagging:
-      #   from:
-      #     operation: PutBucketTagging
-      #     path: Tagging
+      RequestPayment:
+        from:
+          operation: PutBucketRequestPayment
+          path: RequestPaymentConfiguration
+      Tagging:
+        from:
+          operation: PutBucketTagging
+          path: Tagging
       # Versioning:
       #   from:
       #     operation: PutBucketVersioning
       #     path: VersioningConfiguration # Double check about MFA
-      # Website:
-      #   from:
-      #     operation: PutBucketWebsite
-      #     path: WebsiteConfiguration
+      Website:
+        from:
+          operation: PutBucketWebsite
+          path: WebsiteConfiguration
     exceptions:
       errors:
         404:
           code: NoSuchBucket
     hooks:
+      delta_pre_compare:
+        code: customPreCompare(a, b)
       sdk_create_post_set_output:
         template_path: hooks/bucket/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:

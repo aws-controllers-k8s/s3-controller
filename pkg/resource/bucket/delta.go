@@ -31,6 +31,7 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	customPreCompare(a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.ACL, b.ko.Spec.ACL) {
 		delta.Add("Spec.ACL", a.ko.Spec.ACL, b.ko.Spec.ACL)
@@ -38,6 +39,22 @@ func newResourceDelta(
 		if *a.ko.Spec.ACL != *b.ko.Spec.ACL {
 			delta.Add("Spec.ACL", a.ko.Spec.ACL, b.ko.Spec.ACL)
 		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Accelerate, b.ko.Spec.Accelerate) {
+		delta.Add("Spec.Accelerate", a.ko.Spec.Accelerate, b.ko.Spec.Accelerate)
+	} else if a.ko.Spec.Accelerate != nil && b.ko.Spec.Accelerate != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.Accelerate.Status, b.ko.Spec.Accelerate.Status) {
+			delta.Add("Spec.Accelerate.Status", a.ko.Spec.Accelerate.Status, b.ko.Spec.Accelerate.Status)
+		} else if a.ko.Spec.Accelerate.Status != nil && b.ko.Spec.Accelerate.Status != nil {
+			if *a.ko.Spec.Accelerate.Status != *b.ko.Spec.Accelerate.Status {
+				delta.Add("Spec.Accelerate.Status", a.ko.Spec.Accelerate.Status, b.ko.Spec.Accelerate.Status)
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.CORS, b.ko.Spec.CORS) {
+		delta.Add("Spec.CORS", a.ko.Spec.CORS, b.ko.Spec.CORS)
+	} else if a.ko.Spec.CORS != nil && b.ko.Spec.CORS != nil {
+
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration) {
 		delta.Add("Spec.CreateBucketConfiguration", a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration)
@@ -49,6 +66,11 @@ func newResourceDelta(
 				delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
 			}
 		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Encryption, b.ko.Spec.Encryption) {
+		delta.Add("Spec.Encryption", a.ko.Spec.Encryption, b.ko.Spec.Encryption)
+	} else if a.ko.Spec.Encryption != nil && b.ko.Spec.Encryption != nil {
+
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl) {
 		delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
@@ -121,6 +143,72 @@ func newResourceDelta(
 		if *a.ko.Spec.ObjectLockEnabledForBucket != *b.ko.Spec.ObjectLockEnabledForBucket {
 			delta.Add("Spec.ObjectLockEnabledForBucket", a.ko.Spec.ObjectLockEnabledForBucket, b.ko.Spec.ObjectLockEnabledForBucket)
 		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.OwnershipControls, b.ko.Spec.OwnershipControls) {
+		delta.Add("Spec.OwnershipControls", a.ko.Spec.OwnershipControls, b.ko.Spec.OwnershipControls)
+	} else if a.ko.Spec.OwnershipControls != nil && b.ko.Spec.OwnershipControls != nil {
+
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RequestPayment, b.ko.Spec.RequestPayment) {
+		delta.Add("Spec.RequestPayment", a.ko.Spec.RequestPayment, b.ko.Spec.RequestPayment)
+	} else if a.ko.Spec.RequestPayment != nil && b.ko.Spec.RequestPayment != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.RequestPayment.Payer, b.ko.Spec.RequestPayment.Payer) {
+			delta.Add("Spec.RequestPayment.Payer", a.ko.Spec.RequestPayment.Payer, b.ko.Spec.RequestPayment.Payer)
+		} else if a.ko.Spec.RequestPayment.Payer != nil && b.ko.Spec.RequestPayment.Payer != nil {
+			if *a.ko.Spec.RequestPayment.Payer != *b.ko.Spec.RequestPayment.Payer {
+				delta.Add("Spec.RequestPayment.Payer", a.ko.Spec.RequestPayment.Payer, b.ko.Spec.RequestPayment.Payer)
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Tagging, b.ko.Spec.Tagging) {
+		delta.Add("Spec.Tagging", a.ko.Spec.Tagging, b.ko.Spec.Tagging)
+	} else if a.ko.Spec.Tagging != nil && b.ko.Spec.Tagging != nil {
+
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Website, b.ko.Spec.Website) {
+		delta.Add("Spec.Website", a.ko.Spec.Website, b.ko.Spec.Website)
+	} else if a.ko.Spec.Website != nil && b.ko.Spec.Website != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.Website.ErrorDocument, b.ko.Spec.Website.ErrorDocument) {
+			delta.Add("Spec.Website.ErrorDocument", a.ko.Spec.Website.ErrorDocument, b.ko.Spec.Website.ErrorDocument)
+		} else if a.ko.Spec.Website.ErrorDocument != nil && b.ko.Spec.Website.ErrorDocument != nil {
+			if ackcompare.HasNilDifference(a.ko.Spec.Website.ErrorDocument.Key, b.ko.Spec.Website.ErrorDocument.Key) {
+				delta.Add("Spec.Website.ErrorDocument.Key", a.ko.Spec.Website.ErrorDocument.Key, b.ko.Spec.Website.ErrorDocument.Key)
+			} else if a.ko.Spec.Website.ErrorDocument.Key != nil && b.ko.Spec.Website.ErrorDocument.Key != nil {
+				if *a.ko.Spec.Website.ErrorDocument.Key != *b.ko.Spec.Website.ErrorDocument.Key {
+					delta.Add("Spec.Website.ErrorDocument.Key", a.ko.Spec.Website.ErrorDocument.Key, b.ko.Spec.Website.ErrorDocument.Key)
+				}
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.Website.IndexDocument, b.ko.Spec.Website.IndexDocument) {
+			delta.Add("Spec.Website.IndexDocument", a.ko.Spec.Website.IndexDocument, b.ko.Spec.Website.IndexDocument)
+		} else if a.ko.Spec.Website.IndexDocument != nil && b.ko.Spec.Website.IndexDocument != nil {
+			if ackcompare.HasNilDifference(a.ko.Spec.Website.IndexDocument.Suffix, b.ko.Spec.Website.IndexDocument.Suffix) {
+				delta.Add("Spec.Website.IndexDocument.Suffix", a.ko.Spec.Website.IndexDocument.Suffix, b.ko.Spec.Website.IndexDocument.Suffix)
+			} else if a.ko.Spec.Website.IndexDocument.Suffix != nil && b.ko.Spec.Website.IndexDocument.Suffix != nil {
+				if *a.ko.Spec.Website.IndexDocument.Suffix != *b.ko.Spec.Website.IndexDocument.Suffix {
+					delta.Add("Spec.Website.IndexDocument.Suffix", a.ko.Spec.Website.IndexDocument.Suffix, b.ko.Spec.Website.IndexDocument.Suffix)
+				}
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.Website.RedirectAllRequestsTo, b.ko.Spec.Website.RedirectAllRequestsTo) {
+			delta.Add("Spec.Website.RedirectAllRequestsTo", a.ko.Spec.Website.RedirectAllRequestsTo, b.ko.Spec.Website.RedirectAllRequestsTo)
+		} else if a.ko.Spec.Website.RedirectAllRequestsTo != nil && b.ko.Spec.Website.RedirectAllRequestsTo != nil {
+			if ackcompare.HasNilDifference(a.ko.Spec.Website.RedirectAllRequestsTo.HostName, b.ko.Spec.Website.RedirectAllRequestsTo.HostName) {
+				delta.Add("Spec.Website.RedirectAllRequestsTo.HostName", a.ko.Spec.Website.RedirectAllRequestsTo.HostName, b.ko.Spec.Website.RedirectAllRequestsTo.HostName)
+			} else if a.ko.Spec.Website.RedirectAllRequestsTo.HostName != nil && b.ko.Spec.Website.RedirectAllRequestsTo.HostName != nil {
+				if *a.ko.Spec.Website.RedirectAllRequestsTo.HostName != *b.ko.Spec.Website.RedirectAllRequestsTo.HostName {
+					delta.Add("Spec.Website.RedirectAllRequestsTo.HostName", a.ko.Spec.Website.RedirectAllRequestsTo.HostName, b.ko.Spec.Website.RedirectAllRequestsTo.HostName)
+				}
+			}
+			if ackcompare.HasNilDifference(a.ko.Spec.Website.RedirectAllRequestsTo.Protocol, b.ko.Spec.Website.RedirectAllRequestsTo.Protocol) {
+				delta.Add("Spec.Website.RedirectAllRequestsTo.Protocol", a.ko.Spec.Website.RedirectAllRequestsTo.Protocol, b.ko.Spec.Website.RedirectAllRequestsTo.Protocol)
+			} else if a.ko.Spec.Website.RedirectAllRequestsTo.Protocol != nil && b.ko.Spec.Website.RedirectAllRequestsTo.Protocol != nil {
+				if *a.ko.Spec.Website.RedirectAllRequestsTo.Protocol != *b.ko.Spec.Website.RedirectAllRequestsTo.Protocol {
+					delta.Add("Spec.Website.RedirectAllRequestsTo.Protocol", a.ko.Spec.Website.RedirectAllRequestsTo.Protocol, b.ko.Spec.Website.RedirectAllRequestsTo.Protocol)
+				}
+			}
+		}
+
 	}
 
 	return delta

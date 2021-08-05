@@ -27,8 +27,17 @@ import (
 type BucketSpec struct {
 	// The canned ACL to apply to the bucket.
 	ACL *string `json:"acl,omitempty"`
+	// Container for setting the transfer acceleration state.
+	Accelerate *AccelerateConfiguration `json:"accelerate,omitempty"`
+	// Describes the cross-origin access configuration for objects in an Amazon
+	// S3 bucket. For more information, see Enabling Cross-Origin Resource Sharing
+	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html) in the Amazon
+	// Simple Storage Service Developer Guide.
+	CORS *CORSConfiguration `json:"cors,omitempty"`
 	// The configuration information for the bucket.
 	CreateBucketConfiguration *CreateBucketConfiguration `json:"createBucketConfiguration,omitempty"`
+
+	Encryption *ServerSideEncryptionConfiguration `json:"encryption,omitempty"`
 	// Allows grantee the read, write, read ACP, and write ACP permissions on the
 	// bucket.
 	GrantFullControl *string `json:"grantFullControl,omitempty"`
@@ -47,6 +56,15 @@ type BucketSpec struct {
 	Name *string `json:"name"`
 	// Specifies whether you want S3 Object Lock to be enabled for the new bucket.
 	ObjectLockEnabledForBucket *bool `json:"objectLockEnabledForBucket,omitempty"`
+	// The OwnershipControls (BucketOwnerPreferred or ObjectWriter) that you want
+	// to apply to this Amazon S3 bucket.
+	OwnershipControls *OwnershipControls `json:"ownershipControls,omitempty"`
+	// Container for Payer.
+	RequestPayment *RequestPaymentConfiguration `json:"requestPayment,omitempty"`
+	// Container for the TagSet and Tag elements.
+	Tagging *Tagging `json:"tagging,omitempty"`
+	// Container for the request.
+	Website *WebsiteConfiguration `json:"website,omitempty"`
 }
 
 // BucketStatus defines the observed state of Bucket
