@@ -98,6 +98,17 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, err
 		}
 	}
+	if delta.DifferentAt("Spec.ACL") ||
+		delta.DifferentAt("Spec.AccessControlPolicy") ||
+		delta.DifferentAt("Spec.GrantFullControl") ||
+		delta.DifferentAt("Spec.GrantRead") ||
+		delta.DifferentAt("Spec.GrantReadACP") ||
+		delta.DifferentAt("Spec.GrantWrite") ||
+		delta.DifferentAt("Spec.GrantWriteACP") {
+		if err := rm.syncACL(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
 	if delta.DifferentAt("Spec.CORS") {
 		if err := rm.syncCORS(ctx, desired); err != nil {
 			return nil, err
@@ -230,6 +241,9 @@ func customPreCompare(
 			Status: &DefaultAccelerationConfigurationStatus,
 		}
 	}
+	if a.ko.Spec.AccessControlPolicy == nil && b.ko.Spec.AccessControlPolicy != nil {
+		a.ko.Spec.AccessControlPolicy = &svcapitypes.AccessControlPolicy{}
+	}
 	if a.ko.Spec.CORS == nil && b.ko.Spec.CORS != nil {
 		a.ko.Spec.CORS = &svcapitypes.CORSConfiguration{}
 	}
@@ -292,6 +306,64 @@ func (rm *resourceManager) syncAccelerate(
 
 	_, err = rm.sdkapi.PutBucketAccelerateConfigurationWithContext(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketAccelerate", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) newGetBucketACLPayload(
+	r *resource,
+) *svcsdk.GetBucketAclInput {
+	res := &svcsdk.GetBucketAclInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketACLPayload(
+	r *resource,
+) *svcsdk.PutBucketAclInput {
+	res := &svcsdk.PutBucketAclInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	if r.ko.Spec.ACL != nil {
+		res.SetACL(*r.ko.Spec.ACL)
+	}
+
+	if r.ko.Spec.AccessControlPolicy != nil {
+		res.SetAccessControlPolicy(rm.newAccessControlPolicy(r))
+	}
+
+	if r.ko.Spec.GrantFullControl != nil {
+		res.SetGrantFullControl(*r.ko.Spec.GrantFullControl)
+	}
+	if r.ko.Spec.GrantRead != nil {
+		res.SetGrantRead(*r.ko.Spec.GrantRead)
+	}
+	if r.ko.Spec.GrantReadACP != nil {
+		res.SetGrantReadACP(*r.ko.Spec.GrantReadACP)
+	}
+	if r.ko.Spec.GrantWrite != nil {
+		res.SetGrantWrite(*r.ko.Spec.GrantWrite)
+	}
+	if r.ko.Spec.GrantWriteACP != nil {
+		res.SetGrantWriteACP(*r.ko.Spec.GrantWriteACP)
+	}
+
+	return res
+}
+
+func (rm *resourceManager) syncACL(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncACL")
+	defer exit(err)
+	input := rm.newPutBucketACLPayload(r)
+
+	_, err = rm.sdkapi.PutBucketAclWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATED", "PutBucketAccelerate", err)
 	if err != nil {
 		return err
 	}
