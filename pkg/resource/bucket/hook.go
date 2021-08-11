@@ -163,6 +163,12 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	if err != nil {
 		return err
 	}
+	ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
+
+	getACLResponse, err := rm.sdkapi.GetBucketAclWithContext(ctx, rm.newGetBucketACLPayload(r))
+	if err != nil {
+		return err
+	}
 	rm.setResourceACL(ko, getACLResponse)
 
 	getCORSResponse, err := rm.sdkapi.GetBucketCorsWithContext(ctx, rm.newGetBucketCORSPayload(r))
@@ -405,7 +411,7 @@ func (rm *resourceManager) syncACL(
 	input := rm.newPutBucketACLPayload(r)
 
 	_, err = rm.sdkapi.PutBucketAclWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketAcl", err)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketAcl", err)
 	if err != nil {
 		return err
 	}
