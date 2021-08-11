@@ -15,10 +15,6 @@ resources:
         from:
           operation: PutBucketAccelerateConfiguration
           path: AccelerateConfiguration
-      AccessControlPolicy:
-        from:
-          operation: PutBucketAcl
-          path: AccessControlPolicy
       # AnalyticsConfiguration:
       #   from:
       #     operation: PutBucketAnalyticsConfiguration

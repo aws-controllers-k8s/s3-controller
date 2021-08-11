@@ -51,29 +51,6 @@ func newResourceDelta(
 			}
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.AccessControlPolicy, b.ko.Spec.AccessControlPolicy) {
-		delta.Add("Spec.AccessControlPolicy", a.ko.Spec.AccessControlPolicy, b.ko.Spec.AccessControlPolicy)
-	} else if a.ko.Spec.AccessControlPolicy != nil && b.ko.Spec.AccessControlPolicy != nil {
-
-		if ackcompare.HasNilDifference(a.ko.Spec.AccessControlPolicy.Owner, b.ko.Spec.AccessControlPolicy.Owner) {
-			delta.Add("Spec.AccessControlPolicy.Owner", a.ko.Spec.AccessControlPolicy.Owner, b.ko.Spec.AccessControlPolicy.Owner)
-		} else if a.ko.Spec.AccessControlPolicy.Owner != nil && b.ko.Spec.AccessControlPolicy.Owner != nil {
-			if ackcompare.HasNilDifference(a.ko.Spec.AccessControlPolicy.Owner.DisplayName, b.ko.Spec.AccessControlPolicy.Owner.DisplayName) {
-				delta.Add("Spec.AccessControlPolicy.Owner.DisplayName", a.ko.Spec.AccessControlPolicy.Owner.DisplayName, b.ko.Spec.AccessControlPolicy.Owner.DisplayName)
-			} else if a.ko.Spec.AccessControlPolicy.Owner.DisplayName != nil && b.ko.Spec.AccessControlPolicy.Owner.DisplayName != nil {
-				if *a.ko.Spec.AccessControlPolicy.Owner.DisplayName != *b.ko.Spec.AccessControlPolicy.Owner.DisplayName {
-					delta.Add("Spec.AccessControlPolicy.Owner.DisplayName", a.ko.Spec.AccessControlPolicy.Owner.DisplayName, b.ko.Spec.AccessControlPolicy.Owner.DisplayName)
-				}
-			}
-			if ackcompare.HasNilDifference(a.ko.Spec.AccessControlPolicy.Owner.ID, b.ko.Spec.AccessControlPolicy.Owner.ID) {
-				delta.Add("Spec.AccessControlPolicy.Owner.ID", a.ko.Spec.AccessControlPolicy.Owner.ID, b.ko.Spec.AccessControlPolicy.Owner.ID)
-			} else if a.ko.Spec.AccessControlPolicy.Owner.ID != nil && b.ko.Spec.AccessControlPolicy.Owner.ID != nil {
-				if *a.ko.Spec.AccessControlPolicy.Owner.ID != *b.ko.Spec.AccessControlPolicy.Owner.ID {
-					delta.Add("Spec.AccessControlPolicy.Owner.ID", a.ko.Spec.AccessControlPolicy.Owner.ID, b.ko.Spec.AccessControlPolicy.Owner.ID)
-				}
-			}
-		}
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CORS, b.ko.Spec.CORS) {
 		delta.Add("Spec.CORS", a.ko.Spec.CORS, b.ko.Spec.CORS)
 	} else if a.ko.Spec.CORS != nil && b.ko.Spec.CORS != nil {

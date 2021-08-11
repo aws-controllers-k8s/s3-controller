@@ -37,7 +37,6 @@ type AccelerateConfiguration struct {
 
 // Contains the elements that set the ACL permissions for an object per grantee.
 type AccessControlPolicy struct {
-	Grants []*Grant `json:"grants,omitempty"`
 	// Container for the owner's display name and ID.
 	Owner *Owner `json:"owner,omitempty"`
 }
@@ -148,8 +147,7 @@ type ErrorDocument struct {
 // Container for grant information.
 type Grant struct {
 	// Container for the person being granted permissions.
-	Grantee    *Grantee `json:"grantee,omitempty"`
-	Permission *string  `json:"permission,omitempty"`
+	Grantee *Grantee `json:"grantee,omitempty"`
 }
 
 // Container for the person being granted permissions.
@@ -214,8 +212,7 @@ type LifecycleRuleFilter struct {
 // Describes an Amazon S3 location that will receive the results of the restore
 // request.
 type Location struct {
-	AccessControlList []*Grant `json:"accessControlList,omitempty"`
-	BucketName        *string  `json:"bucketName,omitempty"`
+	BucketName *string `json:"bucketName,omitempty"`
 	// Container for TagSet elements.
 	Tagging *Tagging `json:"tagging,omitempty"`
 }

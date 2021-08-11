@@ -44,41 +44,6 @@ spec:
                   status:
                     type: string
                 type: object
-              accessControlPolicy:
-                description: Contains the elements that set the ACL permissions for
-                  an object per grantee.
-                properties:
-                  grants:
-                    items:
-                      description: Container for grant information.
-                      properties:
-                        grantee:
-                          description: Container for the person being granted permissions.
-                          properties:
-                            displayName:
-                              type: string
-                            emailAddress:
-                              type: string
-                            id:
-                              type: string
-                            type_:
-                              type: string
-                            uRI:
-                              type: string
-                          type: object
-                        permission:
-                          type: string
-                      type: object
-                    type: array
-                  owner:
-                    description: Container for the owner's display name and ID.
-                    properties:
-                      displayName:
-                        type: string
-                      id:
-                        type: string
-                    type: object
-                type: object
               acl:
                 description: The canned ACL to apply to the bucket.
                 type: string

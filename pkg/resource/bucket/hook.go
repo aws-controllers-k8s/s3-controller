@@ -15,6 +15,7 @@ package bucket
 
 import (
 	"context"
+	"strings"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
@@ -26,6 +27,10 @@ import (
 var (
 	DefaultAccelerationConfigurationStatus = "Suspended"
 	DefaultRequestPayer                    = "BucketOwner"
+)
+
+var (
+	CANNED_ACL_JOIN_DELIMITER = "|"
 )
 
 func (rm *resourceManager) createPutFields(
@@ -99,7 +104,6 @@ func (rm *resourceManager) customUpdateBucket(
 		}
 	}
 	if delta.DifferentAt("Spec.ACL") ||
-		delta.DifferentAt("Spec.AccessControlPolicy") ||
 		delta.DifferentAt("Spec.GrantFullControl") ||
 		delta.DifferentAt("Spec.GrantRead") ||
 		delta.DifferentAt("Spec.GrantReadACP") ||
@@ -159,7 +163,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	if err != nil {
 		return err
 	}
-	ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
+	rm.setResourceACL(ko, getACLResponse)
 
 	getCORSResponse, err := rm.sdkapi.GetBucketCorsWithContext(ctx, rm.newGetBucketCORSPayload(r))
 	if err != nil {
@@ -241,8 +245,29 @@ func customPreCompare(
 			Status: &DefaultAccelerationConfigurationStatus,
 		}
 	}
-	if a.ko.Spec.AccessControlPolicy == nil && b.ko.Spec.AccessControlPolicy != nil {
-		a.ko.Spec.AccessControlPolicy = &svcapitypes.AccessControlPolicy{}
+	if a.ko.Spec.ACL != nil {
+		// Don't diff grant headers if a canned ACL has been used
+		b.ko.Spec.GrantFullControl = nil
+		b.ko.Spec.GrantRead = nil
+		b.ko.Spec.GrantReadACP = nil
+		b.ko.Spec.GrantWrite = nil
+		b.ko.Spec.GrantWriteACP = nil
+
+		// Split the joined canned ACL from the response object
+		if b.ko.Spec.ACL != nil {
+			possibleACLs := strings.Split(*b.ko.Spec.ACL, CANNED_ACL_JOIN_DELIMITER)
+			// Check to see if any of the possibilities matches, and set that on
+			// the b object for a matching diff
+			for _, possible := range possibleACLs {
+				if *a.ko.Spec.ACL == possible {
+					b.ko.Spec.ACL = &possible
+					break
+				}
+			}
+			// If no canned ACL possibility matches, or there were no matches,
+			// set to nil so it appears in the diff
+			b.ko.Spec.ACL = nil
+		}
 	}
 	if a.ko.Spec.CORS == nil && b.ko.Spec.CORS != nil {
 		a.ko.Spec.CORS = &svcapitypes.CORSConfiguration{}
@@ -267,6 +292,25 @@ func customPreCompare(
 	if a.ko.Spec.Website == nil && b.ko.Spec.Website != nil {
 		a.ko.Spec.Website = &svcapitypes.WebsiteConfiguration{}
 	}
+}
+
+// setResourceACL sets the `Grant*` spec fields given the output of a
+// `GetBucketAcl` operation.
+func (rm *resourceManager) setResourceACL(
+	ko *svcapitypes.Bucket,
+	resp *svcsdk.GetBucketAclOutput,
+) {
+	grants := GetHeadersFromGrants(resp)
+	ko.Spec.GrantFullControl = &grants.FullControl
+	ko.Spec.GrantRead = &grants.Read
+	ko.Spec.GrantReadACP = &grants.ReadACP
+	ko.Spec.GrantWrite = &grants.Write
+	ko.Spec.GrantWriteACP = &grants.WriteACP
+
+	// Join possible ACLs into a single string, delimited by bar
+	cannedACLs := GetPossibleCannedACLsFromGrants(resp)
+	joinedACLs := strings.Join(cannedACLs, CANNED_ACL_JOIN_DELIMITER)
+	ko.Spec.ACL = &joinedACLs
 }
 
 func (rm *resourceManager) newGetBucketAcceleratePayload(
@@ -330,10 +374,6 @@ func (rm *resourceManager) newPutBucketACLPayload(
 		res.SetACL(*r.ko.Spec.ACL)
 	}
 
-	if r.ko.Spec.AccessControlPolicy != nil {
-		res.SetAccessControlPolicy(rm.newAccessControlPolicy(r))
-	}
-
 	if r.ko.Spec.GrantFullControl != nil {
 		res.SetGrantFullControl(*r.ko.Spec.GrantFullControl)
 	}
@@ -363,7 +403,7 @@ func (rm *resourceManager) syncACL(
 	input := rm.newPutBucketACLPayload(r)
 
 	_, err = rm.sdkapi.PutBucketAclWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketAccelerate", err)
+	rm.metrics.RecordAPICall("UPDATED", "PutBucketAcl", err)
 	if err != nil {
 		return err
 	}
@@ -481,6 +521,45 @@ func (rm *resourceManager) syncLogging(
 
 	_, err = rm.sdkapi.PutBucketLoggingWithContext(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketLogging", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) newGetBucketLoggingPayload(
+	r *resource,
+) *svcsdk.GetBucketLoggingInput {
+	res := &svcsdk.GetBucketLoggingInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketLoggingPayload(
+	r *resource,
+) *svcsdk.PutBucketLoggingInput {
+	res := &svcsdk.PutBucketLoggingInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	if r.ko.Spec.Logging != nil {
+		res.SetBucketLoggingStatus(rm.newBucketLoggingStatus(r))
+	} else {
+		res.SetBucketLoggingStatus(&svcsdk.BucketLoggingStatus{})
+	}
+	return res
+}
+
+func (rm *resourceManager) syncLogging(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncLogging")
+	defer exit(err)
+	input := rm.newPutBucketLoggingPayload(r)
+
+	_, err = rm.sdkapi.PutBucketLoggingWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATED", "PutBucketLogging", err)
 	if err != nil {
 		return err
 	}
