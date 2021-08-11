@@ -11,7 +11,7 @@ maintainers:
   - name: ACK Admins
     url: https://github.com/orgs/aws-controllers-k8s/teams/ack-admin
   - name: S3 Admins
-    url:https://github.com/orgs/aws-controllers-k8s/teams/s3-maintainer
+    url: https://github.com/orgs/aws-controllers-k8s/teams/s3-maintainer
 keywords:
   - aws
   - kubernetes
