@@ -30,7 +30,7 @@ var (
 )
 
 var (
-	CANNED_ACL_JOIN_DELIMITER = "|"
+	CannedACLJoinDelimiter = "|"
 )
 
 func (rm *resourceManager) createPutFields(
@@ -237,7 +237,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 // list of possibilities. If any of the possibilities matches, it will be
 // returned, otherwise nil.
 func matchPossibleCannedACL(search string, joinedPossibilities string) *string {
-	splitPossibilities := strings.Split(joinedPossibilities, CANNED_ACL_JOIN_DELIMITER)
+	splitPossibilities := strings.Split(joinedPossibilities, CannedACLJoinDelimiter)
 	for _, possible := range splitPossibilities {
 		if search == possible {
 			return &possible
@@ -311,7 +311,7 @@ func (rm *resourceManager) setResourceACL(
 
 	// Join possible ACLs into a single string, delimited by bar
 	cannedACLs := GetPossibleCannedACLsFromGrants(resp)
-	joinedACLs := strings.Join(cannedACLs, CANNED_ACL_JOIN_DELIMITER)
+	joinedACLs := strings.Join(cannedACLs, CannedACLJoinDelimiter)
 	ko.Spec.ACL = &joinedACLs
 }
 
@@ -523,45 +523,6 @@ func (rm *resourceManager) syncLogging(
 
 	_, err = rm.sdkapi.PutBucketLoggingWithContext(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketLogging", err)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (rm *resourceManager) newGetBucketLoggingPayload(
-	r *resource,
-) *svcsdk.GetBucketLoggingInput {
-	res := &svcsdk.GetBucketLoggingInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	return res
-}
-
-func (rm *resourceManager) newPutBucketLoggingPayload(
-	r *resource,
-) *svcsdk.PutBucketLoggingInput {
-	res := &svcsdk.PutBucketLoggingInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	if r.ko.Spec.Logging != nil {
-		res.SetBucketLoggingStatus(rm.newBucketLoggingStatus(r))
-	} else {
-		res.SetBucketLoggingStatus(&svcsdk.BucketLoggingStatus{})
-	}
-	return res
-}
-
-func (rm *resourceManager) syncLogging(
-	ctx context.Context,
-	r *resource,
-) (err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncLogging")
-	defer exit(err)
-	input := rm.newPutBucketLoggingPayload(r)
-
-	_, err = rm.sdkapi.PutBucketLoggingWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketLogging", err)
 	if err != nil {
 		return err
 	}
