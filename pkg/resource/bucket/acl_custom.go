@@ -22,26 +22,26 @@ import (
 
 // Only some of these exist in the SDK, so duplicating them all here
 var (
-	CANNED_ACL_PRIVATE               = "private"
-	CANNED_PUBLIC_READ               = "public-read"
-	CANNED_PUBLIC_READ_WRITE         = "public-read-write"
-	CANNED_AWS_EXEC_READ             = "aws-exec-read"
-	CANNED_AUTHENTICATED_READ        = "authenticated-read"
-	CANNED_BUCKET_OWNER_READ         = "bucket-owner-read"
-	CANNED_BUCKET_OWNER_FULL_CONTROL = "bucket-owner-full-control"
-	CANNED_LOG_DELIVERY_WRITE        = "log-delivery-write"
+	CannedACLPrivate             = "private"
+	CannedPublicRead             = "public-read"
+	CannedPublicReadWrite        = "public-read-write"
+	CannedAWSExecRead            = "aws-exec-read"
+	CannedAuthenticatedRead      = "authenticated-read"
+	CannedBucketOwnerRead        = "bucket-owner-read"
+	CannedBucketOwnerFullControl = "bucket-owner-full-control"
+	CannedLogDeliveryWrite       = "log-delivery-write"
 )
 
 var (
-	GRANTEE_ZA_TEAM_ID              = "6aa5a366c34c1cbe25dc49211496e913e0351eb0e8c37aa3477e40942ec6b97c"
-	GRANTEE_LOG_DELIVERY_URI        = "http://acs.amazonaws.com/groups/s3/LogDelivery"
-	GRANTEE_ALL_USERS_URI           = "http://acs.amazonaws.com/groups/global/AllUsers"
-	GRANTEE_AUTHENTICATED_USERS_URI = "http://acs.amazonaws.com/groups/global/AuthenticatedUsers"
+	GranteeZATeamID              = "6aa5a366c34c1cbe25dc49211496e913e0351eb0e8c37aa3477e40942ec6b97c"
+	GranteeLogDeliveryURI        = "http://acs.amazonaws.com/groups/s3/LogDelivery"
+	GranteeAllUsersURI           = "http://acs.amazonaws.com/groups/global/AllUsers"
+	GranteeAuthenticatedUsersURI = "http://acs.amazonaws.com/groups/global/AuthenticatedUsers"
 )
 
 var (
-	HEADER_USER_ID_FORMAT = "id=%s"
-	HEADER_URI_FORMAT     = "uri=%s"
+	HeaderUserIDFormat = "id=%s"
+	HeaderURIFormat    = "uri=%s"
 )
 
 type aclGrantHeaders struct {
@@ -142,10 +142,10 @@ func formGrantHeader(grants []*svcsdk.Grant) string {
 		}
 
 		if *grant.Grantee.Type == svcsdk.TypeGroup {
-			headers = append(headers, fmt.Sprintf(HEADER_URI_FORMAT, *grant.Grantee.URI))
+			headers = append(headers, fmt.Sprintf(HeaderURIFormat, *grant.Grantee.URI))
 		}
 		if *grant.Grantee.Type == svcsdk.TypeCanonicalUser {
-			headers = append(headers, fmt.Sprintf(HEADER_USER_ID_FORMAT, *grant.Grantee.ID))
+			headers = append(headers, fmt.Sprintf(HeaderUserIDFormat, *grant.Grantee.ID))
 		}
 	}
 	return strings.Join(headers, ",")
@@ -182,33 +182,33 @@ func GetPossibleCannedACLsFromGrants(
 
 	switch len(grants) {
 	case 1:
-		return []string{CANNED_ACL_PRIVATE, CANNED_BUCKET_OWNER_READ, CANNED_BUCKET_OWNER_FULL_CONTROL}
+		return []string{CannedACLPrivate, CannedBucketOwnerRead, CannedBucketOwnerFullControl}
 	case 2:
-		execTeamGrant := getGrantsByCanonicalUserID(GRANTEE_ZA_TEAM_ID, grants)
+		execTeamGrant := getGrantsByCanonicalUserID(GranteeZATeamID, grants)
 		if grantsContainPermission(svcsdk.PermissionRead, execTeamGrant) {
-			return []string{CANNED_AWS_EXEC_READ}
+			return []string{CannedAWSExecRead}
 		}
 
-		allUsersGrants := getGrantsByGroupURI(GRANTEE_ALL_USERS_URI, grants)
+		allUsersGrants := getGrantsByGroupURI(GranteeAllUsersURI, grants)
 		if grantsContainPermission(svcsdk.PermissionRead, allUsersGrants) {
-			return []string{CANNED_PUBLIC_READ}
+			return []string{CannedPublicRead}
 		}
 
-		authenticatedUsersGrants := getGrantsByGroupURI(GRANTEE_AUTHENTICATED_USERS_URI, grants)
+		authenticatedUsersGrants := getGrantsByGroupURI(GranteeAuthenticatedUsersURI, grants)
 		if grantsContainPermission(svcsdk.PermissionRead, authenticatedUsersGrants) {
-			return []string{CANNED_AUTHENTICATED_READ}
+			return []string{CannedAuthenticatedRead}
 		}
 	case 3:
-		logDeliveryGrants := getGrantsByGroupURI(GRANTEE_LOG_DELIVERY_URI, grants)
+		logDeliveryGrants := getGrantsByGroupURI(GranteeLogDeliveryURI, grants)
 		if grantsContainPermission(svcsdk.PermissionWrite, logDeliveryGrants) &&
 			grantsContainPermission(svcsdk.PermissionReadAcp, logDeliveryGrants) {
-			return []string{CANNED_LOG_DELIVERY_WRITE}
+			return []string{CannedLogDeliveryWrite}
 		}
 
-		allUsersGrants := getGrantsByGroupURI(GRANTEE_ALL_USERS_URI, grants)
+		allUsersGrants := getGrantsByGroupURI(GranteeAllUsersURI, grants)
 		if grantsContainPermission(svcsdk.PermissionRead, allUsersGrants) &&
 			grantsContainPermission(svcsdk.PermissionWrite, allUsersGrants) {
-			return []string{CANNED_PUBLIC_READ_WRITE}
+			return []string{CannedPublicReadWrite}
 		}
 	}
 

@@ -233,6 +233,19 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	return nil
 }
 
+// matchPossibleCannedACL attempts to find a canned ACL string in a joined
+// list of possibilities. If any of the possibilities matches, it will be
+// returned, otherwise nil.
+func matchPossibleCannedACL(search string, joinedPossibilities string) *string {
+	splitPossibilities := strings.Split(joinedPossibilities, CANNED_ACL_JOIN_DELIMITER)
+	for _, possible := range splitPossibilities {
+		if search == possible {
+			return &possible
+		}
+	}
+	return nil
+}
+
 // customPreCompare ensures that default values of nil-able types are
 // appropriately replaced with empty maps or structs depending on the default
 // output of the SDK.
@@ -253,20 +266,9 @@ func customPreCompare(
 		b.ko.Spec.GrantWrite = nil
 		b.ko.Spec.GrantWriteACP = nil
 
-		// Split the joined canned ACL from the response object
+		// Find the canned ACL from the joined possibility string
 		if b.ko.Spec.ACL != nil {
-			possibleACLs := strings.Split(*b.ko.Spec.ACL, CANNED_ACL_JOIN_DELIMITER)
-			// Check to see if any of the possibilities matches, and set that on
-			// the b object for a matching diff
-			for _, possible := range possibleACLs {
-				if *a.ko.Spec.ACL == possible {
-					b.ko.Spec.ACL = &possible
-					break
-				}
-			}
-			// If no canned ACL possibility matches, or there were no matches,
-			// set to nil so it appears in the diff
-			b.ko.Spec.ACL = nil
+			b.ko.Spec.ACL = matchPossibleCannedACL(*a.ko.Spec.ACL, *b.ko.Spec.ACL)
 		}
 	}
 	if a.ko.Spec.CORS == nil && b.ko.Spec.CORS != nil {
