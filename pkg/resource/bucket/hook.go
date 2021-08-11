@@ -24,19 +24,14 @@ import (
 )
 
 var (
-	DEFAULT_ACCELERATION_CONFIGURATION_STATUS = "Suspended"
-	DEFAULT_REQUEST_PAYER                     = "BucketOwner"
+	DefaultAccelerationConfigurationStatus = "Suspended"
+	DefaultRequestPayer                    = "BucketOwner"
 )
 
 func (rm *resourceManager) createPutFields(
 	ctx context.Context,
 	r *resource,
 ) error {
-	if r.ko.Spec.Logging != nil {
-		if err := rm.syncLogging(ctx, r); err != nil {
-			return err
-		}
-	}
 	if r.ko.Spec.Accelerate != nil {
 		if err := rm.syncAccelerate(ctx, r); err != nil {
 			return err
@@ -49,6 +44,11 @@ func (rm *resourceManager) createPutFields(
 	}
 	if r.ko.Spec.Encryption != nil {
 		if err := rm.syncEncryption(ctx, r); err != nil {
+			return err
+		}
+	}
+	if r.ko.Spec.Logging != nil {
+		if err := rm.syncLogging(ctx, r); err != nil {
 			return err
 		}
 	}
@@ -93,11 +93,6 @@ func (rm *resourceManager) customUpdateBucket(
 
 	rm.setStatusDefaults(ko)
 
-	if delta.DifferentAt("Spec.Logging") {
-		if err := rm.syncLogging(ctx, desired); err != nil {
-			return nil, err
-		}
-	}
 	if delta.DifferentAt("Spec.Accelerate") {
 		if err := rm.syncAccelerate(ctx, desired); err != nil {
 			return nil, err
@@ -110,6 +105,11 @@ func (rm *resourceManager) customUpdateBucket(
 	}
 	if delta.DifferentAt("Spec.Encryption") {
 		if err := rm.syncEncryption(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.Logging") {
+		if err := rm.syncLogging(ctx, desired); err != nil {
 			return nil, err
 		}
 	}
@@ -144,12 +144,6 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	r *resource,
 	ko *svcapitypes.Bucket,
 ) (err error) {
-	getLoggingResponse, err := rm.sdkapi.GetBucketLoggingWithContext(ctx, rm.newGetBucketLoggingPayload(r))
-	if err != nil {
-		return err
-	}
-	ko.Spec.Logging = rm.setResourceLogging(r, getLoggingResponse)
-
 	getAccelerateResponse, err := rm.sdkapi.GetBucketAccelerateConfigurationWithContext(ctx, rm.newGetBucketAcceleratePayload(r))
 	if err != nil {
 		return err
@@ -177,6 +171,12 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		}
 	}
 	ko.Spec.Encryption = rm.setResourceEncryption(r, getEncryptionResponse)
+
+	getLoggingResponse, err := rm.sdkapi.GetBucketLoggingWithContext(ctx, rm.newGetBucketLoggingPayload(r))
+	if err != nil {
+		return err
+	}
+	ko.Spec.Logging = rm.setResourceLogging(r, getLoggingResponse)
 
 	getOwnershipControlsResponse, err := rm.sdkapi.GetBucketOwnershipControlsWithContext(ctx, rm.newGetBucketOwnershipControlsPayload(r))
 	if err != nil {
@@ -225,12 +225,9 @@ func customPreCompare(
 	a *resource,
 	b *resource,
 ) {
-	if a.ko.Spec.Logging == nil && b.ko.Spec.Logging != nil {
-		a.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
-	}
 	if a.ko.Spec.Accelerate == nil && b.ko.Spec.Accelerate != nil {
 		a.ko.Spec.Accelerate = &svcapitypes.AccelerateConfiguration{
-			Status: &DEFAULT_ACCELERATION_CONFIGURATION_STATUS,
+			Status: &DefaultAccelerationConfigurationStatus,
 		}
 	}
 	if a.ko.Spec.CORS == nil && b.ko.Spec.CORS != nil {
@@ -239,12 +236,15 @@ func customPreCompare(
 	if a.ko.Spec.Encryption == nil && b.ko.Spec.Encryption != nil {
 		a.ko.Spec.Encryption = &svcapitypes.ServerSideEncryptionConfiguration{}
 	}
+	if a.ko.Spec.Logging == nil && b.ko.Spec.Logging != nil {
+		a.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
+	}
 	if a.ko.Spec.OwnershipControls == nil && b.ko.Spec.OwnershipControls != nil {
 		a.ko.Spec.OwnershipControls = &svcapitypes.OwnershipControls{}
 	}
 	if a.ko.Spec.RequestPayment == nil && b.ko.Spec.RequestPayment != nil {
 		a.ko.Spec.RequestPayment = &svcapitypes.RequestPaymentConfiguration{
-			Payer: &DEFAULT_REQUEST_PAYER,
+			Payer: &DefaultRequestPayer,
 		}
 	}
 	if a.ko.Spec.Tagging == nil && b.ko.Spec.Tagging != nil {
@@ -275,7 +275,7 @@ func (rm *resourceManager) newPutBucketAcceleratePayload(
 	}
 
 	if res.AccelerateConfiguration.Status == nil {
-		res.AccelerateConfiguration.SetStatus(DEFAULT_ACCELERATION_CONFIGURATION_STATUS)
+		res.AccelerateConfiguration.SetStatus(DefaultAccelerationConfigurationStatus)
 	}
 
 	return res
@@ -290,8 +290,8 @@ func (rm *resourceManager) syncAccelerate(
 	defer exit(err)
 	input := rm.newPutBucketAcceleratePayload(r)
 
-	_, err = rm.sdkapi.PutBucketAccelerateConfiguration(input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketAccelerate", err)
+	_, err = rm.sdkapi.PutBucketAccelerateConfigurationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketAccelerate", err)
 	if err != nil {
 		return err
 	}
@@ -329,8 +329,8 @@ func (rm *resourceManager) syncCORS(
 	defer exit(err)
 	input := rm.newPutBucketCORSPayload(r)
 
-	_, err = rm.sdkapi.PutBucketCors(input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketCors", err)
+	_, err = rm.sdkapi.PutBucketCorsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketCors", err)
 	if err != nil {
 		return err
 	}
@@ -368,169 +368,8 @@ func (rm *resourceManager) syncEncryption(
 	defer exit(err)
 	input := rm.newPutBucketEncryptionPayload(r)
 
-	_, err = rm.sdkapi.PutBucketEncryption(input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketEncryption", err)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (rm *resourceManager) newGetBucketOwnershipControlsPayload(
-	r *resource,
-) *svcsdk.GetBucketOwnershipControlsInput {
-	res := &svcsdk.GetBucketOwnershipControlsInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	return res
-}
-
-func (rm *resourceManager) newPutBucketOwnershipControlsPayload(
-	r *resource,
-) *svcsdk.PutBucketOwnershipControlsInput {
-	res := &svcsdk.PutBucketOwnershipControlsInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	if r.ko.Spec.OwnershipControls != nil {
-		res.SetOwnershipControls(rm.newOwnershipControls(r))
-	} else {
-		res.SetOwnershipControls(&svcsdk.OwnershipControls{})
-	}
-	return res
-}
-
-func (rm *resourceManager) syncOwnershipControls(
-	ctx context.Context,
-	r *resource,
-) (err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncOwnershipControls")
-	defer exit(err)
-	input := rm.newPutBucketOwnershipControlsPayload(r)
-
-	_, err = rm.sdkapi.PutBucketOwnershipControls(input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketOwnershipControls", err)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (rm *resourceManager) newGetBucketRequestPaymentPayload(
-	r *resource,
-) *svcsdk.GetBucketRequestPaymentInput {
-	res := &svcsdk.GetBucketRequestPaymentInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	return res
-}
-
-func (rm *resourceManager) newPutBucketRequestPaymentPayload(
-	r *resource,
-) *svcsdk.PutBucketRequestPaymentInput {
-	res := &svcsdk.PutBucketRequestPaymentInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	if r.ko.Spec.RequestPayment != nil && r.ko.Spec.RequestPayment.Payer != nil {
-		res.SetRequestPaymentConfiguration(rm.newRequestPaymentConfiguration(r))
-	} else {
-		res.SetRequestPaymentConfiguration(&svcsdk.RequestPaymentConfiguration{})
-	}
-
-	if res.RequestPaymentConfiguration.Payer == nil {
-		res.RequestPaymentConfiguration.SetPayer(DEFAULT_REQUEST_PAYER)
-	}
-
-	return res
-}
-
-func (rm *resourceManager) syncRequestPayment(
-	ctx context.Context,
-	r *resource,
-) (err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncRequestPayment")
-	defer exit(err)
-	input := rm.newPutBucketRequestPaymentPayload(r)
-
-	_, err = rm.sdkapi.PutBucketRequestPayment(input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketRequestPayment", err)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (rm *resourceManager) newGetBucketTaggingPayload(
-	r *resource,
-) *svcsdk.GetBucketTaggingInput {
-	res := &svcsdk.GetBucketTaggingInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	return res
-}
-
-func (rm *resourceManager) newPutBucketTaggingPayload(
-	r *resource,
-) *svcsdk.PutBucketTaggingInput {
-	res := &svcsdk.PutBucketTaggingInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	if r.ko.Spec.Tagging != nil {
-		res.SetTagging(rm.newTagging(r))
-	} else {
-		res.SetTagging(&svcsdk.Tagging{})
-	}
-	return res
-}
-
-func (rm *resourceManager) syncTagging(
-	ctx context.Context,
-	r *resource,
-) (err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncTagging")
-	defer exit(err)
-	input := rm.newPutBucketTaggingPayload(r)
-
-	_, err = rm.sdkapi.PutBucketTagging(input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketTagging", err)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (rm *resourceManager) newGetBucketWebsitePayload(
-	r *resource,
-) *svcsdk.GetBucketWebsiteInput {
-	res := &svcsdk.GetBucketWebsiteInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	return res
-}
-
-func (rm *resourceManager) newPutBucketWebsitePayload(
-	r *resource,
-) *svcsdk.PutBucketWebsiteInput {
-	res := &svcsdk.PutBucketWebsiteInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	if r.ko.Spec.Website != nil {
-		res.SetWebsiteConfiguration(rm.newWebsiteConfiguration(r))
-	} else {
-		res.SetWebsiteConfiguration(&svcsdk.WebsiteConfiguration{})
-	}
-	return res
-}
-
-func (rm *resourceManager) syncWebsite(
-	ctx context.Context,
-	r *resource,
-) (err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncWebsite")
-	defer exit(err)
-	input := rm.newPutBucketWebsitePayload(r)
-
-	_, err = rm.sdkapi.PutBucketWebsite(input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketWebsite", err)
+	_, err = rm.sdkapi.PutBucketEncryptionWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketEncryption", err)
 	if err != nil {
 		return err
 	}
@@ -568,8 +407,169 @@ func (rm *resourceManager) syncLogging(
 	defer exit(err)
 	input := rm.newPutBucketLoggingPayload(r)
 
-	_, err = rm.sdkapi.PutBucketLogging(input)
-	rm.metrics.RecordAPICall("UPDATED", "PutBucketLogging", err)
+	_, err = rm.sdkapi.PutBucketLoggingWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketLogging", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) newGetBucketOwnershipControlsPayload(
+	r *resource,
+) *svcsdk.GetBucketOwnershipControlsInput {
+	res := &svcsdk.GetBucketOwnershipControlsInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketOwnershipControlsPayload(
+	r *resource,
+) *svcsdk.PutBucketOwnershipControlsInput {
+	res := &svcsdk.PutBucketOwnershipControlsInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	if r.ko.Spec.OwnershipControls != nil {
+		res.SetOwnershipControls(rm.newOwnershipControls(r))
+	} else {
+		res.SetOwnershipControls(&svcsdk.OwnershipControls{})
+	}
+	return res
+}
+
+func (rm *resourceManager) syncOwnershipControls(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncOwnershipControls")
+	defer exit(err)
+	input := rm.newPutBucketOwnershipControlsPayload(r)
+
+	_, err = rm.sdkapi.PutBucketOwnershipControlsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketOwnershipControls", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) newGetBucketRequestPaymentPayload(
+	r *resource,
+) *svcsdk.GetBucketRequestPaymentInput {
+	res := &svcsdk.GetBucketRequestPaymentInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketRequestPaymentPayload(
+	r *resource,
+) *svcsdk.PutBucketRequestPaymentInput {
+	res := &svcsdk.PutBucketRequestPaymentInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	if r.ko.Spec.RequestPayment != nil && r.ko.Spec.RequestPayment.Payer != nil {
+		res.SetRequestPaymentConfiguration(rm.newRequestPaymentConfiguration(r))
+	} else {
+		res.SetRequestPaymentConfiguration(&svcsdk.RequestPaymentConfiguration{})
+	}
+
+	if res.RequestPaymentConfiguration.Payer == nil {
+		res.RequestPaymentConfiguration.SetPayer(DefaultRequestPayer)
+	}
+
+	return res
+}
+
+func (rm *resourceManager) syncRequestPayment(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncRequestPayment")
+	defer exit(err)
+	input := rm.newPutBucketRequestPaymentPayload(r)
+
+	_, err = rm.sdkapi.PutBucketRequestPaymentWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketRequestPayment", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) newGetBucketTaggingPayload(
+	r *resource,
+) *svcsdk.GetBucketTaggingInput {
+	res := &svcsdk.GetBucketTaggingInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketTaggingPayload(
+	r *resource,
+) *svcsdk.PutBucketTaggingInput {
+	res := &svcsdk.PutBucketTaggingInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	if r.ko.Spec.Tagging != nil {
+		res.SetTagging(rm.newTagging(r))
+	} else {
+		res.SetTagging(&svcsdk.Tagging{})
+	}
+	return res
+}
+
+func (rm *resourceManager) syncTagging(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncTagging")
+	defer exit(err)
+	input := rm.newPutBucketTaggingPayload(r)
+
+	_, err = rm.sdkapi.PutBucketTaggingWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketTagging", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) newGetBucketWebsitePayload(
+	r *resource,
+) *svcsdk.GetBucketWebsiteInput {
+	res := &svcsdk.GetBucketWebsiteInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketWebsitePayload(
+	r *resource,
+) *svcsdk.PutBucketWebsiteInput {
+	res := &svcsdk.PutBucketWebsiteInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	if r.ko.Spec.Website != nil {
+		res.SetWebsiteConfiguration(rm.newWebsiteConfiguration(r))
+	} else {
+		res.SetWebsiteConfiguration(&svcsdk.WebsiteConfiguration{})
+	}
+	return res
+}
+
+func (rm *resourceManager) syncWebsite(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncWebsite")
+	defer exit(err)
+	input := rm.newPutBucketWebsitePayload(r)
+
+	_, err = rm.sdkapi.PutBucketWebsiteWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketWebsite", err)
 	if err != nil {
 		return err
 	}
