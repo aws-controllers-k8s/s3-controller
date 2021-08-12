@@ -240,11 +240,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 
 	getVersioningResponse, err := rm.sdkapi.GetBucketVersioningWithContext(ctx, rm.newGetBucketVersioningPayload(r))
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchTagSet" {
-			getVersioningResponse = &svcsdk.GetBucketVersioningOutput{}
-		} else {
-			return err
-		}
+		return err
 	}
 	ko.Spec.Versioning = rm.setResourceVersioning(r, getVersioningResponse)
 
