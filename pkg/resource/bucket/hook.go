@@ -26,7 +26,7 @@ import (
 
 var (
 	DefaultAccelerationConfigurationStatus = svcsdk.BucketAccelerateStatusSuspended
-	DefaultRequestPayer                    = "BucketOwner" // Not included in AWS SDK Go ...
+	DefaultRequestPayer                    = svcsdk.PayerBucketOwner
 	DefaultVersioningStatus                = svcsdk.BucketVersioningStatusSuspended
 )
 
