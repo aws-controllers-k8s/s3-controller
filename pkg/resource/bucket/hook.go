@@ -15,6 +15,7 @@ package bucket
 
 import (
 	"context"
+	"strings"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
@@ -26,6 +27,10 @@ import (
 var (
 	DefaultAccelerationConfigurationStatus = "Suspended"
 	DefaultRequestPayer                    = "BucketOwner"
+)
+
+var (
+	CannedACLJoinDelimiter = "|"
 )
 
 func (rm *resourceManager) createPutFields(
@@ -98,6 +103,16 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, err
 		}
 	}
+	if delta.DifferentAt("Spec.ACL") ||
+		delta.DifferentAt("Spec.GrantFullControl") ||
+		delta.DifferentAt("Spec.GrantRead") ||
+		delta.DifferentAt("Spec.GrantReadACP") ||
+		delta.DifferentAt("Spec.GrantWrite") ||
+		delta.DifferentAt("Spec.GrantWriteACP") {
+		if err := rm.syncACL(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
 	if delta.DifferentAt("Spec.CORS") {
 		if err := rm.syncCORS(ctx, desired); err != nil {
 			return nil, err
@@ -149,6 +164,12 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		return err
 	}
 	ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
+
+	getACLResponse, err := rm.sdkapi.GetBucketAclWithContext(ctx, rm.newGetBucketACLPayload(r))
+	if err != nil {
+		return err
+	}
+	rm.setResourceACL(ko, getACLResponse)
 
 	getCORSResponse, err := rm.sdkapi.GetBucketCorsWithContext(ctx, rm.newGetBucketCORSPayload(r))
 	if err != nil {
@@ -218,6 +239,19 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	return nil
 }
 
+// matchPossibleCannedACL attempts to find a canned ACL string in a joined
+// list of possibilities. If any of the possibilities matches, it will be
+// returned, otherwise nil.
+func matchPossibleCannedACL(search string, joinedPossibilities string) *string {
+	splitPossibilities := strings.Split(joinedPossibilities, CannedACLJoinDelimiter)
+	for _, possible := range splitPossibilities {
+		if search == possible {
+			return &possible
+		}
+	}
+	return nil
+}
+
 // customPreCompare ensures that default values of nil-able types are
 // appropriately replaced with empty maps or structs depending on the default
 // output of the SDK.
@@ -228,6 +262,19 @@ func customPreCompare(
 	if a.ko.Spec.Accelerate == nil && b.ko.Spec.Accelerate != nil {
 		a.ko.Spec.Accelerate = &svcapitypes.AccelerateConfiguration{
 			Status: &DefaultAccelerationConfigurationStatus,
+		}
+	}
+	if a.ko.Spec.ACL != nil {
+		// Don't diff grant headers if a canned ACL has been used
+		b.ko.Spec.GrantFullControl = nil
+		b.ko.Spec.GrantRead = nil
+		b.ko.Spec.GrantReadACP = nil
+		b.ko.Spec.GrantWrite = nil
+		b.ko.Spec.GrantWriteACP = nil
+
+		// Find the canned ACL from the joined possibility string
+		if b.ko.Spec.ACL != nil {
+			b.ko.Spec.ACL = matchPossibleCannedACL(*a.ko.Spec.ACL, *b.ko.Spec.ACL)
 		}
 	}
 	if a.ko.Spec.CORS == nil && b.ko.Spec.CORS != nil {
@@ -253,6 +300,25 @@ func customPreCompare(
 	if a.ko.Spec.Website == nil && b.ko.Spec.Website != nil {
 		a.ko.Spec.Website = &svcapitypes.WebsiteConfiguration{}
 	}
+}
+
+// setResourceACL sets the `Grant*` spec fields given the output of a
+// `GetBucketAcl` operation.
+func (rm *resourceManager) setResourceACL(
+	ko *svcapitypes.Bucket,
+	resp *svcsdk.GetBucketAclOutput,
+) {
+	grants := GetHeadersFromGrants(resp)
+	ko.Spec.GrantFullControl = &grants.FullControl
+	ko.Spec.GrantRead = &grants.Read
+	ko.Spec.GrantReadACP = &grants.ReadACP
+	ko.Spec.GrantWrite = &grants.Write
+	ko.Spec.GrantWriteACP = &grants.WriteACP
+
+	// Join possible ACLs into a single string, delimited by bar
+	cannedACLs := GetPossibleCannedACLsFromGrants(resp)
+	joinedACLs := strings.Join(cannedACLs, CannedACLJoinDelimiter)
+	ko.Spec.ACL = &joinedACLs
 }
 
 func (rm *resourceManager) newGetBucketAcceleratePayload(
@@ -292,6 +358,60 @@ func (rm *resourceManager) syncAccelerate(
 
 	_, err = rm.sdkapi.PutBucketAccelerateConfigurationWithContext(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketAccelerate", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) newGetBucketACLPayload(
+	r *resource,
+) *svcsdk.GetBucketAclInput {
+	res := &svcsdk.GetBucketAclInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketACLPayload(
+	r *resource,
+) *svcsdk.PutBucketAclInput {
+	res := &svcsdk.PutBucketAclInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	if r.ko.Spec.ACL != nil {
+		res.SetACL(*r.ko.Spec.ACL)
+	}
+
+	if r.ko.Spec.GrantFullControl != nil {
+		res.SetGrantFullControl(*r.ko.Spec.GrantFullControl)
+	}
+	if r.ko.Spec.GrantRead != nil {
+		res.SetGrantRead(*r.ko.Spec.GrantRead)
+	}
+	if r.ko.Spec.GrantReadACP != nil {
+		res.SetGrantReadACP(*r.ko.Spec.GrantReadACP)
+	}
+	if r.ko.Spec.GrantWrite != nil {
+		res.SetGrantWrite(*r.ko.Spec.GrantWrite)
+	}
+	if r.ko.Spec.GrantWriteACP != nil {
+		res.SetGrantWriteACP(*r.ko.Spec.GrantWriteACP)
+	}
+
+	return res
+}
+
+func (rm *resourceManager) syncACL(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncACL")
+	defer exit(err)
+	input := rm.newPutBucketACLPayload(r)
+
+	_, err = rm.sdkapi.PutBucketAclWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketAcl", err)
 	if err != nil {
 		return err
 	}
