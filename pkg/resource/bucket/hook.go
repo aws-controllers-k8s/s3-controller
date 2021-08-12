@@ -28,6 +28,7 @@ var (
 	DefaultAccelerationConfigurationStatus = svcsdk.BucketAccelerateStatusSuspended
 	DefaultRequestPayer                    = svcsdk.PayerBucketOwner
 	DefaultVersioningStatus                = svcsdk.BucketVersioningStatusSuspended
+	DefaultPolicy                          = ""
 )
 
 var (
@@ -60,6 +61,11 @@ func (rm *resourceManager) createPutFields(
 	}
 	if r.ko.Spec.OwnershipControls != nil {
 		if err := rm.syncOwnershipControls(ctx, r); err != nil {
+			return err
+		}
+	}
+	if r.ko.Spec.Policy != nil {
+		if err := rm.syncPolicy(ctx, r); err != nil {
 			return err
 		}
 	}
@@ -136,6 +142,11 @@ func (rm *resourceManager) customUpdateBucket(
 	}
 	if delta.DifferentAt("Spec.OwnershipControls") {
 		if err := rm.syncOwnershipControls(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.Policy") {
+		if err := rm.syncPolicy(ctx, desired); err != nil {
 			return nil, err
 		}
 	}
@@ -221,6 +232,16 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		}
 	}
 	ko.Spec.OwnershipControls = rm.setResourceOwnershipControls(r, getOwnershipControlsResponse)
+
+	getPolicyResponse, err := rm.sdkapi.GetBucketPolicyWithContext(ctx, rm.newGetBucketPolicyPayload(r))
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchBucketPolicy" {
+			getPolicyResponse = &svcsdk.GetBucketPolicyOutput{}
+		} else {
+			return err
+		}
+	}
+	ko.Spec.Policy = getPolicyResponse.Policy
 
 	getRequestPaymentResponse, err := rm.sdkapi.GetBucketRequestPaymentWithContext(ctx, rm.newGetBucketRequestPaymentPayload(r))
 	if err != nil {
@@ -590,6 +611,46 @@ func (rm *resourceManager) syncOwnershipControls(
 
 	_, err = rm.sdkapi.PutBucketOwnershipControlsWithContext(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketOwnershipControls", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) newGetBucketPolicyPayload(
+	r *resource,
+) *svcsdk.GetBucketPolicyInput {
+	res := &svcsdk.GetBucketPolicyInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketPolicyPayload(
+	r *resource,
+) *svcsdk.PutBucketPolicyInput {
+	res := &svcsdk.PutBucketPolicyInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetConfirmRemoveSelfBucketAccess(false)
+	if r.ko.Spec.Policy != nil {
+		res.SetPolicy(*r.ko.Spec.Policy)
+	} else {
+		res.SetPolicy(DefaultPolicy)
+	}
+	return res
+}
+
+func (rm *resourceManager) syncPolicy(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncPolicy")
+	defer exit(err)
+	input := rm.newPutBucketPolicyPayload(r)
+
+	_, err = rm.sdkapi.PutBucketPolicyWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketPolicy", err)
 	if err != nil {
 		return err
 	}
