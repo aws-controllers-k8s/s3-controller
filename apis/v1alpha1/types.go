@@ -420,6 +420,13 @@ type TargetGrant struct {
 	Permission *string  `json:"permission,omitempty"`
 }
 
+// Describes the versioning state of an Amazon S3 bucket. For more information,
+// see PUT Bucket versioning (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTVersioningStatus.html)
+// in the Amazon Simple Storage Service API Reference.
+type VersioningConfiguration struct {
+	Status *string `json:"status,omitempty"`
+}
+
 // Specifies website configuration parameters for an Amazon S3 bucket.
 type WebsiteConfiguration struct {
 	// The error information.

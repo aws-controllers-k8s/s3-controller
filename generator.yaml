@@ -5,6 +5,9 @@ ignore:
   shape_names:
     # These shapes are structs with no members...
     - SSES3
+  field_paths:
+    # We cannot support MFA, so if it is set we cannot unset
+    - "VersioningConfiguration.MFADelete"
 operations:
   ListBuckets:
     primary_identifier_field_name: Name
@@ -71,10 +74,10 @@ resources:
         from:
           operation: PutBucketTagging
           path: Tagging
-      # Versioning:
-      #   from:
-      #     operation: PutBucketVersioning
-      #     path: VersioningConfiguration # Double check about MFA
+      Versioning:
+        from:
+          operation: PutBucketVersioning
+          path: VersioningConfiguration
       Website:
         from:
           operation: PutBucketWebsite
