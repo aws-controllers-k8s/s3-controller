@@ -25,8 +25,9 @@ import (
 )
 
 var (
-	DefaultAccelerationConfigurationStatus = "Suspended"
-	DefaultRequestPayer                    = "BucketOwner"
+	DefaultAccelerationConfigurationStatus = svcsdk.BucketAccelerateStatusSuspended
+	DefaultRequestPayer                    = svcsdk.PayerBucketOwner
+	DefaultVersioningStatus                = svcsdk.BucketVersioningStatusSuspended
 )
 
 var (
@@ -69,6 +70,11 @@ func (rm *resourceManager) createPutFields(
 	}
 	if r.ko.Spec.Tagging != nil {
 		if err := rm.syncTagging(ctx, r); err != nil {
+			return err
+		}
+	}
+	if r.ko.Spec.Versioning != nil {
+		if err := rm.syncVersioning(ctx, r); err != nil {
 			return err
 		}
 	}
@@ -140,6 +146,11 @@ func (rm *resourceManager) customUpdateBucket(
 	}
 	if delta.DifferentAt("Spec.Tagging") {
 		if err := rm.syncTagging(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.Versioning") {
+		if err := rm.syncVersioning(ctx, desired); err != nil {
 			return nil, err
 		}
 	}
@@ -227,6 +238,12 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.Tagging = rm.setResourceTagging(r, getTaggingResponse)
 
+	getVersioningResponse, err := rm.sdkapi.GetBucketVersioningWithContext(ctx, rm.newGetBucketVersioningPayload(r))
+	if err != nil {
+		return err
+	}
+	ko.Spec.Versioning = rm.setResourceVersioning(r, getVersioningResponse)
+
 	getWebsiteResponse, err := rm.sdkapi.GetBucketWebsiteWithContext(ctx, rm.newGetBucketWebsitePayload(r))
 	if err != nil {
 		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchWebsiteConfiguration" {
@@ -296,6 +313,11 @@ func customPreCompare(
 	}
 	if a.ko.Spec.Tagging == nil && b.ko.Spec.Tagging != nil {
 		a.ko.Spec.Tagging = &svcapitypes.Tagging{}
+	}
+	if a.ko.Spec.Versioning == nil && b.ko.Spec.Versioning != nil {
+		a.ko.Spec.Versioning = &svcapitypes.VersioningConfiguration{
+			Status: &DefaultVersioningStatus,
+		}
 	}
 	if a.ko.Spec.Website == nil && b.ko.Spec.Website != nil {
 		a.ko.Spec.Website = &svcapitypes.WebsiteConfiguration{}
@@ -651,6 +673,50 @@ func (rm *resourceManager) syncTagging(
 
 	_, err = rm.sdkapi.PutBucketTaggingWithContext(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketTagging", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) newGetBucketVersioningPayload(
+	r *resource,
+) *svcsdk.GetBucketVersioningInput {
+	res := &svcsdk.GetBucketVersioningInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketVersioningPayload(
+	r *resource,
+) *svcsdk.PutBucketVersioningInput {
+	res := &svcsdk.PutBucketVersioningInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	if r.ko.Spec.Versioning != nil {
+		res.SetVersioningConfiguration(rm.newVersioningConfiguration(r))
+	} else {
+		res.SetVersioningConfiguration(&svcsdk.VersioningConfiguration{})
+	}
+
+	if res.VersioningConfiguration.Status == nil {
+		res.VersioningConfiguration.SetStatus(DefaultVersioningStatus)
+	}
+
+	return res
+}
+
+func (rm *resourceManager) syncVersioning(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncVersioning")
+	defer exit(err)
+	input := rm.newPutBucketVersioningPayload(r)
+
+	_, err = rm.sdkapi.PutBucketVersioningWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketVersioning", err)
 	if err != nil {
 		return err
 	}

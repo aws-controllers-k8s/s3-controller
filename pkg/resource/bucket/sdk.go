@@ -762,6 +762,34 @@ func (rm *resourceManager) setResourceTagging(
 	return res
 }
 
+// newVersioningConfiguration returns a VersioningConfiguration object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newVersioningConfiguration(
+	r *resource,
+) *svcsdk.VersioningConfiguration {
+	res := &svcsdk.VersioningConfiguration{}
+
+	if r.ko.Spec.Versioning.Status != nil {
+		res.SetStatus(*r.ko.Spec.Versioning.Status)
+	}
+
+	return res
+}
+
+// setResourceVersioning sets the `Versioning` spec field
+// given the output of a `GetBucketVersioning` operation.
+func (rm *resourceManager) setResourceVersioning(
+	r *resource,
+	resp *svcsdk.GetBucketVersioningOutput,
+) *svcapitypes.VersioningConfiguration {
+	res := &svcapitypes.VersioningConfiguration{}
+	if resp.Status != nil {
+		res.Status = resp.Status
+	}
+
+	return res
+}
+
 // newWebsiteConfiguration returns a WebsiteConfiguration object
 // with each the field set by the resource's corresponding spec field.
 func (rm *resourceManager) newWebsiteConfiguration(

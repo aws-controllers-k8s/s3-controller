@@ -197,6 +197,19 @@ class TestBucket:
 
         delete_bucket(s3_client, ref, resource_name)
 
+    def test_versioning(self, s3_client, s3_resource):
+        (ref, resource_name, resource_data) = create_bucket(s3_client, "bucket_versioning")
+
+        bucket = get_bucket(s3_resource, resource_name)
+        versioning = bucket.Versioning()
+
+        desired = resource_data["spec"]["versioning"]["status"]
+        latest = versioning.status
+
+        assert desired == latest
+
+        delete_bucket(s3_client, ref, resource_name)
+
     def test_website(self, s3_client, s3_resource):
         (ref, resource_name, resource_data) = create_bucket(s3_client, "bucket_website")
 

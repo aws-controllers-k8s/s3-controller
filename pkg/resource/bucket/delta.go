@@ -165,6 +165,17 @@ func newResourceDelta(
 	} else if a.ko.Spec.Tagging != nil && b.ko.Spec.Tagging != nil {
 
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Versioning, b.ko.Spec.Versioning) {
+		delta.Add("Spec.Versioning", a.ko.Spec.Versioning, b.ko.Spec.Versioning)
+	} else if a.ko.Spec.Versioning != nil && b.ko.Spec.Versioning != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.Versioning.Status, b.ko.Spec.Versioning.Status) {
+			delta.Add("Spec.Versioning.Status", a.ko.Spec.Versioning.Status, b.ko.Spec.Versioning.Status)
+		} else if a.ko.Spec.Versioning.Status != nil && b.ko.Spec.Versioning.Status != nil {
+			if *a.ko.Spec.Versioning.Status != *b.ko.Spec.Versioning.Status {
+				delta.Add("Spec.Versioning.Status", a.ko.Spec.Versioning.Status, b.ko.Spec.Versioning.Status)
+			}
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Website, b.ko.Spec.Website) {
 		delta.Add("Spec.Website", a.ko.Spec.Website, b.ko.Spec.Website)
 	} else if a.ko.Spec.Website != nil && b.ko.Spec.Website != nil {

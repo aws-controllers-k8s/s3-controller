@@ -63,6 +63,8 @@ type BucketSpec struct {
 	RequestPayment *RequestPaymentConfiguration `json:"requestPayment,omitempty"`
 	// Container for the TagSet and Tag elements.
 	Tagging *Tagging `json:"tagging,omitempty"`
+	// Container for setting the versioning state.
+	Versioning *VersioningConfiguration `json:"versioning,omitempty"`
 	// Container for the request.
 	Website *WebsiteConfiguration `json:"website,omitempty"`
 }
