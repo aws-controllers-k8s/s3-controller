@@ -640,12 +640,20 @@ func (rm *resourceManager) newPutBucketPolicyPayload(
 	return res
 }
 
-func (rm *resourceManager) syncPolicy(
+func (rm *resourceManager) newDeleteBucketPolicyPayload(
+	r *resource,
+) *svcsdk.DeleteBucketPolicyInput {
+	res := &svcsdk.DeleteBucketPolicyInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) putPolicy(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncPolicy")
+	exit := rlog.Trace("rm.putPolicy")
 	defer exit(err)
 	input := rm.newPutBucketPolicyPayload(r)
 
@@ -656,6 +664,34 @@ func (rm *resourceManager) syncPolicy(
 	}
 
 	return nil
+}
+
+func (rm *resourceManager) deletePolicy(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deletePolicy")
+	defer exit(err)
+	input := rm.newDeleteBucketPolicyPayload(r)
+
+	_, err = rm.sdkapi.DeleteBucketPolicyWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketPolicy", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) syncPolicy(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	if r.ko.Spec.Policy == nil {
+		return rm.deletePolicy(ctx, r)
+	}
+	return rm.putPolicy(ctx, r)
 }
 
 func (rm *resourceManager) newGetBucketRequestPaymentPayload(
