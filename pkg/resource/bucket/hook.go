@@ -28,6 +28,7 @@ var (
 	DefaultAccelerationConfigurationStatus = svcsdk.BucketAccelerateStatusSuspended
 	DefaultRequestPayer                    = svcsdk.PayerBucketOwner
 	DefaultVersioningStatus                = svcsdk.BucketVersioningStatusSuspended
+	DefaultACL                             = svcsdk.BucketCannedACLPrivate
 	DefaultPolicy                          = ""
 )
 
@@ -314,7 +315,42 @@ func customPreCompare(
 		if b.ko.Spec.ACL != nil {
 			b.ko.Spec.ACL = matchPossibleCannedACL(*a.ko.Spec.ACL, *b.ko.Spec.ACL)
 		}
+	} else {
+		// If we are sure the grants weren't set from the header strings
+		if a.ko.Spec.GrantFullControl == nil &&
+			a.ko.Spec.GrantRead == nil &&
+			a.ko.Spec.GrantReadACP == nil &&
+			a.ko.Spec.GrantWrite == nil &&
+			a.ko.Spec.GrantWriteACP == nil {
+			b.ko.Spec.GrantFullControl = nil
+			b.ko.Spec.GrantRead = nil
+			b.ko.Spec.GrantReadACP = nil
+			b.ko.Spec.GrantWrite = nil
+			b.ko.Spec.GrantWriteACP = nil
+		}
+
+		emptyGrant := ""
+		if a.ko.Spec.GrantFullControl == nil && b.ko.Spec.GrantFullControl != nil {
+			a.ko.Spec.GrantFullControl = &emptyGrant
+			// TODO(RedbackThomson): Remove the following line. GrantFullControl
+			// has a server-side default of id="<owner ID>". This field needs to
+			// be marked as such before we can diff it.
+			b.ko.Spec.GrantFullControl = &emptyGrant
+		}
+		if a.ko.Spec.GrantRead == nil && b.ko.Spec.GrantRead != nil {
+			a.ko.Spec.GrantRead = &emptyGrant
+		}
+		if a.ko.Spec.GrantReadACP == nil && b.ko.Spec.GrantReadACP != nil {
+			a.ko.Spec.GrantReadACP = &emptyGrant
+		}
+		if a.ko.Spec.GrantWrite == nil && b.ko.Spec.GrantWrite != nil {
+			a.ko.Spec.GrantWrite = &emptyGrant
+		}
+		if a.ko.Spec.GrantWriteACP == nil && b.ko.Spec.GrantWriteACP != nil {
+			a.ko.Spec.GrantWriteACP = &emptyGrant
+		}
 	}
+
 	if a.ko.Spec.CORS == nil && b.ko.Spec.CORS != nil {
 		a.ko.Spec.CORS = &svcapitypes.CORSConfiguration{}
 	}
@@ -439,6 +475,16 @@ func (rm *resourceManager) newPutBucketACLPayload(
 	}
 	if r.ko.Spec.GrantWriteACP != nil {
 		res.SetGrantWriteACP(*r.ko.Spec.GrantWriteACP)
+	}
+
+	// Check that there is at least some ACL on the bucket
+	if res.ACL == nil &&
+		res.GrantFullControl == nil &&
+		res.GrantRead == nil &&
+		res.GrantReadACP == nil &&
+		res.GrantWrite == nil &&
+		res.GrantWriteACP == nil {
+		res.SetACL(DefaultACL)
 	}
 
 	return res
