@@ -1,0 +1,19 @@
+apiVersion: s3.services.k8s.aws/v1alpha1
+kind: Bucket
+metadata:
+  name: $BUCKET_NAME
+spec:
+  name: $BUCKET_NAME
+  policy: >
+    {
+      "Version": "2012-10-17",
+      "Id": "BlockAllObjects",
+      "Statement": [
+        {
+          "Effect": "Deny",
+          "Principal": "*",
+          "Action": "s3:PutObject",
+          "Resource": "arn:aws:s3:::$BUCKET_NAME/*"
+        }
+      ]
+    }

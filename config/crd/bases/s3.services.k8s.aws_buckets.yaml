@@ -194,6 +194,9 @@ spec:
                       type: object
                     type: array
                 type: object
+              policy:
+                description: The bucket policy as a JSON document.
+                type: string
               requestPayment:
                 description: Container for Payer.
                 properties:

@@ -149,6 +149,13 @@ func newResourceDelta(
 	} else if a.ko.Spec.OwnershipControls != nil && b.ko.Spec.OwnershipControls != nil {
 
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Policy, b.ko.Spec.Policy) {
+		delta.Add("Spec.Policy", a.ko.Spec.Policy, b.ko.Spec.Policy)
+	} else if a.ko.Spec.Policy != nil && b.ko.Spec.Policy != nil {
+		if *a.ko.Spec.Policy != *b.ko.Spec.Policy {
+			delta.Add("Spec.Policy", a.ko.Spec.Policy, b.ko.Spec.Policy)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.RequestPayment, b.ko.Spec.RequestPayment) {
 		delta.Add("Spec.RequestPayment", a.ko.Spec.RequestPayment, b.ko.Spec.RequestPayment)
 	} else if a.ko.Spec.RequestPayment != nil && b.ko.Spec.RequestPayment != nil {

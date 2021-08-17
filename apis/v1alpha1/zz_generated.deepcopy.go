@@ -287,6 +287,11 @@ func (in *BucketSpec) DeepCopyInto(out *BucketSpec) {
 		*out = new(OwnershipControls)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Policy != nil {
+		in, out := &in.Policy, &out.Policy
+		*out = new(string)
+		**out = **in
+	}
 	if in.RequestPayment != nil {
 		in, out := &in.RequestPayment, &out.RequestPayment
 		*out = new(RequestPaymentConfiguration)

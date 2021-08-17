@@ -41,10 +41,16 @@ spec:
         - "$(AWS_ACCOUNT_ID)"
         - --aws-region
         - "$(AWS_REGION)"
+        - --aws-endpoint-url
+        - "$(AWS_ENDPOINT_URL)"
         - --enable-development-logging
         - "$(ACK_ENABLE_DEVELOPMENT_LOGGING)"
         - --log-level
         - "$(ACK_LOG_LEVEL)"
+        - --resource-tags
+        - "$(ACK_RESOURCE_TAGS)"
+        - --watch-namespace
+        - "$(ACK_WATCH_NAMESPACE)"
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         name: controller
         ports:
@@ -56,6 +62,18 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: AWS_ACCOUNT_ID
+          value: {{ .Values.aws.account_id | quote }}
         - name: AWS_REGION
           value: {{ .Values.aws.region }}
+        - name: AWS_ENDPOINT_URL
+          value: {{ .Values.aws.endpoint_url | quote }}
+        - name: ACK_WATCH_NAMESPACE
+          value: {{ include "watch-namespace" . }}   
+        - name: ACK_ENABLE_DEVELOPMENT_LOGGING
+          value: {{ .Values.log.enable_development_logging | quote }}
+        - name: ACK_LOG_LEVEL
+          value: {{ .Values.log.level | quote }}
+        - name: ACK_RESOURCE_TAGS
+          value: {{ join "," .Values.resourceTags | quote }}
       terminationGracePeriodSeconds: 10

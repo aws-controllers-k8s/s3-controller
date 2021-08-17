@@ -59,6 +59,8 @@ type BucketSpec struct {
 	// The OwnershipControls (BucketOwnerPreferred or ObjectWriter) that you want
 	// to apply to this Amazon S3 bucket.
 	OwnershipControls *OwnershipControls `json:"ownershipControls,omitempty"`
+	// The bucket policy as a JSON document.
+	Policy *string `json:"policy,omitempty"`
 	// Container for Payer.
 	RequestPayment *RequestPaymentConfiguration `json:"requestPayment,omitempty"`
 	// Container for the TagSet and Tag elements.
