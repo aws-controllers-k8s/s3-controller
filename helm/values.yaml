@@ -3,8 +3,8 @@
 # Declare variables to be passed into your templates.
 
 image:
-  repository: public.ecr.aws/aws-controllers-k8s/controller
-  tag: s3-v0.0.2
+  repository: public.ecr.aws/aws-controllers-k8s/s3-controller
+  tag: v0.0.2
   pullPolicy: IfNotPresent
   pullSecrets: []
 
@@ -15,6 +15,15 @@ deployment:
   annotations: {}
   labels: {}
   containerPort: 8080
+
+metrics:
+  service:
+    # Set to true to automatically create a Kubernetes Service resource for the
+    # Prometheus metrics server endpoint in controller
+    create: false
+    # Which Type to use for the Kubernetes Service?
+    # See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+    type: "ClusterIP"
 
 resources:
   requests:
@@ -27,6 +36,23 @@ resources:
 aws:
   # If specified, use the AWS region for AWS API calls
   region: ""
+  account_id: ""
+  endpoint_url: ""
+
+# log level for the controller
+log:
+  enable_development_logging: false
+  level: info
+
+# Set to "namespace" to install the controller in a namespaced scope, will only watch for object creation 
+# in the namespace. By default installScope is cluster wide.
+installScope: cluster
+
+resourceTags:
+  # Configures the ACK service controller to always set key/value pairs tags on resources that it manages.
+  - services.k8s.aws/managed=true
+  - services.k8s.aws/created=%UTCNOW%
+  - services.k8s.aws/namespace=%KUBERNETES_NAMESPACE%
 
 serviceAccount:
   # Specifies whether a service account should be created

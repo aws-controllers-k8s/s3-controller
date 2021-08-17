@@ -58,10 +58,10 @@ resources:
         from:
           operation: PutBucketOwnershipControls
           path: OwnershipControls
-      # Policy:
-      #   from:
-      #     operation: PutBucketPolicy
-      #     path: Policy # Double check about ConfirmRemoveSelfBucketAccess
+      Policy:
+        from:
+          operation: PutBucketPolicy
+          path: Policy # Double check about ConfirmRemoveSelfBucketAccess
       # Replication:
       #   from:
       #     operation: PutBucketReplication

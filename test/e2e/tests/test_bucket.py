@@ -18,6 +18,7 @@ import boto3
 import pytest
 import time
 import logging
+import re
 
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
@@ -166,6 +167,20 @@ class TestBucket:
         latest_rule = ownership_controls["OwnershipControls"]["Rules"][0]
 
         assert desired_rule["objectOwnership"] == latest_rule["ObjectOwnership"]
+
+        delete_bucket(s3_client, ref, resource_name)
+
+    def test_policy(self, s3_client, s3_resource):
+        (ref, resource_name, resource_data) = create_bucket(s3_client, "bucket_policy")
+
+        bucket = get_bucket(s3_resource, resource_name)
+        policy = bucket.Policy()
+
+        # Strip any whitespace from between the two
+        desired = re.sub(r"\s+", "", resource_data["spec"]["policy"], flags=re.UNICODE)
+        latest = re.sub(r"\s+", "", policy.policy, flags=re.UNICODE)
+
+        assert desired == latest
 
         delete_bucket(s3_client, ref, resource_name)
 

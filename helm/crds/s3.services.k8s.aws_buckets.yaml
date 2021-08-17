@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
   name: buckets.s3.services.k8s.aws
 spec:
@@ -34,29 +34,258 @@ spec:
           metadata:
             type: object
           spec:
-            description: BucketSpec defines the desired state of Bucket
+            description: "BucketSpec defines the desired state of Bucket. \n In terms
+              of implementation, a Bucket is a resource. An Amazon S3 bucket name
+              is globally unique, and the namespace is shared by all AWS accounts."
             properties:
+              accelerate:
+                description: Container for setting the transfer acceleration state.
+                properties:
+                  status:
+                    type: string
+                type: object
               acl:
+                description: The canned ACL to apply to the bucket.
                 type: string
+              cors:
+                description: Describes the cross-origin access configuration for objects
+                  in an Amazon S3 bucket. For more information, see Enabling Cross-Origin
+                  Resource Sharing (https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html)
+                  in the Amazon Simple Storage Service Developer Guide.
+                properties:
+                  corsRules:
+                    items:
+                      description: Specifies a cross-origin access rule for an Amazon
+                        S3 bucket.
+                      properties:
+                        allowedHeaders:
+                          items:
+                            type: string
+                          type: array
+                        allowedMethods:
+                          items:
+                            type: string
+                          type: array
+                        allowedOrigins:
+                          items:
+                            type: string
+                          type: array
+                        exposeHeaders:
+                          items:
+                            type: string
+                          type: array
+                        maxAgeSeconds:
+                          format: int64
+                          type: integer
+                      type: object
+                    type: array
+                type: object
               createBucketConfiguration:
+                description: The configuration information for the bucket.
                 properties:
                   locationConstraint:
                     type: string
                 type: object
+              encryption:
+                description: Specifies the default server-side-encryption configuration.
+                properties:
+                  rules:
+                    items:
+                      description: Specifies the default server-side encryption configuration.
+                      properties:
+                        applyServerSideEncryptionByDefault:
+                          description: Describes the default server-side encryption
+                            to apply to new objects in the bucket. If a PUT Object
+                            request doesn't specify any server-side encryption, this
+                            default encryption will be applied. For more information,
+                            see PUT Bucket encryption (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTencryption.html)
+                            in the Amazon Simple Storage Service API Reference.
+                          properties:
+                            kmsMasterKeyID:
+                              type: string
+                            sseAlgorithm:
+                              type: string
+                          type: object
+                        bucketKeyEnabled:
+                          type: boolean
+                      type: object
+                    type: array
+                type: object
               grantFullControl:
+                description: Allows grantee the read, write, read ACP, and write ACP
+                  permissions on the bucket.
                 type: string
               grantRead:
+                description: Allows grantee to list the objects in the bucket.
                 type: string
               grantReadACP:
+                description: Allows grantee to read the bucket ACL.
                 type: string
               grantWrite:
+                description: Allows grantee to create, overwrite, and delete any object
+                  in the bucket.
                 type: string
               grantWriteACP:
+                description: Allows grantee to write the ACL for the applicable bucket.
                 type: string
+              logging:
+                description: Container for logging status information.
+                properties:
+                  loggingEnabled:
+                    description: Describes where logs are stored and the prefix that
+                      Amazon S3 assigns to all log object keys for a bucket. For more
+                      information, see PUT Bucket logging (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTlogging.html)
+                      in the Amazon Simple Storage Service API Reference.
+                    properties:
+                      targetBucket:
+                        type: string
+                      targetGrants:
+                        items:
+                          description: Container for granting information.
+                          properties:
+                            grantee:
+                              description: Container for the person being granted
+                                permissions.
+                              properties:
+                                displayName:
+                                  type: string
+                                emailAddress:
+                                  type: string
+                                id:
+                                  type: string
+                                type_:
+                                  type: string
+                                uRI:
+                                  type: string
+                              type: object
+                            permission:
+                              type: string
+                          type: object
+                        type: array
+                      targetPrefix:
+                        type: string
+                    type: object
+                type: object
               name:
+                description: The name of the bucket to create.
                 type: string
               objectLockEnabledForBucket:
+                description: Specifies whether you want S3 Object Lock to be enabled
+                  for the new bucket.
                 type: boolean
+              ownershipControls:
+                description: The OwnershipControls (BucketOwnerPreferred or ObjectWriter)
+                  that you want to apply to this Amazon S3 bucket.
+                properties:
+                  rules:
+                    items:
+                      description: The container element for an ownership control
+                        rule.
+                      properties:
+                        objectOwnership:
+                          description: "The container element for object ownership
+                            for a bucket's ownership controls. \n BucketOwnerPreferred
+                            - Objects uploaded to the bucket change ownership to the
+                            bucket owner if the objects are uploaded with the bucket-owner-full-control
+                            canned ACL. \n ObjectWriter - The uploading account will
+                            own the object if the object is uploaded with the bucket-owner-full-control
+                            canned ACL."
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              policy:
+                description: The bucket policy as a JSON document.
+                type: string
+              requestPayment:
+                description: Container for Payer.
+                properties:
+                  payer:
+                    type: string
+                type: object
+              tagging:
+                description: Container for the TagSet and Tag elements.
+                properties:
+                  tagSet:
+                    items:
+                      description: A container of a key value name pair.
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              versioning:
+                description: Container for setting the versioning state.
+                properties:
+                  status:
+                    type: string
+                type: object
+              website:
+                description: Container for the request.
+                properties:
+                  errorDocument:
+                    description: The error information.
+                    properties:
+                      key:
+                        type: string
+                    type: object
+                  indexDocument:
+                    description: Container for the Suffix element.
+                    properties:
+                      suffix:
+                        type: string
+                    type: object
+                  redirectAllRequestsTo:
+                    description: Specifies the redirect behavior of all requests to
+                      a website endpoint of an Amazon S3 bucket.
+                    properties:
+                      hostName:
+                        type: string
+                      protocol:
+                        type: string
+                    type: object
+                  routingRules:
+                    items:
+                      description: Specifies the redirect behavior and when a redirect
+                        is applied. For more information about routing rules, see
+                        Configuring advanced conditional redirects (https://docs.aws.amazon.com/AmazonS3/latest/dev/how-to-page-redirect.html#advanced-conditional-redirects)
+                        in the Amazon Simple Storage Service Developer Guide.
+                      properties:
+                        condition:
+                          description: A container for describing a condition that
+                            must be met for the specified redirect to apply. For example,
+                            1. If request is for pages in the /docs folder, redirect
+                            to the /documents folder. 2. If request results in HTTP
+                            error 4xx, redirect request to another host where you
+                            might process the error.
+                          properties:
+                            httpErrorCodeReturnedEquals:
+                              type: string
+                            keyPrefixEquals:
+                              type: string
+                          type: object
+                        redirect:
+                          description: Specifies how requests are redirected. In the
+                            event of an error, you can specify a different error code
+                            to return.
+                          properties:
+                            hostName:
+                              type: string
+                            httpRedirectCode:
+                              type: string
+                            protocol:
+                              type: string
+                            replaceKeyPrefixWith:
+                              type: string
+                            replaceKeyWith:
+                              type: string
+                          type: object
+                      type: object
+                    type: array
+                type: object
             required:
             - name
             type: object
@@ -120,10 +349,10 @@ spec:
                   type: object
                 type: array
               location:
+                description: Specifies the Region where the bucket will be created.
+                  If you are creating a bucket on the US East (N. Virginia) Region
+                  (us-east-1), you do not need to specify the location.
                 type: string
-            required:
-            - ackResourceMetadata
-            - conditions
             type: object
         type: object
     served: true
