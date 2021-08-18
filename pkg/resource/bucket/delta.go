@@ -16,7 +16,14 @@
 package bucket
 
 import (
+	"reflect"
+
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+)
+
+// Hack to avoid import errors during build...
+var (
+	_ = &reflect.Method{}
 )
 
 // newResourceDelta returns a new `ackcompare.Delta` used to compare two
@@ -54,7 +61,9 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.CORS, b.ko.Spec.CORS) {
 		delta.Add("Spec.CORS", a.ko.Spec.CORS, b.ko.Spec.CORS)
 	} else if a.ko.Spec.CORS != nil && b.ko.Spec.CORS != nil {
-
+		if !reflect.DeepEqual(a.ko.Spec.CORS.CORSRules, b.ko.Spec.CORS.CORSRules) {
+			delta.Add("Spec.CORS.CORSRules", a.ko.Spec.CORS.CORSRules, b.ko.Spec.CORS.CORSRules)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration) {
 		delta.Add("Spec.CreateBucketConfiguration", a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration)
@@ -70,7 +79,9 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.Encryption, b.ko.Spec.Encryption) {
 		delta.Add("Spec.Encryption", a.ko.Spec.Encryption, b.ko.Spec.Encryption)
 	} else if a.ko.Spec.Encryption != nil && b.ko.Spec.Encryption != nil {
-
+		if !reflect.DeepEqual(a.ko.Spec.Encryption.Rules, b.ko.Spec.Encryption.Rules) {
+			delta.Add("Spec.Encryption.Rules", a.ko.Spec.Encryption.Rules, b.ko.Spec.Encryption.Rules)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl) {
 		delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
@@ -120,7 +131,9 @@ func newResourceDelta(
 					delta.Add("Spec.Logging.LoggingEnabled.TargetBucket", a.ko.Spec.Logging.LoggingEnabled.TargetBucket, b.ko.Spec.Logging.LoggingEnabled.TargetBucket)
 				}
 			}
-
+			if !reflect.DeepEqual(a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
+				delta.Add("Spec.Logging.LoggingEnabled.TargetGrants", a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants)
+			}
 			if ackcompare.HasNilDifference(a.ko.Spec.Logging.LoggingEnabled.TargetPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetPrefix) {
 				delta.Add("Spec.Logging.LoggingEnabled.TargetPrefix", a.ko.Spec.Logging.LoggingEnabled.TargetPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetPrefix)
 			} else if a.ko.Spec.Logging.LoggingEnabled.TargetPrefix != nil && b.ko.Spec.Logging.LoggingEnabled.TargetPrefix != nil {
@@ -147,7 +160,9 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.OwnershipControls, b.ko.Spec.OwnershipControls) {
 		delta.Add("Spec.OwnershipControls", a.ko.Spec.OwnershipControls, b.ko.Spec.OwnershipControls)
 	} else if a.ko.Spec.OwnershipControls != nil && b.ko.Spec.OwnershipControls != nil {
-
+		if !reflect.DeepEqual(a.ko.Spec.OwnershipControls.Rules, b.ko.Spec.OwnershipControls.Rules) {
+			delta.Add("Spec.OwnershipControls.Rules", a.ko.Spec.OwnershipControls.Rules, b.ko.Spec.OwnershipControls.Rules)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Policy, b.ko.Spec.Policy) {
 		delta.Add("Spec.Policy", a.ko.Spec.Policy, b.ko.Spec.Policy)
@@ -170,7 +185,9 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.Tagging, b.ko.Spec.Tagging) {
 		delta.Add("Spec.Tagging", a.ko.Spec.Tagging, b.ko.Spec.Tagging)
 	} else if a.ko.Spec.Tagging != nil && b.ko.Spec.Tagging != nil {
-
+		if !reflect.DeepEqual(a.ko.Spec.Tagging.TagSet, b.ko.Spec.Tagging.TagSet) {
+			delta.Add("Spec.Tagging.TagSet", a.ko.Spec.Tagging.TagSet, b.ko.Spec.Tagging.TagSet)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Versioning, b.ko.Spec.Versioning) {
 		delta.Add("Spec.Versioning", a.ko.Spec.Versioning, b.ko.Spec.Versioning)
@@ -226,7 +243,9 @@ func newResourceDelta(
 				}
 			}
 		}
-
+		if !reflect.DeepEqual(a.ko.Spec.Website.RoutingRules, b.ko.Spec.Website.RoutingRules) {
+			delta.Add("Spec.Website.RoutingRules", a.ko.Spec.Website.RoutingRules, b.ko.Spec.Website.RoutingRules)
+		}
 	}
 
 	return delta
