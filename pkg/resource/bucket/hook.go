@@ -25,11 +25,10 @@ import (
 )
 
 var (
-	DefaultAccelerationConfigurationStatus = svcsdk.BucketAccelerateStatusSuspended
-	DefaultRequestPayer                    = svcsdk.PayerBucketOwner
-	DefaultVersioningStatus                = svcsdk.BucketVersioningStatusSuspended
-	DefaultACL                             = svcsdk.BucketCannedACLPrivate
-	DefaultPolicy                          = ""
+	DefaultAccelerationStatus = svcsdk.BucketAccelerateStatusSuspended
+	DefaultRequestPayer       = svcsdk.PayerBucketOwner
+	DefaultVersioningStatus   = svcsdk.BucketVersioningStatusSuspended
+	DefaultACL                = svcsdk.BucketCannedACLPrivate
 )
 
 var (
@@ -299,8 +298,10 @@ func customPreCompare(
 	b *resource,
 ) {
 	if a.ko.Spec.Accelerate == nil && b.ko.Spec.Accelerate != nil {
-		a.ko.Spec.Accelerate = &svcapitypes.AccelerateConfiguration{
-			Status: &DefaultAccelerationConfigurationStatus,
+		a.ko.Spec.Accelerate = &svcapitypes.AccelerateConfiguration{}
+
+		if *b.ko.Spec.Accelerate.Status == DefaultAccelerationStatus {
+			a.ko.Spec.Accelerate.Status = &DefaultAccelerationStatus
 		}
 	}
 	if a.ko.Spec.ACL != nil {
@@ -372,8 +373,10 @@ func customPreCompare(
 		a.ko.Spec.Tagging = &svcapitypes.Tagging{}
 	}
 	if a.ko.Spec.Versioning == nil && b.ko.Spec.Versioning != nil {
-		a.ko.Spec.Versioning = &svcapitypes.VersioningConfiguration{
-			Status: &DefaultVersioningStatus,
+		a.ko.Spec.Versioning = &svcapitypes.VersioningConfiguration{}
+
+		if *b.ko.Spec.Versioning.Status == DefaultVersioningStatus {
+			a.ko.Spec.Versioning.Status = &DefaultVersioningStatus
 		}
 	}
 	if a.ko.Spec.Website == nil && b.ko.Spec.Website != nil {
@@ -420,7 +423,7 @@ func (rm *resourceManager) newPutBucketAcceleratePayload(
 	}
 
 	if res.AccelerateConfiguration.Status == nil {
-		res.AccelerateConfiguration.SetStatus(DefaultAccelerationConfigurationStatus)
+		res.AccelerateConfiguration.SetStatus(DefaultAccelerationStatus)
 	}
 
 	return res
@@ -521,20 +524,30 @@ func (rm *resourceManager) newPutBucketCORSPayload(
 ) *svcsdk.PutBucketCorsInput {
 	res := &svcsdk.PutBucketCorsInput{}
 	res.SetBucket(*r.ko.Spec.Name)
-	if r.ko.Spec.CORS != nil {
-		res.SetCORSConfiguration(rm.newCORSConfiguration(r))
-	} else {
-		res.SetCORSConfiguration(&svcsdk.CORSConfiguration{})
+	res.SetCORSConfiguration(rm.newCORSConfiguration(r))
+
+	if res.CORSConfiguration.CORSRules == nil {
+		res.CORSConfiguration.SetCORSRules([]*svcsdk.CORSRule{})
 	}
+
 	return res
 }
 
-func (rm *resourceManager) syncCORS(
+func (rm *resourceManager) newDeleteBucketCORSPayload(
+	r *resource,
+) *svcsdk.DeleteBucketCorsInput {
+	res := &svcsdk.DeleteBucketCorsInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+
+	return res
+}
+
+func (rm *resourceManager) putCORS(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncCORS")
+	exit := rlog.Trace("rm.putCORS")
 	defer exit(err)
 	input := rm.newPutBucketCORSPayload(r)
 
@@ -545,6 +558,34 @@ func (rm *resourceManager) syncCORS(
 	}
 
 	return nil
+}
+
+func (rm *resourceManager) deleteCORS(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteCORS")
+	defer exit(err)
+	input := rm.newDeleteBucketCORSPayload(r)
+
+	_, err = rm.sdkapi.DeleteBucketCorsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketCors", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) syncCORS(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	if r.ko.Spec.CORS == nil || r.ko.Spec.CORS.CORSRules == nil {
+		return rm.deleteCORS(ctx, r)
+	}
+	return rm.putCORS(ctx, r)
 }
 
 func (rm *resourceManager) newGetBucketEncryptionPayload(
@@ -560,20 +601,26 @@ func (rm *resourceManager) newPutBucketEncryptionPayload(
 ) *svcsdk.PutBucketEncryptionInput {
 	res := &svcsdk.PutBucketEncryptionInput{}
 	res.SetBucket(*r.ko.Spec.Name)
-	if r.ko.Spec.Encryption != nil {
-		res.SetServerSideEncryptionConfiguration(rm.newServerSideEncryptionConfiguration(r))
-	} else {
-		res.SetServerSideEncryptionConfiguration(&svcsdk.ServerSideEncryptionConfiguration{})
-	}
+	res.SetServerSideEncryptionConfiguration(rm.newServerSideEncryptionConfiguration(r))
+
 	return res
 }
 
-func (rm *resourceManager) syncEncryption(
+func (rm *resourceManager) newDeleteBucketEncryptionPayload(
+	r *resource,
+) *svcsdk.DeleteBucketEncryptionInput {
+	res := &svcsdk.DeleteBucketEncryptionInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+
+	return res
+}
+
+func (rm *resourceManager) putEncryption(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncEncryption")
+	exit := rlog.Trace("rm.putEncryption")
 	defer exit(err)
 	input := rm.newPutBucketEncryptionPayload(r)
 
@@ -584,6 +631,34 @@ func (rm *resourceManager) syncEncryption(
 	}
 
 	return nil
+}
+
+func (rm *resourceManager) deleteEncryption(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteEncryption")
+	defer exit(err)
+	input := rm.newDeleteBucketEncryptionPayload(r)
+
+	_, err = rm.sdkapi.DeleteBucketEncryptionWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketEncryption", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) syncEncryption(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	if r.ko.Spec.Encryption == nil || r.ko.Spec.Encryption.Rules == nil {
+		return rm.deleteEncryption(ctx, r)
+	}
+	return rm.putEncryption(ctx, r)
 }
 
 func (rm *resourceManager) newGetBucketLoggingPayload(
@@ -638,20 +713,26 @@ func (rm *resourceManager) newPutBucketOwnershipControlsPayload(
 ) *svcsdk.PutBucketOwnershipControlsInput {
 	res := &svcsdk.PutBucketOwnershipControlsInput{}
 	res.SetBucket(*r.ko.Spec.Name)
-	if r.ko.Spec.OwnershipControls != nil {
-		res.SetOwnershipControls(rm.newOwnershipControls(r))
-	} else {
-		res.SetOwnershipControls(&svcsdk.OwnershipControls{})
-	}
+	res.SetOwnershipControls(rm.newOwnershipControls(r))
+
 	return res
 }
 
-func (rm *resourceManager) syncOwnershipControls(
+func (rm *resourceManager) newDeleteBucketOwnershipControlsPayload(
+	r *resource,
+) *svcsdk.DeleteBucketOwnershipControlsInput {
+	res := &svcsdk.DeleteBucketOwnershipControlsInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+
+	return res
+}
+
+func (rm *resourceManager) putOwnershipControls(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncOwnershipControls")
+	exit := rlog.Trace("rm.putOwnershipControls")
 	defer exit(err)
 	input := rm.newPutBucketOwnershipControlsPayload(r)
 
@@ -662,6 +743,34 @@ func (rm *resourceManager) syncOwnershipControls(
 	}
 
 	return nil
+}
+
+func (rm *resourceManager) deleteOwnershipControls(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteOwnershipControls")
+	defer exit(err)
+	input := rm.newDeleteBucketOwnershipControlsPayload(r)
+
+	_, err = rm.sdkapi.DeleteBucketOwnershipControlsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketOwnershipControls", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) syncOwnershipControls(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	if r.ko.Spec.OwnershipControls == nil || r.ko.Spec.OwnershipControls.Rules == nil {
+		return rm.deleteOwnershipControls(ctx, r)
+	}
+	return rm.putOwnershipControls(ctx, r)
 }
 
 func (rm *resourceManager) newGetBucketPolicyPayload(
@@ -678,11 +787,8 @@ func (rm *resourceManager) newPutBucketPolicyPayload(
 	res := &svcsdk.PutBucketPolicyInput{}
 	res.SetBucket(*r.ko.Spec.Name)
 	res.SetConfirmRemoveSelfBucketAccess(false)
-	if r.ko.Spec.Policy != nil {
-		res.SetPolicy(*r.ko.Spec.Policy)
-	} else {
-		res.SetPolicy(DefaultPolicy)
-	}
+	res.SetPolicy(*r.ko.Spec.Policy)
+
 	return res
 }
 
@@ -797,20 +903,26 @@ func (rm *resourceManager) newPutBucketTaggingPayload(
 ) *svcsdk.PutBucketTaggingInput {
 	res := &svcsdk.PutBucketTaggingInput{}
 	res.SetBucket(*r.ko.Spec.Name)
-	if r.ko.Spec.Tagging != nil {
-		res.SetTagging(rm.newTagging(r))
-	} else {
-		res.SetTagging(&svcsdk.Tagging{})
-	}
+	res.SetTagging(rm.newTagging(r))
+
 	return res
 }
 
-func (rm *resourceManager) syncTagging(
+func (rm *resourceManager) newDeleteBucketTaggingPayload(
+	r *resource,
+) *svcsdk.DeleteBucketTaggingInput {
+	res := &svcsdk.DeleteBucketTaggingInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+
+	return res
+}
+
+func (rm *resourceManager) putTagging(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncTagging")
+	exit := rlog.Trace("rm.putTagging")
 	defer exit(err)
 	input := rm.newPutBucketTaggingPayload(r)
 
@@ -821,6 +933,34 @@ func (rm *resourceManager) syncTagging(
 	}
 
 	return nil
+}
+
+func (rm *resourceManager) deleteTagging(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteTagging")
+	defer exit(err)
+	input := rm.newDeleteBucketTaggingPayload(r)
+
+	_, err = rm.sdkapi.DeleteBucketTaggingWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketTagging", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) syncTagging(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	if r.ko.Spec.Tagging == nil || r.ko.Spec.Tagging.TagSet == nil {
+		return rm.deleteTagging(ctx, r)
+	}
+	return rm.putTagging(ctx, r)
 }
 
 func (rm *resourceManager) newGetBucketVersioningPayload(
@@ -880,20 +1020,26 @@ func (rm *resourceManager) newPutBucketWebsitePayload(
 ) *svcsdk.PutBucketWebsiteInput {
 	res := &svcsdk.PutBucketWebsiteInput{}
 	res.SetBucket(*r.ko.Spec.Name)
-	if r.ko.Spec.Website != nil {
-		res.SetWebsiteConfiguration(rm.newWebsiteConfiguration(r))
-	} else {
-		res.SetWebsiteConfiguration(&svcsdk.WebsiteConfiguration{})
-	}
+	res.SetWebsiteConfiguration(rm.newWebsiteConfiguration(r))
+
 	return res
 }
 
-func (rm *resourceManager) syncWebsite(
+func (rm *resourceManager) newDeleteBucketWebsitePayload(
+	r *resource,
+) *svcsdk.DeleteBucketWebsiteInput {
+	res := &svcsdk.DeleteBucketWebsiteInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+
+	return res
+}
+
+func (rm *resourceManager) putWebsite(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncWebsite")
+	exit := rlog.Trace("rm.putWebsite")
 	defer exit(err)
 	input := rm.newPutBucketWebsitePayload(r)
 
@@ -904,4 +1050,32 @@ func (rm *resourceManager) syncWebsite(
 	}
 
 	return nil
+}
+
+func (rm *resourceManager) deleteWebsite(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteWebsite")
+	defer exit(err)
+	input := rm.newDeleteBucketWebsitePayload(r)
+
+	_, err = rm.sdkapi.DeleteBucketWebsiteWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketWebsite", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) syncWebsite(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	if r.ko.Spec.Website == nil {
+		return rm.deleteWebsite(ctx, r)
+	}
+	return rm.putWebsite(ctx, r)
 }
