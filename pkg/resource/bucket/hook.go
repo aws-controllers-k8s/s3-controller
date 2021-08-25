@@ -300,7 +300,8 @@ func customPreCompare(
 	if a.ko.Spec.Accelerate == nil && b.ko.Spec.Accelerate != nil {
 		a.ko.Spec.Accelerate = &svcapitypes.AccelerateConfiguration{}
 
-		if *b.ko.Spec.Accelerate.Status == DefaultAccelerationStatus {
+		if b.ko.Spec.Accelerate.Status != nil &&
+			*b.ko.Spec.Accelerate.Status == DefaultAccelerationStatus {
 			a.ko.Spec.Accelerate.Status = &DefaultAccelerationStatus
 		}
 	}
@@ -375,7 +376,8 @@ func customPreCompare(
 	if a.ko.Spec.Versioning == nil && b.ko.Spec.Versioning != nil {
 		a.ko.Spec.Versioning = &svcapitypes.VersioningConfiguration{}
 
-		if *b.ko.Spec.Versioning.Status == DefaultVersioningStatus {
+		if b.ko.Spec.Versioning.Status != nil &&
+			*b.ko.Spec.Versioning.Status == DefaultVersioningStatus {
 			a.ko.Spec.Versioning.Status = &DefaultVersioningStatus
 		}
 	}
