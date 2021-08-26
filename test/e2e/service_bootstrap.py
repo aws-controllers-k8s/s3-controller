@@ -16,17 +16,24 @@
 import logging
 from pathlib import Path
 
-from acktest import resources
+from acktest.bootstrapping import Resources, BootstrapFailureException
 from e2e import bootstrap_directory
 from e2e.bootstrap_resources import TestBootstrapResources
 
 
-def service_bootstrap() -> dict:
+def service_bootstrap() -> Resources:
     logging.getLogger().setLevel(logging.INFO)
+    
+    resources = TestBootstrapResources()
 
-    return TestBootstrapResources(
-    ).__dict__
+    try:
+        resources.bootstrap()
+    except BootstrapFailureException as ex:
+        exit(254)
+
+    return resources
 
 if __name__ == "__main__":
     config = service_bootstrap()
-    resources.write_bootstrap_config(config, bootstrap_directory)
+    # Write config to current directory by default
+    config.serialize(bootstrap_directory)

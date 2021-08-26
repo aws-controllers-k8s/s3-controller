@@ -31,11 +31,11 @@ from e2e.bootstrap_resources import TestBootstrapResources, get_bootstrap_resour
 RESOURCE_PLURAL = "buckets"
 
 CREATE_WAIT_AFTER_SECONDS = 10
-MODIFY_WAIT_AFTER_SECONDS = 5
+MODIFY_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
 @dataclass
-class BucketCR:
+class Bucket:
     ref: k8s.CustomResourceReference
     resource_name: str
     resource_data: str
@@ -43,7 +43,7 @@ class BucketCR:
 def get_bucket(s3_resource, bucket_name: str):
     return s3_resource.Bucket(bucket_name)
 
-def bucket_exists(s3_client, bucket: BucketCR) -> bool:
+def bucket_exists(s3_client, bucket: Bucket) -> bool:
     try:
         resp = s3_client.list_buckets()
     except Exception as e:
@@ -68,7 +68,7 @@ def load_bucket_resource(resource_file_name: str, resource_name: str):
     logging.debug(resource_data)
     return resource_data
 
-def create_bucket(resource_file_name: str) -> BucketCR:
+def create_bucket(resource_file_name: str) -> Bucket:
     resource_name = random_suffix_name("s3-bucket", 24)
     resource_data = load_bucket_resource(resource_file_name, resource_name)
 
@@ -79,16 +79,13 @@ def create_bucket(resource_file_name: str) -> BucketCR:
         resource_name, namespace="default",
     )
     resource_data = k8s.create_custom_resource(ref, resource_data)
-    cr = k8s.wait_resource_consumed_by_controller(ref)
-
-    assert cr is not None
-    assert k8s.get_resource_exists(ref)
+    k8s.wait_resource_consumed_by_controller(ref)
 
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-    return BucketCR(ref, resource_name, resource_data)
+    return Bucket(ref, resource_name, resource_data)
 
-def replace_bucket_spec(bucket: BucketCR, resource_file_name: str):
+def replace_bucket_spec(bucket: Bucket, resource_file_name: str):
     resource_data = load_bucket_resource(resource_file_name, bucket.resource_name)
     
     # Fetch latest version before patching
@@ -98,7 +95,7 @@ def replace_bucket_spec(bucket: BucketCR, resource_file_name: str):
 
     time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
-def delete_bucket(bucket: BucketCR):
+def delete_bucket(bucket: Bucket):
     # Delete k8s resource
     _, deleted = k8s.delete_custom_resource(bucket.ref)
     assert deleted is True
@@ -106,12 +103,16 @@ def delete_bucket(bucket: BucketCR):
     time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
 @pytest.fixture(scope="function")
-def basic_bucket(s3_client) -> Generator[BucketCR, None, None]:
-    bucket = create_bucket("bucket")
-    exists = bucket_exists(s3_client, bucket)
+def basic_bucket(s3_client) -> Generator[Bucket, None, None]:
+    try:
+        bucket = create_bucket("bucket")
+        assert k8s.get_resource_exists(bucket.ref)
 
-    if not exists:
-        delete_bucket(bucket)
+        exists = bucket_exists(s3_client, bucket)
+        assert exists
+    except:
+        if bucket:
+            delete_bucket(bucket)
         return pytest.xfail("Bucket failed to create")
 
     yield bucket
@@ -120,16 +121,7 @@ def basic_bucket(s3_client) -> Generator[BucketCR, None, None]:
     exists = bucket_exists(s3_client, bucket)
     assert not exists
 
-@pytest.fixture(scope="module")
-def s3_client():
-    return boto3.client("s3")
-
-@pytest.fixture(scope="module")
-def s3_resource():
-    return boto3.resource("s3")
-
 @service_marker
-@pytest.mark.canary
 class TestBucket:
     def test_basic(self, basic_bucket):
         # Existance assertions are handled by the fixture
@@ -148,17 +140,16 @@ class TestBucket:
         self._update_assert_website(basic_bucket, s3_resource)
 
 
-    def _update_assert_accelerate(self, bucket: BucketCR, s3_client):
+    def _update_assert_accelerate(self, bucket: Bucket, s3_client):
         replace_bucket_spec(bucket, "bucket_accelerate")
 
         accelerate_configuration = s3_client.get_bucket_accelerate_configuration(Bucket=bucket.resource_name)
         logging.info(bucket.resource_data)
         assert bucket.resource_data["spec"]["accelerate"]["status"] == accelerate_configuration["Status"]
 
-    def _update_assert_cors(self, bucket: BucketCR, s3_resource):
+    def _update_assert_cors(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_cors")
         
-        # Do checks
         latest = get_bucket(s3_resource, bucket.resource_name)
         cors = latest.Cors()
 
@@ -170,7 +161,7 @@ class TestBucket:
         assert desired_rule.get("allowedHeaders", []) == latest_rule.get("AllowedHeaders", [])
         assert desired_rule.get("exposeHeaders", []) == latest_rule.get("ExposeHeaders", [])
 
-    def _update_assert_encryption(self, bucket: BucketCR, s3_client):
+    def _update_assert_encryption(self, bucket: Bucket, s3_client):
         replace_bucket_spec(bucket, "bucket_encryption")
 
         encryption = s3_client.get_bucket_encryption(Bucket=bucket.resource_name)
@@ -181,7 +172,7 @@ class TestBucket:
         assert desired_rule["applyServerSideEncryptionByDefault"]["sseAlgorithm"] == \
             latest_rule["ApplyServerSideEncryptionByDefault"]["SSEAlgorithm"]
 
-    def _update_assert_logging(self, bucket: BucketCR, s3_resource):
+    def _update_assert_logging(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_logging")
         
         latest = get_bucket(s3_resource, bucket.resource_name)
@@ -193,7 +184,7 @@ class TestBucket:
         assert desired["targetBucket"] == latest["TargetBucket"]
         assert desired["targetPrefix"] == latest["TargetPrefix"]
 
-    def _update_assert_ownership_controls(self, bucket: BucketCR, s3_client):
+    def _update_assert_ownership_controls(self, bucket: Bucket, s3_client):
         replace_bucket_spec(bucket, "bucket_ownership_controls")
 
         ownership_controls = s3_client.get_bucket_ownership_controls(Bucket=bucket.resource_name)
@@ -203,7 +194,7 @@ class TestBucket:
 
         assert desired_rule["objectOwnership"] == latest_rule["ObjectOwnership"]
 
-    def _update_assert_policy(self, bucket: BucketCR, s3_resource):
+    def _update_assert_policy(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_policy")
 
         latest = get_bucket(s3_resource, bucket.resource_name)
@@ -215,7 +206,7 @@ class TestBucket:
 
         assert desired == latest
 
-    def _update_assert_request_payment(self, bucket: BucketCR, s3_resource):
+    def _update_assert_request_payment(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_request_payment")
 
         latest = get_bucket(s3_resource, bucket.resource_name)
@@ -226,7 +217,7 @@ class TestBucket:
 
         assert desired == latest
 
-    def _update_assert_tagging(self, bucket: BucketCR, s3_resource):
+    def _update_assert_tagging(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_tagging")
 
         latest = get_bucket(s3_resource, bucket.resource_name)
@@ -239,7 +230,7 @@ class TestBucket:
             assert desired[i]["key"] == latest[i]["Key"]
             assert desired[i]["value"] == latest[i]["Value"]
 
-    def _update_assert_versioning(self, bucket: BucketCR, s3_resource):
+    def _update_assert_versioning(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_versioning")
 
         latest = get_bucket(s3_resource, bucket.resource_name)
@@ -248,10 +239,9 @@ class TestBucket:
         desired = bucket.resource_data["spec"]["versioning"]["status"]
         latest = versioning.status
 
-        assert desired["errorDocument"]["key"] == latest.error_document["Key"]
-        assert desired["indexDocument"]["suffix"] == latest.index_document["Suffix"]
+        assert desired == latest
 
-    def _update_assert_website(self, bucket: BucketCR, s3_resource):
+    def _update_assert_website(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_website")
 
         latest = get_bucket(s3_resource, bucket.resource_name)

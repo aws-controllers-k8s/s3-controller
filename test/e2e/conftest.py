@@ -12,6 +12,7 @@
 # permissions and limitations under the License.
 
 import os
+import boto3
 import pytest
 
 from acktest import k8s
@@ -22,9 +23,6 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    config.addinivalue_line(
-        "markers", "canary: mark test to also run in canary tests"
-    )
     config.addinivalue_line(
         "markers", "service(arg): mark test associated with a given service"
     )
@@ -44,3 +42,11 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(scope='class')
 def k8s_client():
     return k8s._get_k8s_api_client()
+
+@pytest.fixture(scope='module')
+def s3_client():
+    return boto3.client('s3')
+
+@pytest.fixture(scope='module')
+def s3_resource():
+    return boto3.resource('s3') 
