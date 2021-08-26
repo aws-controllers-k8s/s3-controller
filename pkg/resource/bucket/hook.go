@@ -277,7 +277,9 @@ func (rm *resourceManager) addPutFieldsToSpec(
 			return err
 		}
 	}
-	ko.Spec.OwnershipControls = rm.setResourceOwnershipControls(r, getOwnershipControlsResponse)
+	if getOwnershipControlsResponse.OwnershipControls != nil {
+		ko.Spec.OwnershipControls = rm.setResourceOwnershipControls(r, getOwnershipControlsResponse)
+	}
 
 	getPolicyResponse, err := rm.sdkapi.GetBucketPolicyWithContext(ctx, rm.newGetBucketPolicyPayload(r))
 	if err != nil {
@@ -292,12 +294,14 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	getReplicationResponse, err := rm.sdkapi.GetBucketReplicationWithContext(ctx, rm.newGetBucketReplicationPayload(r))
 	if err != nil {
 		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "ReplicationConfigurationNotFoundError" {
-			getPolicyResponse = &svcsdk.GetBucketPolicyOutput{}
+			getReplicationResponse = &svcsdk.GetBucketReplicationOutput{}
 		} else {
 			return err
 		}
 	}
-	ko.Spec.Replication = rm.setResourceReplication(r, getReplicationResponse)
+	if getReplicationResponse.ReplicationConfiguration != nil {
+		ko.Spec.Replication = rm.setResourceReplication(r, getReplicationResponse)
+	}
 
 	getRequestPaymentResponse, err := rm.sdkapi.GetBucketRequestPaymentWithContext(ctx, rm.newGetBucketRequestPaymentPayload(r))
 	if err != nil {
