@@ -1,0 +1,14 @@
+apiVersion: s3.services.k8s.aws/v1alpha1
+kind: Bucket
+metadata:
+  name: $BUCKET_NAME
+spec:
+  name: $BUCKET_NAME
+  lifecycle:
+    rules:
+    - id: "Move to Glacier after sixty days"
+      prefix: "/logs/"
+      status: "Enabled"
+      transitions:
+      - days: 60
+        storageClass: "GLACIER"
