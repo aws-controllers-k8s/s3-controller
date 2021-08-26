@@ -16,7 +16,6 @@
 package bucket
 
 import (
-	"bytes"
 	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -24,7 +23,6 @@ import (
 
 // Hack to avoid import errors during build...
 var (
-	_ = &bytes.Buffer{}
 	_ = &reflect.Method{}
 )
 
