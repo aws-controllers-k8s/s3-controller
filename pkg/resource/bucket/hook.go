@@ -39,6 +39,14 @@ func (rm *resourceManager) createPutFields(
 	ctx context.Context,
 	r *resource,
 ) error {
+	// Other configuration options (Replication) require versioning to be
+	// enabled before they can be configured
+	if r.ko.Spec.Versioning != nil {
+		if err := rm.syncVersioning(ctx, r); err != nil {
+			return err
+		}
+	}
+
 	if r.ko.Spec.Accelerate != nil {
 		if err := rm.syncAccelerate(ctx, r); err != nil {
 			return err
@@ -91,11 +99,6 @@ func (rm *resourceManager) createPutFields(
 	}
 	if r.ko.Spec.Tagging != nil {
 		if err := rm.syncTagging(ctx, r); err != nil {
-			return err
-		}
-	}
-	if r.ko.Spec.Versioning != nil {
-		if err := rm.syncVersioning(ctx, r); err != nil {
 			return err
 		}
 	}
@@ -175,11 +178,6 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, err
 		}
 	}
-	if delta.DifferentAt("Spec.Replication") {
-		if err := rm.syncReplication(ctx, desired); err != nil {
-			return nil, err
-		}
-	}
 	if delta.DifferentAt("Spec.RequestPayment") {
 		if err := rm.syncRequestPayment(ctx, desired); err != nil {
 			return nil, err
@@ -190,14 +188,30 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, err
 		}
 	}
-	if delta.DifferentAt("Spec.Versioning") {
-		if err := rm.syncVersioning(ctx, desired); err != nil {
-			return nil, err
-		}
-	}
 	if delta.DifferentAt("Spec.Website") {
 		if err := rm.syncWebsite(ctx, desired); err != nil {
 			return nil, err
+		}
+	}
+
+	// Replication requires versioning be enabled. We check that if we are
+	// disabling versioning, that we disable replication first. If we are
+	// enabling replication, that we enable versioning first.
+	if delta.DifferentAt("Spec.Replication") || delta.DifferentAt("Spec.Versioning") {
+		if desired.ko.Spec.Replication == nil || desired.ko.Spec.Replication.Rules == nil {
+			if err := rm.syncReplication(ctx, desired); err != nil {
+				return nil, err
+			}
+			if err := rm.syncVersioning(ctx, desired); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := rm.syncVersioning(ctx, desired); err != nil {
+				return nil, err
+			}
+			if err := rm.syncReplication(ctx, desired); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -279,6 +293,8 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	if getOwnershipControlsResponse.OwnershipControls != nil {
 		ko.Spec.OwnershipControls = rm.setResourceOwnershipControls(r, getOwnershipControlsResponse)
+	} else {
+		ko.Spec.OwnershipControls = nil
 	}
 
 	getPolicyResponse, err := rm.sdkapi.GetBucketPolicyWithContext(ctx, rm.newGetBucketPolicyPayload(r))
@@ -301,6 +317,8 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	if getReplicationResponse.ReplicationConfiguration != nil {
 		ko.Spec.Replication = rm.setResourceReplication(r, getReplicationResponse)
+	} else {
+		ko.Spec.Replication = nil
 	}
 
 	getRequestPaymentResponse, err := rm.sdkapi.GetBucketRequestPaymentWithContext(ctx, rm.newGetBucketRequestPaymentPayload(r))
@@ -782,9 +800,9 @@ func (rm *resourceManager) putLifecycle(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.putLifecycle")
 	defer exit(err)
-	input := rm.newPutBucketLoggingPayload(r)
+	input := rm.newPutBucketLifecyclePayload(r)
 
-	_, err = rm.sdkapi.PutBucketLoggingWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketLifecycleConfigurationWithContext(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketLifecycle", err)
 	if err != nil {
 		return err
