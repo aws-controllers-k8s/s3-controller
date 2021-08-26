@@ -54,8 +54,18 @@ func (rm *resourceManager) createPutFields(
 			return err
 		}
 	}
+	if r.ko.Spec.Lifecycle != nil {
+		if err := rm.syncLifecycle(ctx, r); err != nil {
+			return err
+		}
+	}
 	if r.ko.Spec.Logging != nil {
 		if err := rm.syncLogging(ctx, r); err != nil {
+			return err
+		}
+	}
+	if r.ko.Spec.Notification != nil {
+		if err := rm.syncNotification(ctx, r); err != nil {
 			return err
 		}
 	}
@@ -66,6 +76,11 @@ func (rm *resourceManager) createPutFields(
 	}
 	if r.ko.Spec.Policy != nil {
 		if err := rm.syncPolicy(ctx, r); err != nil {
+			return err
+		}
+	}
+	if r.ko.Spec.Replication != nil {
+		if err := rm.syncReplication(ctx, r); err != nil {
 			return err
 		}
 	}
@@ -135,8 +150,18 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, err
 		}
 	}
+	if delta.DifferentAt("Spec.Lifecycle") {
+		if err := rm.syncLifecycle(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
 	if delta.DifferentAt("Spec.Logging") {
 		if err := rm.syncLogging(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.Notification") {
+		if err := rm.syncNotification(ctx, desired); err != nil {
 			return nil, err
 		}
 	}
@@ -147,6 +172,11 @@ func (rm *resourceManager) customUpdateBucket(
 	}
 	if delta.DifferentAt("Spec.Policy") {
 		if err := rm.syncPolicy(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.Replication") {
+		if err := rm.syncReplication(ctx, desired); err != nil {
 			return nil, err
 		}
 	}
@@ -215,11 +245,27 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.Encryption = rm.setResourceEncryption(r, getEncryptionResponse)
 
+	getLifecycleResponse, err := rm.sdkapi.GetBucketLifecycleConfigurationWithContext(ctx, rm.newGetBucketLifecyclePayload(r))
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchLifecycleConfiguration" {
+			getLifecycleResponse = &svcsdk.GetBucketLifecycleConfigurationOutput{}
+		} else {
+			return err
+		}
+	}
+	ko.Spec.Lifecycle = rm.setResourceLifecycle(r, getLifecycleResponse)
+
 	getLoggingResponse, err := rm.sdkapi.GetBucketLoggingWithContext(ctx, rm.newGetBucketLoggingPayload(r))
 	if err != nil {
 		return err
 	}
 	ko.Spec.Logging = rm.setResourceLogging(r, getLoggingResponse)
+
+	getNotificationResponse, err := rm.sdkapi.GetBucketNotificationConfigurationWithContext(ctx, rm.newGetBucketNotificationPayload(r))
+	if err != nil {
+		return err
+	}
+	ko.Spec.Notification = rm.setResourceNotification(r, getNotificationResponse)
 
 	getOwnershipControlsResponse, err := rm.sdkapi.GetBucketOwnershipControlsWithContext(ctx, rm.newGetBucketOwnershipControlsPayload(r))
 	if err != nil {
@@ -242,6 +288,16 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		}
 	}
 	ko.Spec.Policy = getPolicyResponse.Policy
+
+	getReplicationResponse, err := rm.sdkapi.GetBucketReplicationWithContext(ctx, rm.newGetBucketReplicationPayload(r))
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "ReplicationConfigurationNotFoundError" {
+			getPolicyResponse = &svcsdk.GetBucketPolicyOutput{}
+		} else {
+			return err
+		}
+	}
+	ko.Spec.Replication = rm.setResourceReplication(r, getReplicationResponse)
 
 	getRequestPaymentResponse, err := rm.sdkapi.GetBucketRequestPaymentWithContext(ctx, rm.newGetBucketRequestPaymentPayload(r))
 	if err != nil {
@@ -274,19 +330,6 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		}
 	}
 	ko.Spec.Website = rm.setResourceWebsite(r, getWebsiteResponse)
-	return nil
-}
-
-// matchPossibleCannedACL attempts to find a canned ACL string in a joined
-// list of possibilities. If any of the possibilities matches, it will be
-// returned, otherwise nil.
-func matchPossibleCannedACL(search string, joinedPossibilities string) *string {
-	splitPossibilities := strings.Split(joinedPossibilities, CannedACLJoinDelimiter)
-	for _, possible := range splitPossibilities {
-		if search == possible {
-			return &possible
-		}
-	}
 	return nil
 }
 
@@ -359,11 +402,20 @@ func customPreCompare(
 	if a.ko.Spec.Encryption == nil && b.ko.Spec.Encryption != nil {
 		a.ko.Spec.Encryption = &svcapitypes.ServerSideEncryptionConfiguration{}
 	}
+	if a.ko.Spec.Lifecycle == nil && b.ko.Spec.Lifecycle != nil {
+		a.ko.Spec.Lifecycle = &svcapitypes.BucketLifecycleConfiguration{}
+	}
 	if a.ko.Spec.Logging == nil && b.ko.Spec.Logging != nil {
 		a.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
 	}
+	if a.ko.Spec.Notification == nil && b.ko.Spec.Notification != nil {
+		a.ko.Spec.Notification = &svcapitypes.NotificationConfiguration{}
+	}
 	if a.ko.Spec.OwnershipControls == nil && b.ko.Spec.OwnershipControls != nil {
 		a.ko.Spec.OwnershipControls = &svcapitypes.OwnershipControls{}
+	}
+	if a.ko.Spec.Replication == nil && b.ko.Spec.Replication != nil {
+		a.ko.Spec.Replication = &svcapitypes.ReplicationConfiguration{}
 	}
 	if a.ko.Spec.RequestPayment == nil && b.ko.Spec.RequestPayment != nil {
 		a.ko.Spec.RequestPayment = &svcapitypes.RequestPaymentConfiguration{
@@ -386,24 +438,7 @@ func customPreCompare(
 	}
 }
 
-// setResourceACL sets the `Grant*` spec fields given the output of a
-// `GetBucketAcl` operation.
-func (rm *resourceManager) setResourceACL(
-	ko *svcapitypes.Bucket,
-	resp *svcsdk.GetBucketAclOutput,
-) {
-	grants := GetHeadersFromGrants(resp)
-	ko.Spec.GrantFullControl = &grants.FullControl
-	ko.Spec.GrantRead = &grants.Read
-	ko.Spec.GrantReadACP = &grants.ReadACP
-	ko.Spec.GrantWrite = &grants.Write
-	ko.Spec.GrantWriteACP = &grants.WriteACP
-
-	// Join possible ACLs into a single string, delimited by bar
-	cannedACLs := GetPossibleCannedACLsFromGrants(resp)
-	joinedACLs := strings.Join(cannedACLs, CannedACLJoinDelimiter)
-	ko.Spec.ACL = &joinedACLs
-}
+//region accelerate
 
 func (rm *resourceManager) newGetBucketAcceleratePayload(
 	r *resource,
@@ -446,6 +481,42 @@ func (rm *resourceManager) syncAccelerate(
 		return err
 	}
 
+	return nil
+}
+
+//endregion accelerate
+
+//region acl
+
+// setResourceACL sets the `Grant*` spec fields given the output of a
+// `GetBucketAcl` operation.
+func (rm *resourceManager) setResourceACL(
+	ko *svcapitypes.Bucket,
+	resp *svcsdk.GetBucketAclOutput,
+) {
+	grants := GetHeadersFromGrants(resp)
+	ko.Spec.GrantFullControl = &grants.FullControl
+	ko.Spec.GrantRead = &grants.Read
+	ko.Spec.GrantReadACP = &grants.ReadACP
+	ko.Spec.GrantWrite = &grants.Write
+	ko.Spec.GrantWriteACP = &grants.WriteACP
+
+	// Join possible ACLs into a single string, delimited by bar
+	cannedACLs := GetPossibleCannedACLsFromGrants(resp)
+	joinedACLs := strings.Join(cannedACLs, CannedACLJoinDelimiter)
+	ko.Spec.ACL = &joinedACLs
+}
+
+// matchPossibleCannedACL attempts to find a canned ACL string in a joined
+// list of possibilities. If any of the possibilities matches, it will be
+// returned, otherwise nil.
+func matchPossibleCannedACL(search string, joinedPossibilities string) *string {
+	splitPossibilities := strings.Split(joinedPossibilities, CannedACLJoinDelimiter)
+	for _, possible := range splitPossibilities {
+		if search == possible {
+			return &possible
+		}
+	}
 	return nil
 }
 
@@ -512,6 +583,10 @@ func (rm *resourceManager) syncACL(
 
 	return nil
 }
+
+//endregion acl
+
+//region cors
 
 func (rm *resourceManager) newGetBucketCORSPayload(
 	r *resource,
@@ -590,6 +665,10 @@ func (rm *resourceManager) syncCORS(
 	return rm.putCORS(ctx, r)
 }
 
+//endregion cors
+
+//region encryption
+
 func (rm *resourceManager) newGetBucketEncryptionPayload(
 	r *resource,
 ) *svcsdk.GetBucketEncryptionInput {
@@ -663,6 +742,85 @@ func (rm *resourceManager) syncEncryption(
 	return rm.putEncryption(ctx, r)
 }
 
+//endregion encryption
+
+//region lifecycle
+
+func (rm *resourceManager) newGetBucketLifecyclePayload(
+	r *resource,
+) *svcsdk.GetBucketLifecycleConfigurationInput {
+	res := &svcsdk.GetBucketLifecycleConfigurationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketLifecyclePayload(
+	r *resource,
+) *svcsdk.PutBucketLifecycleConfigurationInput {
+	res := &svcsdk.PutBucketLifecycleConfigurationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetLifecycleConfiguration(rm.newLifecycleConfiguration(r))
+	return res
+}
+
+func (rm *resourceManager) newDeleteBucketLifecyclePayload(
+	r *resource,
+) *svcsdk.DeleteBucketLifecycleInput {
+	res := &svcsdk.DeleteBucketLifecycleInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) putLifecycle(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.putLifecycle")
+	defer exit(err)
+	input := rm.newPutBucketLoggingPayload(r)
+
+	_, err = rm.sdkapi.PutBucketLoggingWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketLifecycle", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) deleteLifecycle(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteLifecycle")
+	defer exit(err)
+	input := rm.newDeleteBucketLifecyclePayload(r)
+
+	_, err = rm.sdkapi.DeleteBucketLifecycleWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketLifecycle", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) syncLifecycle(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	if r.ko.Spec.Lifecycle == nil || r.ko.Spec.Lifecycle.Rules == nil {
+		return rm.deleteLifecycle(ctx, r)
+	}
+	return rm.putLifecycle(ctx, r)
+}
+
+//endregion lifecycle
+
+//region logging
+
 func (rm *resourceManager) newGetBucketLoggingPayload(
 	r *resource,
 ) *svcsdk.GetBucketLoggingInput {
@@ -701,6 +859,53 @@ func (rm *resourceManager) syncLogging(
 
 	return nil
 }
+
+//endregion logging
+
+//region notification
+
+func (rm *resourceManager) newGetBucketNotificationPayload(
+	r *resource,
+) *svcsdk.GetBucketNotificationConfigurationRequest {
+	res := &svcsdk.GetBucketNotificationConfigurationRequest{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketNotificationPayload(
+	r *resource,
+) *svcsdk.PutBucketNotificationConfigurationInput {
+	res := &svcsdk.PutBucketNotificationConfigurationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	if r.ko.Spec.Notification != nil {
+		res.SetNotificationConfiguration(rm.newNotificationConfiguration(r))
+	} else {
+		res.SetNotificationConfiguration(&svcsdk.NotificationConfiguration{})
+	}
+	return res
+}
+
+func (rm *resourceManager) syncNotification(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncNotification")
+	defer exit(err)
+	input := rm.newPutBucketNotificationPayload(r)
+
+	_, err = rm.sdkapi.PutBucketNotificationConfigurationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketNotification", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//endregion notification
+
+//region ownershipcontrols
 
 func (rm *resourceManager) newGetBucketOwnershipControlsPayload(
 	r *resource,
@@ -775,6 +980,10 @@ func (rm *resourceManager) syncOwnershipControls(
 	return rm.putOwnershipControls(ctx, r)
 }
 
+//endregion ownershipcontrols
+
+//region policy
+
 func (rm *resourceManager) newGetBucketPolicyPayload(
 	r *resource,
 ) *svcsdk.GetBucketPolicyInput {
@@ -848,6 +1057,85 @@ func (rm *resourceManager) syncPolicy(
 	return rm.putPolicy(ctx, r)
 }
 
+//endregion
+
+//region replication
+
+func (rm *resourceManager) newGetBucketReplicationPayload(
+	r *resource,
+) *svcsdk.GetBucketReplicationInput {
+	res := &svcsdk.GetBucketReplicationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketReplicationPayload(
+	r *resource,
+) *svcsdk.PutBucketReplicationInput {
+	res := &svcsdk.PutBucketReplicationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetReplicationConfiguration(rm.newReplicationConfiguration(r))
+	return res
+}
+
+func (rm *resourceManager) newDeleteBucketReplicationPayload(
+	r *resource,
+) *svcsdk.DeleteBucketReplicationInput {
+	res := &svcsdk.DeleteBucketReplicationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) putReplication(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.putReplication")
+	defer exit(err)
+	input := rm.newPutBucketReplicationPayload(r)
+
+	_, err = rm.sdkapi.PutBucketReplicationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketReplication", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) deleteReplication(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteReplication")
+	defer exit(err)
+	input := rm.newDeleteBucketReplicationPayload(r)
+
+	_, err = rm.sdkapi.DeleteBucketReplicationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketReplication", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) syncReplication(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	if r.ko.Spec.Replication == nil || r.ko.Spec.Replication.Rules == nil {
+		return rm.deleteReplication(ctx, r)
+	}
+	return rm.putReplication(ctx, r)
+}
+
+//endregion replication
+
+//region requestpayment
+
 func (rm *resourceManager) newGetBucketRequestPaymentPayload(
 	r *resource,
 ) *svcsdk.GetBucketRequestPaymentInput {
@@ -891,6 +1179,10 @@ func (rm *resourceManager) syncRequestPayment(
 
 	return nil
 }
+
+//endregion requestpayment
+
+//region tagging
 
 func (rm *resourceManager) newGetBucketTaggingPayload(
 	r *resource,
@@ -965,6 +1257,10 @@ func (rm *resourceManager) syncTagging(
 	return rm.putTagging(ctx, r)
 }
 
+//endregion tagging
+
+//region versioning
+
 func (rm *resourceManager) newGetBucketVersioningPayload(
 	r *resource,
 ) *svcsdk.GetBucketVersioningInput {
@@ -1008,6 +1304,10 @@ func (rm *resourceManager) syncVersioning(
 
 	return nil
 }
+
+//endregion versioning
+
+//region website
 
 func (rm *resourceManager) newGetBucketWebsitePayload(
 	r *resource,
@@ -1081,3 +1381,5 @@ func (rm *resourceManager) syncWebsite(
 	}
 	return rm.putWebsite(ctx, r)
 }
+
+//endregion website

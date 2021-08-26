@@ -554,6 +554,254 @@ func (rm *resourceManager) setResourceEncryption(
 	return res
 }
 
+// newLifecycleConfiguration returns a LifecycleConfiguration object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newLifecycleConfiguration(
+	r *resource,
+) *svcsdk.BucketLifecycleConfiguration {
+	res := &svcsdk.BucketLifecycleConfiguration{}
+
+	if r.ko.Spec.Lifecycle.Rules != nil {
+		resf0 := []*svcsdk.LifecycleRule{}
+		for _, resf0iter := range r.ko.Spec.Lifecycle.Rules {
+			resf0elem := &svcsdk.LifecycleRule{}
+			if resf0iter.AbortIncompleteMultipartUpload != nil {
+				resf0elemf0 := &svcsdk.AbortIncompleteMultipartUpload{}
+				if resf0iter.AbortIncompleteMultipartUpload.DaysAfterInitiation != nil {
+					resf0elemf0.SetDaysAfterInitiation(*resf0iter.AbortIncompleteMultipartUpload.DaysAfterInitiation)
+				}
+				resf0elem.SetAbortIncompleteMultipartUpload(resf0elemf0)
+			}
+			if resf0iter.Expiration != nil {
+				resf0elemf1 := &svcsdk.LifecycleExpiration{}
+				if resf0iter.Expiration.Date != nil {
+					resf0elemf1.SetDate(resf0iter.Expiration.Date.Time)
+				}
+				if resf0iter.Expiration.Days != nil {
+					resf0elemf1.SetDays(*resf0iter.Expiration.Days)
+				}
+				if resf0iter.Expiration.ExpiredObjectDeleteMarker != nil {
+					resf0elemf1.SetExpiredObjectDeleteMarker(*resf0iter.Expiration.ExpiredObjectDeleteMarker)
+				}
+				resf0elem.SetExpiration(resf0elemf1)
+			}
+			if resf0iter.Filter != nil {
+				resf0elemf2 := &svcsdk.LifecycleRuleFilter{}
+				if resf0iter.Filter.And != nil {
+					resf0elemf2f0 := &svcsdk.LifecycleRuleAndOperator{}
+					if resf0iter.Filter.And.Prefix != nil {
+						resf0elemf2f0.SetPrefix(*resf0iter.Filter.And.Prefix)
+					}
+					if resf0iter.Filter.And.Tags != nil {
+						resf0elemf2f0f1 := []*svcsdk.Tag{}
+						for _, resf0elemf2f0f1iter := range resf0iter.Filter.And.Tags {
+							resf0elemf2f0f1elem := &svcsdk.Tag{}
+							if resf0elemf2f0f1iter.Key != nil {
+								resf0elemf2f0f1elem.SetKey(*resf0elemf2f0f1iter.Key)
+							}
+							if resf0elemf2f0f1iter.Value != nil {
+								resf0elemf2f0f1elem.SetValue(*resf0elemf2f0f1iter.Value)
+							}
+							resf0elemf2f0f1 = append(resf0elemf2f0f1, resf0elemf2f0f1elem)
+						}
+						resf0elemf2f0.SetTags(resf0elemf2f0f1)
+					}
+					resf0elemf2.SetAnd(resf0elemf2f0)
+				}
+				if resf0iter.Filter.Prefix != nil {
+					resf0elemf2.SetPrefix(*resf0iter.Filter.Prefix)
+				}
+				if resf0iter.Filter.Tag != nil {
+					resf0elemf2f2 := &svcsdk.Tag{}
+					if resf0iter.Filter.Tag.Key != nil {
+						resf0elemf2f2.SetKey(*resf0iter.Filter.Tag.Key)
+					}
+					if resf0iter.Filter.Tag.Value != nil {
+						resf0elemf2f2.SetValue(*resf0iter.Filter.Tag.Value)
+					}
+					resf0elemf2.SetTag(resf0elemf2f2)
+				}
+				resf0elem.SetFilter(resf0elemf2)
+			}
+			if resf0iter.ID != nil {
+				resf0elem.SetID(*resf0iter.ID)
+			}
+			if resf0iter.NoncurrentVersionExpiration != nil {
+				resf0elemf4 := &svcsdk.NoncurrentVersionExpiration{}
+				if resf0iter.NoncurrentVersionExpiration.NoncurrentDays != nil {
+					resf0elemf4.SetNoncurrentDays(*resf0iter.NoncurrentVersionExpiration.NoncurrentDays)
+				}
+				resf0elem.SetNoncurrentVersionExpiration(resf0elemf4)
+			}
+			if resf0iter.NoncurrentVersionTransitions != nil {
+				resf0elemf5 := []*svcsdk.NoncurrentVersionTransition{}
+				for _, resf0elemf5iter := range resf0iter.NoncurrentVersionTransitions {
+					resf0elemf5elem := &svcsdk.NoncurrentVersionTransition{}
+					if resf0elemf5iter.NoncurrentDays != nil {
+						resf0elemf5elem.SetNoncurrentDays(*resf0elemf5iter.NoncurrentDays)
+					}
+					if resf0elemf5iter.StorageClass != nil {
+						resf0elemf5elem.SetStorageClass(*resf0elemf5iter.StorageClass)
+					}
+					resf0elemf5 = append(resf0elemf5, resf0elemf5elem)
+				}
+				resf0elem.SetNoncurrentVersionTransitions(resf0elemf5)
+			}
+			if resf0iter.Prefix != nil {
+				resf0elem.SetPrefix(*resf0iter.Prefix)
+			}
+			if resf0iter.Status != nil {
+				resf0elem.SetStatus(*resf0iter.Status)
+			}
+			if resf0iter.Transitions != nil {
+				resf0elemf8 := []*svcsdk.Transition{}
+				for _, resf0elemf8iter := range resf0iter.Transitions {
+					resf0elemf8elem := &svcsdk.Transition{}
+					if resf0elemf8iter.Date != nil {
+						resf0elemf8elem.SetDate(resf0elemf8iter.Date.Time)
+					}
+					if resf0elemf8iter.Days != nil {
+						resf0elemf8elem.SetDays(*resf0elemf8iter.Days)
+					}
+					if resf0elemf8iter.StorageClass != nil {
+						resf0elemf8elem.SetStorageClass(*resf0elemf8iter.StorageClass)
+					}
+					resf0elemf8 = append(resf0elemf8, resf0elemf8elem)
+				}
+				resf0elem.SetTransitions(resf0elemf8)
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.SetRules(resf0)
+	}
+
+	return res
+}
+
+// setResourceLifecycle sets the `Lifecycle` spec field
+// given the output of a `GetBucketLifecycleConfiguration` operation.
+func (rm *resourceManager) setResourceLifecycle(
+	r *resource,
+	resp *svcsdk.GetBucketLifecycleConfigurationOutput,
+) *svcapitypes.BucketLifecycleConfiguration {
+	res := &svcapitypes.BucketLifecycleConfiguration{}
+	if resp.Rules != nil {
+		resf0 := []*svcapitypes.LifecycleRule{}
+		for _, resf0iter := range resp.Rules {
+			resf0elem := &svcapitypes.LifecycleRule{}
+			if resf0iter.AbortIncompleteMultipartUpload != nil {
+				resf0elemf0 := &svcapitypes.AbortIncompleteMultipartUpload{}
+				if resf0iter.AbortIncompleteMultipartUpload.DaysAfterInitiation != nil {
+					resf0elemf0.DaysAfterInitiation = resf0iter.AbortIncompleteMultipartUpload.DaysAfterInitiation
+				}
+				resf0elem.AbortIncompleteMultipartUpload = resf0elemf0
+			}
+			if resf0iter.Expiration != nil {
+				resf0elemf1 := &svcapitypes.LifecycleExpiration{}
+				if resf0iter.Expiration.Date != nil {
+					resf0elemf1.Date = &metav1.Time{*resf0iter.Expiration.Date}
+				}
+				if resf0iter.Expiration.Days != nil {
+					resf0elemf1.Days = resf0iter.Expiration.Days
+				}
+				if resf0iter.Expiration.ExpiredObjectDeleteMarker != nil {
+					resf0elemf1.ExpiredObjectDeleteMarker = resf0iter.Expiration.ExpiredObjectDeleteMarker
+				}
+				resf0elem.Expiration = resf0elemf1
+			}
+			if resf0iter.Filter != nil {
+				resf0elemf2 := &svcapitypes.LifecycleRuleFilter{}
+				if resf0iter.Filter.And != nil {
+					resf0elemf2f0 := &svcapitypes.LifecycleRuleAndOperator{}
+					if resf0iter.Filter.And.Prefix != nil {
+						resf0elemf2f0.Prefix = resf0iter.Filter.And.Prefix
+					}
+					if resf0iter.Filter.And.Tags != nil {
+						resf0elemf2f0f1 := []*svcapitypes.Tag{}
+						for _, resf0elemf2f0f1iter := range resf0iter.Filter.And.Tags {
+							resf0elemf2f0f1elem := &svcapitypes.Tag{}
+							if resf0elemf2f0f1iter.Key != nil {
+								resf0elemf2f0f1elem.Key = resf0elemf2f0f1iter.Key
+							}
+							if resf0elemf2f0f1iter.Value != nil {
+								resf0elemf2f0f1elem.Value = resf0elemf2f0f1iter.Value
+							}
+							resf0elemf2f0f1 = append(resf0elemf2f0f1, resf0elemf2f0f1elem)
+						}
+						resf0elemf2f0.Tags = resf0elemf2f0f1
+					}
+					resf0elemf2.And = resf0elemf2f0
+				}
+				if resf0iter.Filter.Prefix != nil {
+					resf0elemf2.Prefix = resf0iter.Filter.Prefix
+				}
+				if resf0iter.Filter.Tag != nil {
+					resf0elemf2f2 := &svcapitypes.Tag{}
+					if resf0iter.Filter.Tag.Key != nil {
+						resf0elemf2f2.Key = resf0iter.Filter.Tag.Key
+					}
+					if resf0iter.Filter.Tag.Value != nil {
+						resf0elemf2f2.Value = resf0iter.Filter.Tag.Value
+					}
+					resf0elemf2.Tag = resf0elemf2f2
+				}
+				resf0elem.Filter = resf0elemf2
+			}
+			if resf0iter.ID != nil {
+				resf0elem.ID = resf0iter.ID
+			}
+			if resf0iter.NoncurrentVersionExpiration != nil {
+				resf0elemf4 := &svcapitypes.NoncurrentVersionExpiration{}
+				if resf0iter.NoncurrentVersionExpiration.NoncurrentDays != nil {
+					resf0elemf4.NoncurrentDays = resf0iter.NoncurrentVersionExpiration.NoncurrentDays
+				}
+				resf0elem.NoncurrentVersionExpiration = resf0elemf4
+			}
+			if resf0iter.NoncurrentVersionTransitions != nil {
+				resf0elemf5 := []*svcapitypes.NoncurrentVersionTransition{}
+				for _, resf0elemf5iter := range resf0iter.NoncurrentVersionTransitions {
+					resf0elemf5elem := &svcapitypes.NoncurrentVersionTransition{}
+					if resf0elemf5iter.NoncurrentDays != nil {
+						resf0elemf5elem.NoncurrentDays = resf0elemf5iter.NoncurrentDays
+					}
+					if resf0elemf5iter.StorageClass != nil {
+						resf0elemf5elem.StorageClass = resf0elemf5iter.StorageClass
+					}
+					resf0elemf5 = append(resf0elemf5, resf0elemf5elem)
+				}
+				resf0elem.NoncurrentVersionTransitions = resf0elemf5
+			}
+			if resf0iter.Prefix != nil {
+				resf0elem.Prefix = resf0iter.Prefix
+			}
+			if resf0iter.Status != nil {
+				resf0elem.Status = resf0iter.Status
+			}
+			if resf0iter.Transitions != nil {
+				resf0elemf8 := []*svcapitypes.Transition{}
+				for _, resf0elemf8iter := range resf0iter.Transitions {
+					resf0elemf8elem := &svcapitypes.Transition{}
+					if resf0elemf8iter.Date != nil {
+						resf0elemf8elem.Date = &metav1.Time{*resf0elemf8iter.Date}
+					}
+					if resf0elemf8iter.Days != nil {
+						resf0elemf8elem.Days = resf0elemf8iter.Days
+					}
+					if resf0elemf8iter.StorageClass != nil {
+						resf0elemf8elem.StorageClass = resf0elemf8iter.StorageClass
+					}
+					resf0elemf8 = append(resf0elemf8, resf0elemf8elem)
+				}
+				resf0elem.Transitions = resf0elemf8
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.Rules = resf0
+	}
+
+	return res
+}
+
 // newBucketLoggingStatus returns a BucketLoggingStatus object
 // with each the field set by the resource's corresponding spec field.
 func (rm *resourceManager) newBucketLoggingStatus(
@@ -656,6 +904,298 @@ func (rm *resourceManager) setResourceLogging(
 	return res
 }
 
+// newNotificationConfiguration returns a NotificationConfiguration object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newNotificationConfiguration(
+	r *resource,
+) *svcsdk.NotificationConfiguration {
+	res := &svcsdk.NotificationConfiguration{}
+
+	if r.ko.Spec.Notification.LambdaFunctionConfigurations != nil {
+		resf0 := []*svcsdk.LambdaFunctionConfiguration{}
+		for _, resf0iter := range r.ko.Spec.Notification.LambdaFunctionConfigurations {
+			resf0elem := &svcsdk.LambdaFunctionConfiguration{}
+			if resf0iter.Events != nil {
+				resf0elemf0 := []*string{}
+				for _, resf0elemf0iter := range resf0iter.Events {
+					var resf0elemf0elem string
+					resf0elemf0elem = *resf0elemf0iter
+					resf0elemf0 = append(resf0elemf0, &resf0elemf0elem)
+				}
+				resf0elem.SetEvents(resf0elemf0)
+			}
+			if resf0iter.Filter != nil {
+				resf0elemf1 := &svcsdk.NotificationConfigurationFilter{}
+				if resf0iter.Filter.Key != nil {
+					resf0elemf1f0 := &svcsdk.KeyFilter{}
+					if resf0iter.Filter.Key.FilterRules != nil {
+						resf0elemf1f0f0 := []*svcsdk.FilterRule{}
+						for _, resf0elemf1f0f0iter := range resf0iter.Filter.Key.FilterRules {
+							resf0elemf1f0f0elem := &svcsdk.FilterRule{}
+							if resf0elemf1f0f0iter.Name != nil {
+								resf0elemf1f0f0elem.SetName(*resf0elemf1f0f0iter.Name)
+							}
+							if resf0elemf1f0f0iter.Value != nil {
+								resf0elemf1f0f0elem.SetValue(*resf0elemf1f0f0iter.Value)
+							}
+							resf0elemf1f0f0 = append(resf0elemf1f0f0, resf0elemf1f0f0elem)
+						}
+						resf0elemf1f0.SetFilterRules(resf0elemf1f0f0)
+					}
+					resf0elemf1.SetKey(resf0elemf1f0)
+				}
+				resf0elem.SetFilter(resf0elemf1)
+			}
+			if resf0iter.ID != nil {
+				resf0elem.SetId(*resf0iter.ID)
+			}
+			if resf0iter.LambdaFunctionARN != nil {
+				resf0elem.SetLambdaFunctionArn(*resf0iter.LambdaFunctionARN)
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.SetLambdaFunctionConfigurations(resf0)
+	}
+	if r.ko.Spec.Notification.QueueConfigurations != nil {
+		resf1 := []*svcsdk.QueueConfiguration{}
+		for _, resf1iter := range r.ko.Spec.Notification.QueueConfigurations {
+			resf1elem := &svcsdk.QueueConfiguration{}
+			if resf1iter.Events != nil {
+				resf1elemf0 := []*string{}
+				for _, resf1elemf0iter := range resf1iter.Events {
+					var resf1elemf0elem string
+					resf1elemf0elem = *resf1elemf0iter
+					resf1elemf0 = append(resf1elemf0, &resf1elemf0elem)
+				}
+				resf1elem.SetEvents(resf1elemf0)
+			}
+			if resf1iter.Filter != nil {
+				resf1elemf1 := &svcsdk.NotificationConfigurationFilter{}
+				if resf1iter.Filter.Key != nil {
+					resf1elemf1f0 := &svcsdk.KeyFilter{}
+					if resf1iter.Filter.Key.FilterRules != nil {
+						resf1elemf1f0f0 := []*svcsdk.FilterRule{}
+						for _, resf1elemf1f0f0iter := range resf1iter.Filter.Key.FilterRules {
+							resf1elemf1f0f0elem := &svcsdk.FilterRule{}
+							if resf1elemf1f0f0iter.Name != nil {
+								resf1elemf1f0f0elem.SetName(*resf1elemf1f0f0iter.Name)
+							}
+							if resf1elemf1f0f0iter.Value != nil {
+								resf1elemf1f0f0elem.SetValue(*resf1elemf1f0f0iter.Value)
+							}
+							resf1elemf1f0f0 = append(resf1elemf1f0f0, resf1elemf1f0f0elem)
+						}
+						resf1elemf1f0.SetFilterRules(resf1elemf1f0f0)
+					}
+					resf1elemf1.SetKey(resf1elemf1f0)
+				}
+				resf1elem.SetFilter(resf1elemf1)
+			}
+			if resf1iter.ID != nil {
+				resf1elem.SetId(*resf1iter.ID)
+			}
+			if resf1iter.QueueARN != nil {
+				resf1elem.SetQueueArn(*resf1iter.QueueARN)
+			}
+			resf1 = append(resf1, resf1elem)
+		}
+		res.SetQueueConfigurations(resf1)
+	}
+	if r.ko.Spec.Notification.TopicConfigurations != nil {
+		resf2 := []*svcsdk.TopicConfiguration{}
+		for _, resf2iter := range r.ko.Spec.Notification.TopicConfigurations {
+			resf2elem := &svcsdk.TopicConfiguration{}
+			if resf2iter.Events != nil {
+				resf2elemf0 := []*string{}
+				for _, resf2elemf0iter := range resf2iter.Events {
+					var resf2elemf0elem string
+					resf2elemf0elem = *resf2elemf0iter
+					resf2elemf0 = append(resf2elemf0, &resf2elemf0elem)
+				}
+				resf2elem.SetEvents(resf2elemf0)
+			}
+			if resf2iter.Filter != nil {
+				resf2elemf1 := &svcsdk.NotificationConfigurationFilter{}
+				if resf2iter.Filter.Key != nil {
+					resf2elemf1f0 := &svcsdk.KeyFilter{}
+					if resf2iter.Filter.Key.FilterRules != nil {
+						resf2elemf1f0f0 := []*svcsdk.FilterRule{}
+						for _, resf2elemf1f0f0iter := range resf2iter.Filter.Key.FilterRules {
+							resf2elemf1f0f0elem := &svcsdk.FilterRule{}
+							if resf2elemf1f0f0iter.Name != nil {
+								resf2elemf1f0f0elem.SetName(*resf2elemf1f0f0iter.Name)
+							}
+							if resf2elemf1f0f0iter.Value != nil {
+								resf2elemf1f0f0elem.SetValue(*resf2elemf1f0f0iter.Value)
+							}
+							resf2elemf1f0f0 = append(resf2elemf1f0f0, resf2elemf1f0f0elem)
+						}
+						resf2elemf1f0.SetFilterRules(resf2elemf1f0f0)
+					}
+					resf2elemf1.SetKey(resf2elemf1f0)
+				}
+				resf2elem.SetFilter(resf2elemf1)
+			}
+			if resf2iter.ID != nil {
+				resf2elem.SetId(*resf2iter.ID)
+			}
+			if resf2iter.TopicARN != nil {
+				resf2elem.SetTopicArn(*resf2iter.TopicARN)
+			}
+			resf2 = append(resf2, resf2elem)
+		}
+		res.SetTopicConfigurations(resf2)
+	}
+
+	return res
+}
+
+// setResourceNotification sets the `Notification` spec field
+// given the output of a `GetBucketNotificationConfiguration` operation.
+func (rm *resourceManager) setResourceNotification(
+	r *resource,
+	resp *svcsdk.NotificationConfiguration,
+) *svcapitypes.NotificationConfiguration {
+	res := &svcapitypes.NotificationConfiguration{}
+	if resp.LambdaFunctionConfigurations != nil {
+		resf0 := []*svcapitypes.LambdaFunctionConfiguration{}
+		for _, resf0iter := range resp.LambdaFunctionConfigurations {
+			resf0elem := &svcapitypes.LambdaFunctionConfiguration{}
+			if resf0iter.Events != nil {
+				resf0elemf0 := []*string{}
+				for _, resf0elemf0iter := range resf0iter.Events {
+					var resf0elemf0elem string
+					resf0elemf0elem = *resf0elemf0iter
+					resf0elemf0 = append(resf0elemf0, &resf0elemf0elem)
+				}
+				resf0elem.Events = resf0elemf0
+			}
+			if resf0iter.Filter != nil {
+				resf0elemf1 := &svcapitypes.NotificationConfigurationFilter{}
+				if resf0iter.Filter.Key != nil {
+					resf0elemf1f0 := &svcapitypes.KeyFilter{}
+					if resf0iter.Filter.Key.FilterRules != nil {
+						resf0elemf1f0f0 := []*svcapitypes.FilterRule{}
+						for _, resf0elemf1f0f0iter := range resf0iter.Filter.Key.FilterRules {
+							resf0elemf1f0f0elem := &svcapitypes.FilterRule{}
+							if resf0elemf1f0f0iter.Name != nil {
+								resf0elemf1f0f0elem.Name = resf0elemf1f0f0iter.Name
+							}
+							if resf0elemf1f0f0iter.Value != nil {
+								resf0elemf1f0f0elem.Value = resf0elemf1f0f0iter.Value
+							}
+							resf0elemf1f0f0 = append(resf0elemf1f0f0, resf0elemf1f0f0elem)
+						}
+						resf0elemf1f0.FilterRules = resf0elemf1f0f0
+					}
+					resf0elemf1.Key = resf0elemf1f0
+				}
+				resf0elem.Filter = resf0elemf1
+			}
+			if resf0iter.Id != nil {
+				resf0elem.ID = resf0iter.Id
+			}
+			if resf0iter.LambdaFunctionArn != nil {
+				resf0elem.LambdaFunctionARN = resf0iter.LambdaFunctionArn
+			}
+			resf0 = append(resf0, resf0elem)
+		}
+		res.LambdaFunctionConfigurations = resf0
+	}
+	if resp.QueueConfigurations != nil {
+		resf1 := []*svcapitypes.QueueConfiguration{}
+		for _, resf1iter := range resp.QueueConfigurations {
+			resf1elem := &svcapitypes.QueueConfiguration{}
+			if resf1iter.Events != nil {
+				resf1elemf0 := []*string{}
+				for _, resf1elemf0iter := range resf1iter.Events {
+					var resf1elemf0elem string
+					resf1elemf0elem = *resf1elemf0iter
+					resf1elemf0 = append(resf1elemf0, &resf1elemf0elem)
+				}
+				resf1elem.Events = resf1elemf0
+			}
+			if resf1iter.Filter != nil {
+				resf1elemf1 := &svcapitypes.NotificationConfigurationFilter{}
+				if resf1iter.Filter.Key != nil {
+					resf1elemf1f0 := &svcapitypes.KeyFilter{}
+					if resf1iter.Filter.Key.FilterRules != nil {
+						resf1elemf1f0f0 := []*svcapitypes.FilterRule{}
+						for _, resf1elemf1f0f0iter := range resf1iter.Filter.Key.FilterRules {
+							resf1elemf1f0f0elem := &svcapitypes.FilterRule{}
+							if resf1elemf1f0f0iter.Name != nil {
+								resf1elemf1f0f0elem.Name = resf1elemf1f0f0iter.Name
+							}
+							if resf1elemf1f0f0iter.Value != nil {
+								resf1elemf1f0f0elem.Value = resf1elemf1f0f0iter.Value
+							}
+							resf1elemf1f0f0 = append(resf1elemf1f0f0, resf1elemf1f0f0elem)
+						}
+						resf1elemf1f0.FilterRules = resf1elemf1f0f0
+					}
+					resf1elemf1.Key = resf1elemf1f0
+				}
+				resf1elem.Filter = resf1elemf1
+			}
+			if resf1iter.Id != nil {
+				resf1elem.ID = resf1iter.Id
+			}
+			if resf1iter.QueueArn != nil {
+				resf1elem.QueueARN = resf1iter.QueueArn
+			}
+			resf1 = append(resf1, resf1elem)
+		}
+		res.QueueConfigurations = resf1
+	}
+	if resp.TopicConfigurations != nil {
+		resf2 := []*svcapitypes.TopicConfiguration{}
+		for _, resf2iter := range resp.TopicConfigurations {
+			resf2elem := &svcapitypes.TopicConfiguration{}
+			if resf2iter.Events != nil {
+				resf2elemf0 := []*string{}
+				for _, resf2elemf0iter := range resf2iter.Events {
+					var resf2elemf0elem string
+					resf2elemf0elem = *resf2elemf0iter
+					resf2elemf0 = append(resf2elemf0, &resf2elemf0elem)
+				}
+				resf2elem.Events = resf2elemf0
+			}
+			if resf2iter.Filter != nil {
+				resf2elemf1 := &svcapitypes.NotificationConfigurationFilter{}
+				if resf2iter.Filter.Key != nil {
+					resf2elemf1f0 := &svcapitypes.KeyFilter{}
+					if resf2iter.Filter.Key.FilterRules != nil {
+						resf2elemf1f0f0 := []*svcapitypes.FilterRule{}
+						for _, resf2elemf1f0f0iter := range resf2iter.Filter.Key.FilterRules {
+							resf2elemf1f0f0elem := &svcapitypes.FilterRule{}
+							if resf2elemf1f0f0iter.Name != nil {
+								resf2elemf1f0f0elem.Name = resf2elemf1f0f0iter.Name
+							}
+							if resf2elemf1f0f0iter.Value != nil {
+								resf2elemf1f0f0elem.Value = resf2elemf1f0f0iter.Value
+							}
+							resf2elemf1f0f0 = append(resf2elemf1f0f0, resf2elemf1f0f0elem)
+						}
+						resf2elemf1f0.FilterRules = resf2elemf1f0f0
+					}
+					resf2elemf1.Key = resf2elemf1f0
+				}
+				resf2elem.Filter = resf2elemf1
+			}
+			if resf2iter.Id != nil {
+				resf2elem.ID = resf2iter.Id
+			}
+			if resf2iter.TopicArn != nil {
+				resf2elem.TopicARN = resf2iter.TopicArn
+			}
+			resf2 = append(resf2, resf2elem)
+		}
+		res.TopicConfigurations = resf2
+	}
+
+	return res
+}
+
 // newOwnershipControls returns a OwnershipControls object
 // with each the field set by the resource's corresponding spec field.
 func (rm *resourceManager) newOwnershipControls(
@@ -695,6 +1235,324 @@ func (rm *resourceManager) setResourceOwnershipControls(
 			resf0 = append(resf0, resf0elem)
 		}
 		res.Rules = resf0
+	}
+
+	return res
+}
+
+// newReplicationConfiguration returns a ReplicationConfiguration object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newReplicationConfiguration(
+	r *resource,
+) *svcsdk.ReplicationConfiguration {
+	res := &svcsdk.ReplicationConfiguration{}
+
+	if r.ko.Spec.Replication.Role != nil {
+		res.SetRole(*r.ko.Spec.Replication.Role)
+	}
+	if r.ko.Spec.Replication.Rules != nil {
+		resf1 := []*svcsdk.ReplicationRule{}
+		for _, resf1iter := range r.ko.Spec.Replication.Rules {
+			resf1elem := &svcsdk.ReplicationRule{}
+			if resf1iter.DeleteMarkerReplication != nil {
+				resf1elemf0 := &svcsdk.DeleteMarkerReplication{}
+				if resf1iter.DeleteMarkerReplication.Status != nil {
+					resf1elemf0.SetStatus(*resf1iter.DeleteMarkerReplication.Status)
+				}
+				resf1elem.SetDeleteMarkerReplication(resf1elemf0)
+			}
+			if resf1iter.Destination != nil {
+				resf1elemf1 := &svcsdk.Destination{}
+				if resf1iter.Destination.AccessControlTranslation != nil {
+					resf1elemf1f0 := &svcsdk.AccessControlTranslation{}
+					if resf1iter.Destination.AccessControlTranslation.Owner != nil {
+						resf1elemf1f0.SetOwner(*resf1iter.Destination.AccessControlTranslation.Owner)
+					}
+					resf1elemf1.SetAccessControlTranslation(resf1elemf1f0)
+				}
+				if resf1iter.Destination.Account != nil {
+					resf1elemf1.SetAccount(*resf1iter.Destination.Account)
+				}
+				if resf1iter.Destination.Bucket != nil {
+					resf1elemf1.SetBucket(*resf1iter.Destination.Bucket)
+				}
+				if resf1iter.Destination.EncryptionConfiguration != nil {
+					resf1elemf1f3 := &svcsdk.EncryptionConfiguration{}
+					if resf1iter.Destination.EncryptionConfiguration.ReplicaKMSKeyID != nil {
+						resf1elemf1f3.SetReplicaKmsKeyID(*resf1iter.Destination.EncryptionConfiguration.ReplicaKMSKeyID)
+					}
+					resf1elemf1.SetEncryptionConfiguration(resf1elemf1f3)
+				}
+				if resf1iter.Destination.Metrics != nil {
+					resf1elemf1f4 := &svcsdk.Metrics{}
+					if resf1iter.Destination.Metrics.EventThreshold != nil {
+						resf1elemf1f4f0 := &svcsdk.ReplicationTimeValue{}
+						if resf1iter.Destination.Metrics.EventThreshold.Minutes != nil {
+							resf1elemf1f4f0.SetMinutes(*resf1iter.Destination.Metrics.EventThreshold.Minutes)
+						}
+						resf1elemf1f4.SetEventThreshold(resf1elemf1f4f0)
+					}
+					if resf1iter.Destination.Metrics.Status != nil {
+						resf1elemf1f4.SetStatus(*resf1iter.Destination.Metrics.Status)
+					}
+					resf1elemf1.SetMetrics(resf1elemf1f4)
+				}
+				if resf1iter.Destination.ReplicationTime != nil {
+					resf1elemf1f5 := &svcsdk.ReplicationTime{}
+					if resf1iter.Destination.ReplicationTime.Status != nil {
+						resf1elemf1f5.SetStatus(*resf1iter.Destination.ReplicationTime.Status)
+					}
+					if resf1iter.Destination.ReplicationTime.Time != nil {
+						resf1elemf1f5f1 := &svcsdk.ReplicationTimeValue{}
+						if resf1iter.Destination.ReplicationTime.Time.Minutes != nil {
+							resf1elemf1f5f1.SetMinutes(*resf1iter.Destination.ReplicationTime.Time.Minutes)
+						}
+						resf1elemf1f5.SetTime(resf1elemf1f5f1)
+					}
+					resf1elemf1.SetReplicationTime(resf1elemf1f5)
+				}
+				if resf1iter.Destination.StorageClass != nil {
+					resf1elemf1.SetStorageClass(*resf1iter.Destination.StorageClass)
+				}
+				resf1elem.SetDestination(resf1elemf1)
+			}
+			if resf1iter.ExistingObjectReplication != nil {
+				resf1elemf2 := &svcsdk.ExistingObjectReplication{}
+				if resf1iter.ExistingObjectReplication.Status != nil {
+					resf1elemf2.SetStatus(*resf1iter.ExistingObjectReplication.Status)
+				}
+				resf1elem.SetExistingObjectReplication(resf1elemf2)
+			}
+			if resf1iter.Filter != nil {
+				resf1elemf3 := &svcsdk.ReplicationRuleFilter{}
+				if resf1iter.Filter.And != nil {
+					resf1elemf3f0 := &svcsdk.ReplicationRuleAndOperator{}
+					if resf1iter.Filter.And.Prefix != nil {
+						resf1elemf3f0.SetPrefix(*resf1iter.Filter.And.Prefix)
+					}
+					if resf1iter.Filter.And.Tags != nil {
+						resf1elemf3f0f1 := []*svcsdk.Tag{}
+						for _, resf1elemf3f0f1iter := range resf1iter.Filter.And.Tags {
+							resf1elemf3f0f1elem := &svcsdk.Tag{}
+							if resf1elemf3f0f1iter.Key != nil {
+								resf1elemf3f0f1elem.SetKey(*resf1elemf3f0f1iter.Key)
+							}
+							if resf1elemf3f0f1iter.Value != nil {
+								resf1elemf3f0f1elem.SetValue(*resf1elemf3f0f1iter.Value)
+							}
+							resf1elemf3f0f1 = append(resf1elemf3f0f1, resf1elemf3f0f1elem)
+						}
+						resf1elemf3f0.SetTags(resf1elemf3f0f1)
+					}
+					resf1elemf3.SetAnd(resf1elemf3f0)
+				}
+				if resf1iter.Filter.Prefix != nil {
+					resf1elemf3.SetPrefix(*resf1iter.Filter.Prefix)
+				}
+				if resf1iter.Filter.Tag != nil {
+					resf1elemf3f2 := &svcsdk.Tag{}
+					if resf1iter.Filter.Tag.Key != nil {
+						resf1elemf3f2.SetKey(*resf1iter.Filter.Tag.Key)
+					}
+					if resf1iter.Filter.Tag.Value != nil {
+						resf1elemf3f2.SetValue(*resf1iter.Filter.Tag.Value)
+					}
+					resf1elemf3.SetTag(resf1elemf3f2)
+				}
+				resf1elem.SetFilter(resf1elemf3)
+			}
+			if resf1iter.ID != nil {
+				resf1elem.SetID(*resf1iter.ID)
+			}
+			if resf1iter.Prefix != nil {
+				resf1elem.SetPrefix(*resf1iter.Prefix)
+			}
+			if resf1iter.Priority != nil {
+				resf1elem.SetPriority(*resf1iter.Priority)
+			}
+			if resf1iter.SourceSelectionCriteria != nil {
+				resf1elemf7 := &svcsdk.SourceSelectionCriteria{}
+				if resf1iter.SourceSelectionCriteria.ReplicaModifications != nil {
+					resf1elemf7f0 := &svcsdk.ReplicaModifications{}
+					if resf1iter.SourceSelectionCriteria.ReplicaModifications.Status != nil {
+						resf1elemf7f0.SetStatus(*resf1iter.SourceSelectionCriteria.ReplicaModifications.Status)
+					}
+					resf1elemf7.SetReplicaModifications(resf1elemf7f0)
+				}
+				if resf1iter.SourceSelectionCriteria.SSEKMSEncryptedObjects != nil {
+					resf1elemf7f1 := &svcsdk.SseKmsEncryptedObjects{}
+					if resf1iter.SourceSelectionCriteria.SSEKMSEncryptedObjects.Status != nil {
+						resf1elemf7f1.SetStatus(*resf1iter.SourceSelectionCriteria.SSEKMSEncryptedObjects.Status)
+					}
+					resf1elemf7.SetSseKmsEncryptedObjects(resf1elemf7f1)
+				}
+				resf1elem.SetSourceSelectionCriteria(resf1elemf7)
+			}
+			if resf1iter.Status != nil {
+				resf1elem.SetStatus(*resf1iter.Status)
+			}
+			resf1 = append(resf1, resf1elem)
+		}
+		res.SetRules(resf1)
+	}
+
+	return res
+}
+
+// setResourceReplication sets the `Replication` spec field
+// given the output of a `GetBucketReplication` operation.
+func (rm *resourceManager) setResourceReplication(
+	r *resource,
+	resp *svcsdk.GetBucketReplicationOutput,
+) *svcapitypes.ReplicationConfiguration {
+	res := &svcapitypes.ReplicationConfiguration{}
+	if resp.ReplicationConfiguration.Role != nil {
+		res.Role = resp.ReplicationConfiguration.Role
+	}
+	if resp.ReplicationConfiguration.Rules != nil {
+		resf1 := []*svcapitypes.ReplicationRule{}
+		for _, resf1iter := range resp.ReplicationConfiguration.Rules {
+			resf1elem := &svcapitypes.ReplicationRule{}
+			if resf1iter.DeleteMarkerReplication != nil {
+				resf1elemf0 := &svcapitypes.DeleteMarkerReplication{}
+				if resf1iter.DeleteMarkerReplication.Status != nil {
+					resf1elemf0.Status = resf1iter.DeleteMarkerReplication.Status
+				}
+				resf1elem.DeleteMarkerReplication = resf1elemf0
+			}
+			if resf1iter.Destination != nil {
+				resf1elemf1 := &svcapitypes.Destination{}
+				if resf1iter.Destination.AccessControlTranslation != nil {
+					resf1elemf1f0 := &svcapitypes.AccessControlTranslation{}
+					if resf1iter.Destination.AccessControlTranslation.Owner != nil {
+						resf1elemf1f0.Owner = resf1iter.Destination.AccessControlTranslation.Owner
+					}
+					resf1elemf1.AccessControlTranslation = resf1elemf1f0
+				}
+				if resf1iter.Destination.Account != nil {
+					resf1elemf1.Account = resf1iter.Destination.Account
+				}
+				if resf1iter.Destination.Bucket != nil {
+					resf1elemf1.Bucket = resf1iter.Destination.Bucket
+				}
+				if resf1iter.Destination.EncryptionConfiguration != nil {
+					resf1elemf1f3 := &svcapitypes.EncryptionConfiguration{}
+					if resf1iter.Destination.EncryptionConfiguration.ReplicaKmsKeyID != nil {
+						resf1elemf1f3.ReplicaKMSKeyID = resf1iter.Destination.EncryptionConfiguration.ReplicaKmsKeyID
+					}
+					resf1elemf1.EncryptionConfiguration = resf1elemf1f3
+				}
+				if resf1iter.Destination.Metrics != nil {
+					resf1elemf1f4 := &svcapitypes.Metrics{}
+					if resf1iter.Destination.Metrics.EventThreshold != nil {
+						resf1elemf1f4f0 := &svcapitypes.ReplicationTimeValue{}
+						if resf1iter.Destination.Metrics.EventThreshold.Minutes != nil {
+							resf1elemf1f4f0.Minutes = resf1iter.Destination.Metrics.EventThreshold.Minutes
+						}
+						resf1elemf1f4.EventThreshold = resf1elemf1f4f0
+					}
+					if resf1iter.Destination.Metrics.Status != nil {
+						resf1elemf1f4.Status = resf1iter.Destination.Metrics.Status
+					}
+					resf1elemf1.Metrics = resf1elemf1f4
+				}
+				if resf1iter.Destination.ReplicationTime != nil {
+					resf1elemf1f5 := &svcapitypes.ReplicationTime{}
+					if resf1iter.Destination.ReplicationTime.Status != nil {
+						resf1elemf1f5.Status = resf1iter.Destination.ReplicationTime.Status
+					}
+					if resf1iter.Destination.ReplicationTime.Time != nil {
+						resf1elemf1f5f1 := &svcapitypes.ReplicationTimeValue{}
+						if resf1iter.Destination.ReplicationTime.Time.Minutes != nil {
+							resf1elemf1f5f1.Minutes = resf1iter.Destination.ReplicationTime.Time.Minutes
+						}
+						resf1elemf1f5.Time = resf1elemf1f5f1
+					}
+					resf1elemf1.ReplicationTime = resf1elemf1f5
+				}
+				if resf1iter.Destination.StorageClass != nil {
+					resf1elemf1.StorageClass = resf1iter.Destination.StorageClass
+				}
+				resf1elem.Destination = resf1elemf1
+			}
+			if resf1iter.ExistingObjectReplication != nil {
+				resf1elemf2 := &svcapitypes.ExistingObjectReplication{}
+				if resf1iter.ExistingObjectReplication.Status != nil {
+					resf1elemf2.Status = resf1iter.ExistingObjectReplication.Status
+				}
+				resf1elem.ExistingObjectReplication = resf1elemf2
+			}
+			if resf1iter.Filter != nil {
+				resf1elemf3 := &svcapitypes.ReplicationRuleFilter{}
+				if resf1iter.Filter.And != nil {
+					resf1elemf3f0 := &svcapitypes.ReplicationRuleAndOperator{}
+					if resf1iter.Filter.And.Prefix != nil {
+						resf1elemf3f0.Prefix = resf1iter.Filter.And.Prefix
+					}
+					if resf1iter.Filter.And.Tags != nil {
+						resf1elemf3f0f1 := []*svcapitypes.Tag{}
+						for _, resf1elemf3f0f1iter := range resf1iter.Filter.And.Tags {
+							resf1elemf3f0f1elem := &svcapitypes.Tag{}
+							if resf1elemf3f0f1iter.Key != nil {
+								resf1elemf3f0f1elem.Key = resf1elemf3f0f1iter.Key
+							}
+							if resf1elemf3f0f1iter.Value != nil {
+								resf1elemf3f0f1elem.Value = resf1elemf3f0f1iter.Value
+							}
+							resf1elemf3f0f1 = append(resf1elemf3f0f1, resf1elemf3f0f1elem)
+						}
+						resf1elemf3f0.Tags = resf1elemf3f0f1
+					}
+					resf1elemf3.And = resf1elemf3f0
+				}
+				if resf1iter.Filter.Prefix != nil {
+					resf1elemf3.Prefix = resf1iter.Filter.Prefix
+				}
+				if resf1iter.Filter.Tag != nil {
+					resf1elemf3f2 := &svcapitypes.Tag{}
+					if resf1iter.Filter.Tag.Key != nil {
+						resf1elemf3f2.Key = resf1iter.Filter.Tag.Key
+					}
+					if resf1iter.Filter.Tag.Value != nil {
+						resf1elemf3f2.Value = resf1iter.Filter.Tag.Value
+					}
+					resf1elemf3.Tag = resf1elemf3f2
+				}
+				resf1elem.Filter = resf1elemf3
+			}
+			if resf1iter.ID != nil {
+				resf1elem.ID = resf1iter.ID
+			}
+			if resf1iter.Prefix != nil {
+				resf1elem.Prefix = resf1iter.Prefix
+			}
+			if resf1iter.Priority != nil {
+				resf1elem.Priority = resf1iter.Priority
+			}
+			if resf1iter.SourceSelectionCriteria != nil {
+				resf1elemf7 := &svcapitypes.SourceSelectionCriteria{}
+				if resf1iter.SourceSelectionCriteria.ReplicaModifications != nil {
+					resf1elemf7f0 := &svcapitypes.ReplicaModifications{}
+					if resf1iter.SourceSelectionCriteria.ReplicaModifications.Status != nil {
+						resf1elemf7f0.Status = resf1iter.SourceSelectionCriteria.ReplicaModifications.Status
+					}
+					resf1elemf7.ReplicaModifications = resf1elemf7f0
+				}
+				if resf1iter.SourceSelectionCriteria.SseKmsEncryptedObjects != nil {
+					resf1elemf7f1 := &svcapitypes.SSEKMSEncryptedObjects{}
+					if resf1iter.SourceSelectionCriteria.SseKmsEncryptedObjects.Status != nil {
+						resf1elemf7f1.Status = resf1iter.SourceSelectionCriteria.SseKmsEncryptedObjects.Status
+					}
+					resf1elemf7.SSEKMSEncryptedObjects = resf1elemf7f1
+				}
+				resf1elem.SourceSelectionCriteria = resf1elemf7
+			}
+			if resf1iter.Status != nil {
+				resf1elem.Status = resf1iter.Status
+			}
+			resf1 = append(resf1, resf1elem)
+		}
+		res.Rules = resf1
 	}
 
 	return res

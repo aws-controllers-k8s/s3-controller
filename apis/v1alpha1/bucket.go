@@ -49,11 +49,15 @@ type BucketSpec struct {
 	GrantWrite *string `json:"grantWrite,omitempty"`
 	// Allows grantee to write the ACL for the applicable bucket.
 	GrantWriteACP *string `json:"grantWriteACP,omitempty"`
+	// Container for lifecycle rules. You can add as many as 1,000 rules.
+	Lifecycle *BucketLifecycleConfiguration `json:"lifecycle,omitempty"`
 	// Container for logging status information.
 	Logging *BucketLoggingStatus `json:"logging,omitempty"`
 	// The name of the bucket to create.
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
+
+	Notification *NotificationConfiguration `json:"notification,omitempty"`
 	// Specifies whether you want S3 Object Lock to be enabled for the new bucket.
 	ObjectLockEnabledForBucket *bool `json:"objectLockEnabledForBucket,omitempty"`
 	// The OwnershipControls (BucketOwnerPreferred or ObjectWriter) that you want
@@ -61,6 +65,8 @@ type BucketSpec struct {
 	OwnershipControls *OwnershipControls `json:"ownershipControls,omitempty"`
 	// The bucket policy as a JSON document.
 	Policy *string `json:"policy,omitempty"`
+
+	Replication *ReplicationConfiguration `json:"replication,omitempty"`
 	// Container for Payer.
 	RequestPayment *RequestPaymentConfiguration `json:"requestPayment,omitempty"`
 	// Container for the TagSet and Tag elements.

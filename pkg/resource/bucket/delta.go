@@ -16,6 +16,7 @@
 package bucket
 
 import (
+	"bytes"
 	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -23,6 +24,7 @@ import (
 
 // Hack to avoid import errors during build...
 var (
+	_ = &bytes.Buffer{}
 	_ = &reflect.Method{}
 )
 
@@ -118,6 +120,13 @@ func newResourceDelta(
 			delta.Add("Spec.GrantWriteACP", a.ko.Spec.GrantWriteACP, b.ko.Spec.GrantWriteACP)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Lifecycle, b.ko.Spec.Lifecycle) {
+		delta.Add("Spec.Lifecycle", a.ko.Spec.Lifecycle, b.ko.Spec.Lifecycle)
+	} else if a.ko.Spec.Lifecycle != nil && b.ko.Spec.Lifecycle != nil {
+		if !reflect.DeepEqual(a.ko.Spec.Lifecycle.Rules, b.ko.Spec.Lifecycle.Rules) {
+			delta.Add("Spec.Lifecycle.Rules", a.ko.Spec.Lifecycle.Rules, b.ko.Spec.Lifecycle.Rules)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Logging, b.ko.Spec.Logging) {
 		delta.Add("Spec.Logging", a.ko.Spec.Logging, b.ko.Spec.Logging)
 	} else if a.ko.Spec.Logging != nil && b.ko.Spec.Logging != nil {
@@ -150,6 +159,19 @@ func newResourceDelta(
 			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Notification, b.ko.Spec.Notification) {
+		delta.Add("Spec.Notification", a.ko.Spec.Notification, b.ko.Spec.Notification)
+	} else if a.ko.Spec.Notification != nil && b.ko.Spec.Notification != nil {
+		if !reflect.DeepEqual(a.ko.Spec.Notification.LambdaFunctionConfigurations, b.ko.Spec.Notification.LambdaFunctionConfigurations) {
+			delta.Add("Spec.Notification.LambdaFunctionConfigurations", a.ko.Spec.Notification.LambdaFunctionConfigurations, b.ko.Spec.Notification.LambdaFunctionConfigurations)
+		}
+		if !reflect.DeepEqual(a.ko.Spec.Notification.QueueConfigurations, b.ko.Spec.Notification.QueueConfigurations) {
+			delta.Add("Spec.Notification.QueueConfigurations", a.ko.Spec.Notification.QueueConfigurations, b.ko.Spec.Notification.QueueConfigurations)
+		}
+		if !reflect.DeepEqual(a.ko.Spec.Notification.TopicConfigurations, b.ko.Spec.Notification.TopicConfigurations) {
+			delta.Add("Spec.Notification.TopicConfigurations", a.ko.Spec.Notification.TopicConfigurations, b.ko.Spec.Notification.TopicConfigurations)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ObjectLockEnabledForBucket, b.ko.Spec.ObjectLockEnabledForBucket) {
 		delta.Add("Spec.ObjectLockEnabledForBucket", a.ko.Spec.ObjectLockEnabledForBucket, b.ko.Spec.ObjectLockEnabledForBucket)
 	} else if a.ko.Spec.ObjectLockEnabledForBucket != nil && b.ko.Spec.ObjectLockEnabledForBucket != nil {
@@ -169,6 +191,20 @@ func newResourceDelta(
 	} else if a.ko.Spec.Policy != nil && b.ko.Spec.Policy != nil {
 		if *a.ko.Spec.Policy != *b.ko.Spec.Policy {
 			delta.Add("Spec.Policy", a.ko.Spec.Policy, b.ko.Spec.Policy)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Replication, b.ko.Spec.Replication) {
+		delta.Add("Spec.Replication", a.ko.Spec.Replication, b.ko.Spec.Replication)
+	} else if a.ko.Spec.Replication != nil && b.ko.Spec.Replication != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.Replication.Role, b.ko.Spec.Replication.Role) {
+			delta.Add("Spec.Replication.Role", a.ko.Spec.Replication.Role, b.ko.Spec.Replication.Role)
+		} else if a.ko.Spec.Replication.Role != nil && b.ko.Spec.Replication.Role != nil {
+			if *a.ko.Spec.Replication.Role != *b.ko.Spec.Replication.Role {
+				delta.Add("Spec.Replication.Role", a.ko.Spec.Replication.Role, b.ko.Spec.Replication.Role)
+			}
+		}
+		if !reflect.DeepEqual(a.ko.Spec.Replication.Rules, b.ko.Spec.Replication.Rules) {
+			delta.Add("Spec.Replication.Rules", a.ko.Spec.Replication.Rules, b.ko.Spec.Replication.Rules)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.RequestPayment, b.ko.Spec.RequestPayment) {
