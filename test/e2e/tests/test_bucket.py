@@ -26,7 +26,7 @@ from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_s3_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
-from e2e.bootstrap_resources import TestBootstrapResources, get_bootstrap_resources
+from e2e.bootstrap_resources import BootstrapResources, get_bootstrap_resources
 
 RESOURCE_PLURAL = "buckets"
 
