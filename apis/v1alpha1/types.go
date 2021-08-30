@@ -28,6 +28,15 @@ var (
 	_ = ackv1alpha1.AWSAccountID("")
 )
 
+// Specifies the days since the initiation of an incomplete multipart upload
+// that Amazon S3 will wait before permanently removing all parts of the upload.
+// For more information, see Aborting Incomplete Multipart Uploads Using a Bucket
+// Lifecycle Policy (https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config)
+// in the Amazon Simple Storage Service Developer Guide.
+type AbortIncompleteMultipartUpload struct {
+	DaysAfterInitiation *int64 `json:"daysAfterInitiation,omitempty"`
+}
+
 // Configures the transfer acceleration state for an Amazon S3 bucket. For more
 // information, see Amazon S3 Transfer Acceleration (https://docs.aws.amazon.com/AmazonS3/latest/dev/transfer-acceleration.html)
 // in the Amazon Simple Storage Service Developer Guide.
@@ -41,17 +50,24 @@ type AccessControlPolicy struct {
 	Owner *Owner `json:"owner,omitempty"`
 }
 
+// A container for information about access control for replicas.
+type AccessControlTranslation struct {
+	Owner *string `json:"owner,omitempty"`
+}
+
 // A conjunction (logical AND) of predicates, which is used in evaluating a
 // metrics filter. The operator must have at least two predicates in any combination,
 // and an object must match all of the predicates for the filter to apply.
 type AnalyticsAndOperator struct {
-	Tags []*Tag `json:"tags,omitempty"`
+	Prefix *string `json:"prefix,omitempty"`
+	Tags   []*Tag  `json:"tags,omitempty"`
 }
 
 // The filter used to describe a set of objects for analyses. A filter must
 // have exactly one prefix, one tag, or one conjunction (AnalyticsAndOperator).
 // If no filter is provided, all objects will be considered in any analysis.
 type AnalyticsFilter struct {
+	Prefix *string `json:"prefix,omitempty"`
 	// A container of a key value name pair.
 	Tag *Tag `json:"tag,omitempty"`
 }
@@ -60,6 +76,14 @@ type AnalyticsFilter struct {
 type AnalyticsS3BucketDestination struct {
 	Bucket          *string `json:"bucket,omitempty"`
 	BucketAccountID *string `json:"bucketAccountID,omitempty"`
+	Prefix          *string `json:"prefix,omitempty"`
+}
+
+// Specifies the lifecycle configuration for objects in an Amazon S3 bucket.
+// For more information, see Object Lifecycle Management (https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lifecycle-mgmt.html)
+// in the Amazon Simple Storage Service Developer Guide.
+type BucketLifecycleConfiguration struct {
+	Rules []*LifecycleRule `json:"rules,omitempty"`
 }
 
 // Container for logging status information.
@@ -95,6 +119,25 @@ type CORSRule struct {
 	MaxAgeSeconds  *int64    `json:"maxAgeSeconds,omitempty"`
 }
 
+// Container for specifying the AWS Lambda notification configuration.
+type CloudFunctionConfiguration struct {
+	// The bucket event for which to send notifications.
+	Event  *string   `json:"event,omitempty"`
+	Events []*string `json:"events,omitempty"`
+	// An optional unique identifier for configurations in a notification configuration.
+	// If you don't provide one, Amazon S3 will assign an ID.
+	ID *string `json:"id,omitempty"`
+}
+
+// Container for all (if there are any) keys between Prefix and the next occurrence
+// of the string specified by a delimiter. CommonPrefixes lists keys that act
+// like subdirectories in the directory specified by Prefix. For example, if
+// the prefix is notes/ and the delimiter is a slash (/) as in notes/summer/july,
+// the common prefix is notes/summer/.
+type CommonPrefix struct {
+	Prefix *string `json:"prefix,omitempty"`
+}
+
 // A container for describing a condition that must be met for the specified
 // redirect to apply. For example, 1. If request is for pages in the /docs folder,
 // redirect to the /documents folder. 2. If request results in HTTP error 4xx,
@@ -109,11 +152,34 @@ type CreateBucketConfiguration struct {
 	LocationConstraint *string `json:"locationConstraint,omitempty"`
 }
 
+// The container element for specifying the default Object Lock retention settings
+// for new objects placed in the specified bucket.
+type DefaultRetention struct {
+	Days *int64 `json:"days,omitempty"`
+}
+
 // Information about the delete marker.
 type DeleteMarkerEntry struct {
 	Key *string `json:"key,omitempty"`
 	// Container for the owner's display name and ID.
 	Owner *Owner `json:"owner,omitempty"`
+}
+
+// Specifies whether Amazon S3 replicates delete markers. If you specify a Filter
+// in your replication configuration, you must also include a DeleteMarkerReplication
+// element. If your Filter includes a Tag element, the DeleteMarkerReplication
+// Status must be set to Disabled, because Amazon S3 does not support replicating
+// delete markers for tag-based rules. For an example configuration, see Basic
+// Rule Configuration (https://docs.aws.amazon.com/AmazonS3/latest/dev/replication-add-config.html#replication-config-min-rule-config).
+//
+// For more information about delete marker replication, see Basic Rule Configuration
+// (https://docs.aws.amazon.com/AmazonS3/latest/dev/delete-marker-replication.html).
+//
+// If you are using an earlier version of the replication configuration, Amazon
+// S3 handles replication of delete markers differently. For more information,
+// see Backward Compatibility (https://docs.aws.amazon.com/AmazonS3/latest/dev/replication-add-config.html#replication-backward-compat-considerations).
+type DeleteMarkerReplication struct {
+	Status *string `json:"status,omitempty"`
 }
 
 // Information about the deleted object.
@@ -124,14 +190,34 @@ type DeletedObject struct {
 // Specifies information about where to publish analysis or configuration results
 // for an Amazon S3 bucket and S3 Replication Time Control (S3 RTC).
 type Destination struct {
-	Account *string `json:"account,omitempty"`
-	Bucket  *string `json:"bucket,omitempty"`
+	// A container for information about access control for replicas.
+	AccessControlTranslation *AccessControlTranslation `json:"accessControlTranslation,omitempty"`
+	Account                  *string                   `json:"account,omitempty"`
+	Bucket                   *string                   `json:"bucket,omitempty"`
+	// Specifies encryption-related information for an Amazon S3 bucket that is
+	// a destination for replicated objects.
+	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
+	// A container specifying replication metrics-related settings enabling replication
+	// metrics and events.
+	Metrics *Metrics `json:"metrics,omitempty"`
+	// A container specifying S3 Replication Time Control (S3 RTC) related information,
+	// including whether S3 RTC is enabled and the time when all objects and operations
+	// on objects must be replicated. Must be specified together with a Metrics
+	// block.
+	ReplicationTime *ReplicationTime `json:"replicationTime,omitempty"`
+	StorageClass    *string          `json:"storageClass,omitempty"`
 }
 
 // Contains the type of server-side encryption used.
 type Encryption struct {
 	EncryptionType *string `json:"encryptionType,omitempty"`
 	KMSKeyID       *string `json:"kmsKeyID,omitempty"`
+}
+
+// Specifies encryption-related information for an Amazon S3 bucket that is
+// a destination for replicated objects.
+type EncryptionConfiguration struct {
+	ReplicaKMSKeyID *string `json:"replicaKMSKeyID,omitempty"`
 }
 
 // Container for all error elements.
@@ -142,6 +228,20 @@ type Error struct {
 // The error information.
 type ErrorDocument struct {
 	Key *string `json:"key,omitempty"`
+}
+
+// Optional configuration to replicate existing source bucket objects. For more
+// information, see Replicating Existing Objects (https://docs.aws.amazon.com/AmazonS3/latest/dev/replication-what-is-isnot-replicated.html#existing-object-replication)
+// in the Amazon S3 Developer Guide.
+type ExistingObjectReplication struct {
+	Status *string `json:"status,omitempty"`
+}
+
+// Specifies the Amazon S3 object key name to filter on and whether to filter
+// on the suffix or prefix of the key name.
+type FilterRule struct {
+	Name  *string `json:"name,omitempty"`
+	Value *string `json:"value,omitempty"`
 }
 
 // Container for grant information.
@@ -173,14 +273,22 @@ type Initiator struct {
 // A container for specifying S3 Intelligent-Tiering filters. The filters determine
 // the subset of objects to which the rule applies.
 type IntelligentTieringAndOperator struct {
-	Tags []*Tag `json:"tags,omitempty"`
+	Prefix *string `json:"prefix,omitempty"`
+	Tags   []*Tag  `json:"tags,omitempty"`
 }
 
 // The Filter is used to identify objects that the S3 Intelligent-Tiering configuration
 // applies to.
 type IntelligentTieringFilter struct {
+	Prefix *string `json:"prefix,omitempty"`
 	// A container of a key value name pair.
 	Tag *Tag `json:"tag,omitempty"`
+}
+
+// Specifies an inventory filter. The inventory only includes objects that meet
+// the filter's criteria.
+type InventoryFilter struct {
+	Prefix *string `json:"prefix,omitempty"`
 }
 
 // Contains the bucket name, file format, bucket owner (optional), and prefix
@@ -188,23 +296,78 @@ type IntelligentTieringFilter struct {
 type InventoryS3BucketDestination struct {
 	AccountID *string `json:"accountID,omitempty"`
 	Bucket    *string `json:"bucket,omitempty"`
+	Prefix    *string `json:"prefix,omitempty"`
+}
+
+// A container for object key name prefix and suffix filtering rules.
+type KeyFilter struct {
+	// A list of containers for the key-value pair that defines the criteria for
+	// the filter rule.
+	FilterRules []*FilterRule `json:"filterRules,omitempty"`
+}
+
+// A container for specifying the configuration for AWS Lambda notifications.
+type LambdaFunctionConfiguration struct {
+	Events []*string `json:"events,omitempty"`
+	// Specifies object key name filtering rules. For information about key name
+	// filtering, see Configuring Event Notifications (https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html)
+	// in the Amazon Simple Storage Service Developer Guide.
+	Filter *NotificationConfigurationFilter `json:"filter,omitempty"`
+	// An optional unique identifier for configurations in a notification configuration.
+	// If you don't provide one, Amazon S3 will assign an ID.
+	ID                *string `json:"id,omitempty"`
+	LambdaFunctionARN *string `json:"lambdaFunctionARN,omitempty"`
+}
+
+// Container for the expiration for the lifecycle of the object.
+type LifecycleExpiration struct {
+	Date                      *metav1.Time `json:"date,omitempty"`
+	Days                      *int64       `json:"days,omitempty"`
+	ExpiredObjectDeleteMarker *bool        `json:"expiredObjectDeleteMarker,omitempty"`
 }
 
 // A lifecycle rule for individual objects in an Amazon S3 bucket.
 type LifecycleRule struct {
-	ID *string `json:"id,omitempty"`
+	// Specifies the days since the initiation of an incomplete multipart upload
+	// that Amazon S3 will wait before permanently removing all parts of the upload.
+	// For more information, see Aborting Incomplete Multipart Uploads Using a Bucket
+	// Lifecycle Policy (https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config)
+	// in the Amazon Simple Storage Service Developer Guide.
+	AbortIncompleteMultipartUpload *AbortIncompleteMultipartUpload `json:"abortIncompleteMultipartUpload,omitempty"`
+	// Container for the expiration for the lifecycle of the object.
+	Expiration *LifecycleExpiration `json:"expiration,omitempty"`
+	// The Filter is used to identify objects that a Lifecycle Rule applies to.
+	// A Filter must have exactly one of Prefix, Tag, or And specified.
+	Filter *LifecycleRuleFilter `json:"filter,omitempty"`
+	ID     *string              `json:"id,omitempty"`
+	// Specifies when noncurrent object versions expire. Upon expiration, Amazon
+	// S3 permanently deletes the noncurrent object versions. You set this lifecycle
+	// configuration action on a bucket that has versioning enabled (or suspended)
+	// to request that Amazon S3 delete noncurrent object versions at a specific
+	// period in the object's lifetime.
+	NoncurrentVersionExpiration  *NoncurrentVersionExpiration   `json:"noncurrentVersionExpiration,omitempty"`
+	NoncurrentVersionTransitions []*NoncurrentVersionTransition `json:"noncurrentVersionTransitions,omitempty"`
+	Prefix                       *string                        `json:"prefix,omitempty"`
+	Status                       *string                        `json:"status,omitempty"`
+	Transitions                  []*Transition                  `json:"transitions,omitempty"`
 }
 
 // This is used in a Lifecycle Rule Filter to apply a logical AND to two or
 // more predicates. The Lifecycle Rule will apply to any object matching all
 // of the predicates configured inside the And operator.
 type LifecycleRuleAndOperator struct {
-	Tags []*Tag `json:"tags,omitempty"`
+	Prefix *string `json:"prefix,omitempty"`
+	Tags   []*Tag  `json:"tags,omitempty"`
 }
 
 // The Filter is used to identify objects that a Lifecycle Rule applies to.
 // A Filter must have exactly one of Prefix, Tag, or And specified.
 type LifecycleRuleFilter struct {
+	// This is used in a Lifecycle Rule Filter to apply a logical AND to two or
+	// more predicates. The Lifecycle Rule will apply to any object matching all
+	// of the predicates configured inside the And operator.
+	And    *LifecycleRuleAndOperator `json:"and,omitempty"`
+	Prefix *string                   `json:"prefix,omitempty"`
 	// A container of a key value name pair.
 	Tag *Tag `json:"tag,omitempty"`
 }
@@ -212,7 +375,8 @@ type LifecycleRuleFilter struct {
 // Describes an Amazon S3 location that will receive the results of the restore
 // request.
 type Location struct {
-	BucketName *string `json:"bucketName,omitempty"`
+	BucketName   *string `json:"bucketName,omitempty"`
+	StorageClass *string `json:"storageClass,omitempty"`
 	// Container for TagSet elements.
 	Tagging *Tagging `json:"tagging,omitempty"`
 }
@@ -227,17 +391,28 @@ type LoggingEnabled struct {
 	TargetPrefix *string        `json:"targetPrefix,omitempty"`
 }
 
+// A container specifying replication metrics-related settings enabling replication
+// metrics and events.
+type Metrics struct {
+	// A container specifying the time value for S3 Replication Time Control (S3
+	// RTC) and replication metrics EventThreshold.
+	EventThreshold *ReplicationTimeValue `json:"eventThreshold,omitempty"`
+	Status         *string               `json:"status,omitempty"`
+}
+
 // A conjunction (logical AND) of predicates, which is used in evaluating a
 // metrics filter. The operator must have at least two predicates, and an object
 // must match all of the predicates in order for the filter to apply.
 type MetricsAndOperator struct {
-	Tags []*Tag `json:"tags,omitempty"`
+	Prefix *string `json:"prefix,omitempty"`
+	Tags   []*Tag  `json:"tags,omitempty"`
 }
 
 // Specifies a metrics configuration filter. The metrics configuration only
 // includes objects that meet the filter's criteria. A filter must be a prefix,
 // a tag, or a conjunction (MetricsAndOperator).
 type MetricsFilter struct {
+	Prefix *string `json:"prefix,omitempty"`
 	// A container of a key value name pair.
 	Tag *Tag `json:"tag,omitempty"`
 }
@@ -246,7 +421,45 @@ type MetricsFilter struct {
 type MultipartUpload struct {
 	Key *string `json:"key,omitempty"`
 	// Container for the owner's display name and ID.
-	Owner *Owner `json:"owner,omitempty"`
+	Owner        *Owner  `json:"owner,omitempty"`
+	StorageClass *string `json:"storageClass,omitempty"`
+}
+
+// Specifies when noncurrent object versions expire. Upon expiration, Amazon
+// S3 permanently deletes the noncurrent object versions. You set this lifecycle
+// configuration action on a bucket that has versioning enabled (or suspended)
+// to request that Amazon S3 delete noncurrent object versions at a specific
+// period in the object's lifetime.
+type NoncurrentVersionExpiration struct {
+	NoncurrentDays *int64 `json:"noncurrentDays,omitempty"`
+}
+
+// Container for the transition rule that describes when noncurrent objects
+// transition to the STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING, GLACIER,
+// or DEEP_ARCHIVE storage class. If your bucket is versioning-enabled (or versioning
+// is suspended), you can set this action to request that Amazon S3 transition
+// noncurrent object versions to the STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING,
+// GLACIER, or DEEP_ARCHIVE storage class at a specific period in the object's
+// lifetime.
+type NoncurrentVersionTransition struct {
+	NoncurrentDays *int64  `json:"noncurrentDays,omitempty"`
+	StorageClass   *string `json:"storageClass,omitempty"`
+}
+
+// A container for specifying the notification configuration of the bucket.
+// If this element is empty, notifications are turned off for the bucket.
+type NotificationConfiguration struct {
+	LambdaFunctionConfigurations []*LambdaFunctionConfiguration `json:"lambdaFunctionConfigurations,omitempty"`
+	QueueConfigurations          []*QueueConfiguration          `json:"queueConfigurations,omitempty"`
+	TopicConfigurations          []*TopicConfiguration          `json:"topicConfigurations,omitempty"`
+}
+
+// Specifies object key name filtering rules. For information about key name
+// filtering, see Configuring Event Notifications (https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html)
+// in the Amazon Simple Storage Service Developer Guide.
+type NotificationConfigurationFilter struct {
+	// A container for object key name prefix and suffix filtering rules.
+	Key *KeyFilter `json:"key,omitempty"`
 }
 
 // An object consists of data and its descriptive metadata.
@@ -259,6 +472,11 @@ type Object struct {
 // Object Identifier is unique value to identify objects.
 type ObjectIdentifier struct {
 	Key *string `json:"key,omitempty"`
+}
+
+// A Retention configuration for an object.
+type ObjectLockRetention struct {
+	RetainUntilDate *metav1.Time `json:"retainUntilDate,omitempty"`
 }
 
 // The version of an object.
@@ -299,6 +517,34 @@ type OwnershipControlsRule struct {
 	ObjectOwnership *string `json:"objectOwnership,omitempty"`
 }
 
+// Specifies the configuration for publishing messages to an Amazon Simple Queue
+// Service (Amazon SQS) queue when Amazon S3 detects specified events.
+type QueueConfiguration struct {
+	Events []*string `json:"events,omitempty"`
+	// Specifies object key name filtering rules. For information about key name
+	// filtering, see Configuring Event Notifications (https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html)
+	// in the Amazon Simple Storage Service Developer Guide.
+	Filter *NotificationConfigurationFilter `json:"filter,omitempty"`
+	// An optional unique identifier for configurations in a notification configuration.
+	// If you don't provide one, Amazon S3 will assign an ID.
+	ID       *string `json:"id,omitempty"`
+	QueueARN *string `json:"queueARN,omitempty"`
+}
+
+// This data type is deprecated. Use QueueConfiguration (https://docs.aws.amazon.com/AmazonS3/latest/API/API_QueueConfiguration.html)
+// for the same purposes. This data type specifies the configuration for publishing
+// messages to an Amazon Simple Queue Service (Amazon SQS) queue when Amazon
+// S3 detects specified events.
+type QueueConfigurationDeprecated struct {
+	// The bucket event for which to send notifications.
+	Event  *string   `json:"event,omitempty"`
+	Events []*string `json:"events,omitempty"`
+	// An optional unique identifier for configurations in a notification configuration.
+	// If you don't provide one, Amazon S3 will assign an ID.
+	ID    *string `json:"id,omitempty"`
+	Queue *string `json:"queue,omitempty"`
+}
+
 // Specifies how requests are redirected. In the event of an error, you can
 // specify a different error code to return.
 type Redirect struct {
@@ -316,9 +562,62 @@ type RedirectAllRequestsTo struct {
 	Protocol *string `json:"protocol,omitempty"`
 }
 
+// A filter that you can specify for selection for modifications on replicas.
+// Amazon S3 doesn't replicate replica modifications by default. In the latest
+// version of replication configuration (when Filter is specified), you can
+// specify this element and set the status to Enabled to replicate modifications
+// on replicas.
+//
+// If you don't specify the Filter element, Amazon S3 assumes that the replication
+// configuration is the earlier version, V1. In the earlier version, this element
+// is not allowed.
+type ReplicaModifications struct {
+	Status *string `json:"status,omitempty"`
+}
+
+// A container for replication rules. You can add up to 1,000 rules. The maximum
+// size of a replication configuration is 2 MB.
+type ReplicationConfiguration struct {
+	Role  *string            `json:"role,omitempty"`
+	Rules []*ReplicationRule `json:"rules,omitempty"`
+}
+
 // Specifies which Amazon S3 objects to replicate and where to store the replicas.
 type ReplicationRule struct {
-	ID *string `json:"id,omitempty"`
+	// Specifies whether Amazon S3 replicates delete markers. If you specify a Filter
+	// in your replication configuration, you must also include a DeleteMarkerReplication
+	// element. If your Filter includes a Tag element, the DeleteMarkerReplication
+	// Status must be set to Disabled, because Amazon S3 does not support replicating
+	// delete markers for tag-based rules. For an example configuration, see Basic
+	// Rule Configuration (https://docs.aws.amazon.com/AmazonS3/latest/dev/replication-add-config.html#replication-config-min-rule-config).
+	//
+	// For more information about delete marker replication, see Basic Rule Configuration
+	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/delete-marker-replication.html).
+	//
+	// If you are using an earlier version of the replication configuration, Amazon
+	// S3 handles replication of delete markers differently. For more information,
+	// see Backward Compatibility (https://docs.aws.amazon.com/AmazonS3/latest/dev/replication-add-config.html#replication-backward-compat-considerations).
+	DeleteMarkerReplication *DeleteMarkerReplication `json:"deleteMarkerReplication,omitempty"`
+	// Specifies information about where to publish analysis or configuration results
+	// for an Amazon S3 bucket and S3 Replication Time Control (S3 RTC).
+	Destination *Destination `json:"destination,omitempty"`
+	// Optional configuration to replicate existing source bucket objects. For more
+	// information, see Replicating Existing Objects (https://docs.aws.amazon.com/AmazonS3/latest/dev/replication-what-is-isnot-replicated.html#existing-object-replication)
+	// in the Amazon S3 Developer Guide.
+	ExistingObjectReplication *ExistingObjectReplication `json:"existingObjectReplication,omitempty"`
+	// A filter that identifies the subset of objects to which the replication rule
+	// applies. A Filter must specify exactly one Prefix, Tag, or an And child element.
+	Filter   *ReplicationRuleFilter `json:"filter,omitempty"`
+	ID       *string                `json:"id,omitempty"`
+	Prefix   *string                `json:"prefix,omitempty"`
+	Priority *int64                 `json:"priority,omitempty"`
+	// A container that describes additional filters for identifying the source
+	// objects that you want to replicate. You can choose to enable or disable the
+	// replication of these objects. Currently, Amazon S3 supports only the filter
+	// that you can specify for objects created with server-side encryption using
+	// a customer master key (CMK) stored in AWS Key Management Service (SSE-KMS).
+	SourceSelectionCriteria *SourceSelectionCriteria `json:"sourceSelectionCriteria,omitempty"`
+	Status                  *string                  `json:"status,omitempty"`
 }
 
 // A container for specifying rule filters. The filters determine the subset
@@ -333,19 +632,55 @@ type ReplicationRule struct {
 //    * If you specify a filter based on multiple tags, wrap the Tag elements
 //    in an And tag
 type ReplicationRuleAndOperator struct {
-	Tags []*Tag `json:"tags,omitempty"`
+	Prefix *string `json:"prefix,omitempty"`
+	Tags   []*Tag  `json:"tags,omitempty"`
 }
 
 // A filter that identifies the subset of objects to which the replication rule
 // applies. A Filter must specify exactly one Prefix, Tag, or an And child element.
 type ReplicationRuleFilter struct {
+	// A container for specifying rule filters. The filters determine the subset
+	// of objects to which the rule applies. This element is required only if you
+	// specify more than one filter.
+	//
+	// For example:
+	//
+	//    * If you specify both a Prefix and a Tag filter, wrap these filters in
+	//    an And tag.
+	//
+	//    * If you specify a filter based on multiple tags, wrap the Tag elements
+	//    in an And tag
+	And    *ReplicationRuleAndOperator `json:"and,omitempty"`
+	Prefix *string                     `json:"prefix,omitempty"`
 	// A container of a key value name pair.
 	Tag *Tag `json:"tag,omitempty"`
+}
+
+// A container specifying S3 Replication Time Control (S3 RTC) related information,
+// including whether S3 RTC is enabled and the time when all objects and operations
+// on objects must be replicated. Must be specified together with a Metrics
+// block.
+type ReplicationTime struct {
+	Status *string `json:"status,omitempty"`
+	// A container specifying the time value for S3 Replication Time Control (S3
+	// RTC) and replication metrics EventThreshold.
+	Time *ReplicationTimeValue `json:"time,omitempty"`
+}
+
+// A container specifying the time value for S3 Replication Time Control (S3
+// RTC) and replication metrics EventThreshold.
+type ReplicationTimeValue struct {
+	Minutes *int64 `json:"minutes,omitempty"`
 }
 
 // Container for Payer.
 type RequestPaymentConfiguration struct {
 	Payer *string `json:"payer,omitempty"`
+}
+
+// Container for restore job parameters.
+type RestoreRequest struct {
+	Days *int64 `json:"days,omitempty"`
 }
 
 // Specifies the redirect behavior and when a redirect is applied. For more
@@ -368,12 +703,47 @@ type RoutingRule struct {
 // in the Amazon Simple Storage Service API Reference. For examples, see Put
 // Bucket Lifecycle Configuration Examples (https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLifecycleConfiguration.html#API_PutBucketLifecycleConfiguration_Examples)
 type Rule struct {
-	ID *string `json:"id,omitempty"`
+	// Specifies the days since the initiation of an incomplete multipart upload
+	// that Amazon S3 will wait before permanently removing all parts of the upload.
+	// For more information, see Aborting Incomplete Multipart Uploads Using a Bucket
+	// Lifecycle Policy (https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config)
+	// in the Amazon Simple Storage Service Developer Guide.
+	AbortIncompleteMultipartUpload *AbortIncompleteMultipartUpload `json:"abortIncompleteMultipartUpload,omitempty"`
+	// Container for the expiration for the lifecycle of the object.
+	Expiration *LifecycleExpiration `json:"expiration,omitempty"`
+	ID         *string              `json:"id,omitempty"`
+	// Specifies when noncurrent object versions expire. Upon expiration, Amazon
+	// S3 permanently deletes the noncurrent object versions. You set this lifecycle
+	// configuration action on a bucket that has versioning enabled (or suspended)
+	// to request that Amazon S3 delete noncurrent object versions at a specific
+	// period in the object's lifetime.
+	NoncurrentVersionExpiration *NoncurrentVersionExpiration `json:"noncurrentVersionExpiration,omitempty"`
+	// Container for the transition rule that describes when noncurrent objects
+	// transition to the STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING, GLACIER,
+	// or DEEP_ARCHIVE storage class. If your bucket is versioning-enabled (or versioning
+	// is suspended), you can set this action to request that Amazon S3 transition
+	// noncurrent object versions to the STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING,
+	// GLACIER, or DEEP_ARCHIVE storage class at a specific period in the object's
+	// lifetime.
+	NoncurrentVersionTransition *NoncurrentVersionTransition `json:"noncurrentVersionTransition,omitempty"`
+	Prefix                      *string                      `json:"prefix,omitempty"`
+	Status                      *string                      `json:"status,omitempty"`
+	// Specifies when an object transitions to a specified storage class. For more
+	// information about Amazon S3 lifecycle configuration rules, see Transitioning
+	// Objects Using Amazon S3 Lifecycle (https://docs.aws.amazon.com/AmazonS3/latest/dev/lifecycle-transition-general-considerations.html)
+	// in the Amazon Simple Storage Service Developer Guide.
+	Transition *Transition `json:"transition,omitempty"`
 }
 
 // Specifies the use of SSE-KMS to encrypt delivered inventory reports.
 type SSEKMS struct {
 	KeyID *string `json:"keyID,omitempty"`
+}
+
+// A container for filter information for the selection of S3 objects encrypted
+// with AWS KMS.
+type SSEKMSEncryptedObjects struct {
+	Status *string `json:"status,omitempty"`
 }
 
 // Describes the default server-side encryption to apply to new objects in the
@@ -402,6 +772,27 @@ type ServerSideEncryptionRule struct {
 	BucketKeyEnabled                   *bool                          `json:"bucketKeyEnabled,omitempty"`
 }
 
+// A container that describes additional filters for identifying the source
+// objects that you want to replicate. You can choose to enable or disable the
+// replication of these objects. Currently, Amazon S3 supports only the filter
+// that you can specify for objects created with server-side encryption using
+// a customer master key (CMK) stored in AWS Key Management Service (SSE-KMS).
+type SourceSelectionCriteria struct {
+	// A filter that you can specify for selection for modifications on replicas.
+	// Amazon S3 doesn't replicate replica modifications by default. In the latest
+	// version of replication configuration (when Filter is specified), you can
+	// specify this element and set the status to Enabled to replicate modifications
+	// on replicas.
+	//
+	// If you don't specify the Filter element, Amazon S3 assumes that the replication
+	// configuration is the earlier version, V1. In the earlier version, this element
+	// is not allowed.
+	ReplicaModifications *ReplicaModifications `json:"replicaModifications,omitempty"`
+	// A container for filter information for the selection of S3 objects encrypted
+	// with AWS KMS.
+	SSEKMSEncryptedObjects *SSEKMSEncryptedObjects `json:"sseKMSEncryptedObjects,omitempty"`
+}
+
 // A container of a key value name pair.
 type Tag struct {
 	Key   *string `json:"key,omitempty"`
@@ -418,6 +809,46 @@ type TargetGrant struct {
 	// Container for the person being granted permissions.
 	Grantee    *Grantee `json:"grantee,omitempty"`
 	Permission *string  `json:"permission,omitempty"`
+}
+
+// A container for specifying the configuration for publication of messages
+// to an Amazon Simple Notification Service (Amazon SNS) topic when Amazon S3
+// detects specified events.
+type TopicConfiguration struct {
+	Events []*string `json:"events,omitempty"`
+	// Specifies object key name filtering rules. For information about key name
+	// filtering, see Configuring Event Notifications (https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html)
+	// in the Amazon Simple Storage Service Developer Guide.
+	Filter *NotificationConfigurationFilter `json:"filter,omitempty"`
+	// An optional unique identifier for configurations in a notification configuration.
+	// If you don't provide one, Amazon S3 will assign an ID.
+	ID       *string `json:"id,omitempty"`
+	TopicARN *string `json:"topicARN,omitempty"`
+}
+
+// A container for specifying the configuration for publication of messages
+// to an Amazon Simple Notification Service (Amazon SNS) topic when Amazon S3
+// detects specified events. This data type is deprecated. Use TopicConfiguration
+// (https://docs.aws.amazon.com/AmazonS3/latest/API/API_TopicConfiguration.html)
+// instead.
+type TopicConfigurationDeprecated struct {
+	// The bucket event for which to send notifications.
+	Event  *string   `json:"event,omitempty"`
+	Events []*string `json:"events,omitempty"`
+	// An optional unique identifier for configurations in a notification configuration.
+	// If you don't provide one, Amazon S3 will assign an ID.
+	ID    *string `json:"id,omitempty"`
+	Topic *string `json:"topic,omitempty"`
+}
+
+// Specifies when an object transitions to a specified storage class. For more
+// information about Amazon S3 lifecycle configuration rules, see Transitioning
+// Objects Using Amazon S3 Lifecycle (https://docs.aws.amazon.com/AmazonS3/latest/dev/lifecycle-transition-general-considerations.html)
+// in the Amazon Simple Storage Service Developer Guide.
+type Transition struct {
+	Date         *metav1.Time `json:"date,omitempty"`
+	Days         *int64       `json:"days,omitempty"`
+	StorageClass *string      `json:"storageClass,omitempty"`
 }
 
 // Describes the versioning state of an Amazon S3 bucket. For more information,

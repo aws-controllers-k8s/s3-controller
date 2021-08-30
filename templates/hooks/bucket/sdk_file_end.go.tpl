@@ -39,6 +39,8 @@ func (rm *resourceManager) setResource{{ $specFieldName }}(
 {{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp.ServerSideEncryptionConfiguration" $memberRef 1 }}
 {{- else if (eq $operationName "PutBucketOwnershipControls") }}
 {{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp.OwnershipControls" $memberRef 1 }}
+{{- else if (eq $operationName "PutBucketReplication") }}
+{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp.ReplicationConfiguration" $memberRef 1 }}
 {{- else }}
 {{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp" $memberRef 1 }}
 {{ end }}

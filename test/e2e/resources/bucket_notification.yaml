@@ -1,0 +1,12 @@
+apiVersion: s3.services.k8s.aws/v1alpha1
+kind: Bucket
+metadata:
+  name: $BUCKET_NAME
+spec:
+  name: $BUCKET_NAME
+  notification:
+    topicConfigurations:
+    - id: "Publish new objects to SNS"
+      topicARN: "$SNS_TOPIC_ARN"
+      events:
+      - "s3:ObjectCreated:Put"
