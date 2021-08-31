@@ -14,9 +14,13 @@
 """
 
 import logging
+import json
 from pathlib import Path
 
 from acktest.bootstrapping import Resources, BootstrapFailureException
+from acktest.bootstrapping.iam import Role, UserPolicies
+from acktest.bootstrapping.s3 import Bucket
+from acktest.bootstrapping.sns import Topic
 from e2e import bootstrap_directory
 from e2e.bootstrap_resources import BootstrapResources
 
@@ -24,7 +28,47 @@ from e2e.bootstrap_resources import BootstrapResources
 def service_bootstrap() -> Resources:
     logging.getLogger().setLevel(logging.INFO)
     
-    resources = BootstrapResources()
+    replication_policy = json.dumps({
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:ReplicateObject",
+                    "s3:GetObjectVersionTagging",
+                    "s3:ReplicateTags",
+                    "s3:GetObjectVersionAcl",
+                    "s3:ListBucket",
+                    "s3:GetReplicationConfiguration",
+                    "s3:ReplicateDelete",
+                    "s3:GetObjectVersion"
+                ],
+                "Resource": "*"
+            }
+        ]
+    })
+
+    notification_policy = json.dumps({
+        "Version": "2008-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "s3.amazonaws.com"
+                },
+                "Action": "SNS:Publish",
+                "Resource": "*"
+            }
+        ]
+        })
+
+    resources = BootstrapResources(
+        ReplicationBucket=Bucket("ack-s3-replication", enable_versioning=True),
+        ReplicationRole=Role("ack-s3-replication-role", "s3.amazonaws.com",
+            user_policies=UserPolicies("ack-s3-replication-policy", [replication_policy])
+        ),
+        NotificationTopic=Topic("ack-s3-notification", policy=notification_policy)
+    )
 
     try:
         resources.bootstrap()

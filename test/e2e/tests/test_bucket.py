@@ -14,7 +14,6 @@
 """Integration tests for the S3 Bucket API.
 """
 
-import boto3
 import pytest
 import time
 import logging
@@ -104,6 +103,7 @@ def delete_bucket(bucket: Bucket):
 
 @pytest.fixture(scope="function")
 def basic_bucket(s3_client) -> Generator[Bucket, None, None]:
+    bucket = None
     try:
         bucket = create_bucket("bucket")
         assert k8s.get_resource_exists(bucket.ref)
@@ -111,9 +111,9 @@ def basic_bucket(s3_client) -> Generator[Bucket, None, None]:
         exists = bucket_exists(s3_client, bucket)
         assert exists
     except:
-        if bucket:
+        if bucket is not None:
             delete_bucket(bucket)
-        return pytest.xfail("Bucket failed to create")
+        return pytest.fail("Bucket failed to create")
 
     yield bucket
 
@@ -131,21 +131,26 @@ class TestBucket:
         self._update_assert_accelerate(basic_bucket, s3_client)
         self._update_assert_cors(basic_bucket, s3_resource)
         self._update_assert_encryption(basic_bucket, s3_client)
+        self._update_assert_lifecycle(basic_bucket, s3_resource)
         self._update_assert_logging(basic_bucket, s3_resource)
+        self._update_assert_notification(basic_bucket, s3_resource)
         self._update_assert_ownership_controls(basic_bucket, s3_client)
         self._update_assert_policy(basic_bucket, s3_resource)
+        self._update_assert_replication(basic_bucket, s3_client)
         self._update_assert_request_payment(basic_bucket, s3_resource)
         self._update_assert_tagging(basic_bucket, s3_resource)
         self._update_assert_versioning(basic_bucket, s3_resource)
         self._update_assert_website(basic_bucket, s3_resource)
 
-
     def _update_assert_accelerate(self, bucket: Bucket, s3_client):
         replace_bucket_spec(bucket, "bucket_accelerate")
 
         accelerate_configuration = s3_client.get_bucket_accelerate_configuration(Bucket=bucket.resource_name)
-        logging.info(bucket.resource_data)
-        assert bucket.resource_data["spec"]["accelerate"]["status"] == accelerate_configuration["Status"]
+
+        desired = bucket.resource_data["spec"]["accelerate"]
+        latest = accelerate_configuration
+
+        assert desired["status"] == latest["Status"]
 
     def _update_assert_cors(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_cors")
@@ -172,6 +177,18 @@ class TestBucket:
         assert desired_rule["applyServerSideEncryptionByDefault"]["sseAlgorithm"] == \
             latest_rule["ApplyServerSideEncryptionByDefault"]["SSEAlgorithm"]
 
+    def _update_assert_lifecycle(self, bucket: Bucket, s3_resource):
+        replace_bucket_spec(bucket, "bucket_lifecycle")
+
+        latest = get_bucket(s3_resource, bucket.resource_name)
+        request_payment = latest.LifecycleConfiguration()
+
+        desired_rule = bucket.resource_data["spec"]["lifecycle"]["rules"][0]
+        latest_rule = request_payment.rules[0]
+
+        assert desired_rule["id"] == latest_rule["ID"]
+        assert desired_rule["status"] == latest_rule["Status"]
+
     def _update_assert_logging(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_logging")
         
@@ -183,6 +200,18 @@ class TestBucket:
 
         assert desired["targetBucket"] == latest["TargetBucket"]
         assert desired["targetPrefix"] == latest["TargetPrefix"]
+
+    def _update_assert_notification(self, bucket: Bucket, s3_resource):
+        replace_bucket_spec(bucket, "bucket_notification")
+        
+        latest = get_bucket(s3_resource, bucket.resource_name)
+        notification = latest.Notification()
+
+        desired_config = bucket.resource_data["spec"]["notification"]["topicConfigurations"][0]
+        latest_config = notification.topic_configurations[0]
+
+        assert desired_config["id"] == latest_config["Id"]
+        assert desired_config["topicARN"] == latest_config["TopicArn"]
 
     def _update_assert_ownership_controls(self, bucket: Bucket, s3_client):
         replace_bucket_spec(bucket, "bucket_ownership_controls")
@@ -205,6 +234,21 @@ class TestBucket:
         latest = re.sub(r"\s+", "", policy.policy, flags=re.UNICODE)
 
         assert desired == latest
+
+    def _update_assert_replication(self, bucket: Bucket, s3_client):
+        replace_bucket_spec(bucket, "bucket_replication")
+        
+        replication = s3_client.get_bucket_replication(Bucket=bucket.resource_name)
+
+        desired = bucket.resource_data["spec"]["replication"]
+        latest = replication["ReplicationConfiguration"]
+
+        desired_rule = desired["rules"][0]
+        latest_rule = latest["Rules"][0]
+
+        assert desired["role"] == latest["Role"]
+        assert desired_rule["id"] == latest_rule["ID"]
+        assert desired_rule["destination"]["bucket"] == latest_rule["Destination"]["Bucket"]
 
     def _update_assert_request_payment(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_request_payment")

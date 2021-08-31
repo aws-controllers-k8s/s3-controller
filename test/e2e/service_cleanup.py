@@ -22,7 +22,7 @@ from e2e import bootstrap_directory
 def service_cleanup():
     logging.getLogger().setLevel(logging.INFO)
 
-    resources = Resources.deseralize(bootstrap_directory)
+    resources = Resources.deserialize(bootstrap_directory)
     resources.cleanup()
 
 if __name__ == "__main__":   
