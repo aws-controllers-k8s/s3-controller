@@ -16,17 +16,14 @@
 import logging
 from pathlib import Path
 
-from acktest import resources
+from acktest.bootstrapping import Resources
 from e2e import bootstrap_directory
-from e2e.bootstrap_resources import TestBootstrapResources
 
-def service_cleanup(config: dict):
+def service_cleanup():
     logging.getLogger().setLevel(logging.INFO)
 
-    resources = TestBootstrapResources(
-        **config
-    )
+    resources = Resources.deserialize(bootstrap_directory)
+    resources.cleanup()
 
 if __name__ == "__main__":   
-    bootstrap_config = resources.read_bootstrap_config(bootstrap_directory)
-    service_cleanup(bootstrap_config) 
+    service_cleanup() 

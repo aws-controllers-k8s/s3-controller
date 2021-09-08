@@ -15,7 +15,7 @@ import pytest
 from typing import Dict, Any
 from pathlib import Path
 
-from acktest.k8s import resource
+from acktest.k8s.resource import load_and_create_resource
 from acktest.resources import load_resource_file
 
 SERVICE_NAME = "s3"
@@ -40,7 +40,7 @@ def create_s3_resource(
     Wrapper around k8s.load_and_create_resource to create an S3 resource
     """
 
-    reference, spec, resource = resource.load_and_create_resource(
+    reference, spec, resource = load_and_create_resource(
         resource_directory,
         CRD_GROUP,
         CRD_VERSION,

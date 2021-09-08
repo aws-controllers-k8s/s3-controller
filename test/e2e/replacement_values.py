@@ -14,6 +14,10 @@
 S3-specific test variables.
 """
 
+from e2e.bootstrap_resources import get_bootstrap_resources
+
 REPLACEMENT_VALUES = {
-    
+    "REPLICATION_ROLE_ARN": get_bootstrap_resources().ReplicationRole.arn,
+    "REPLICATION_BUCKET_NAME": get_bootstrap_resources().ReplicationBucket.name,
+    "NOTIFICATION_TOPIC_ARN": get_bootstrap_resources().NotificationTopic.arn,
 }
