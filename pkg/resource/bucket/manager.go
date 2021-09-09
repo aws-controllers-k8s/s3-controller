@@ -159,7 +159,15 @@ func (rm *resourceManager) Delete(
 		// Should never happen... if it does, it's buggy code.
 		panic("resource manager's Update() method received resource with nil CR object")
 	}
-	return rm.sdkDelete(ctx, r)
+	observed, err := rm.sdkDelete(ctx, r)
+	if err != nil {
+		if observed != nil {
+			return rm.onError(observed, err)
+		}
+		return rm.onError(r, err)
+	}
+
+	return rm.onSuccess(observed)
 }
 
 // ARNFromName returns an AWS Resource Name from a given string name. This
@@ -190,35 +198,36 @@ func (rm *resourceManager) LateInitialize(
 		rlog.Debug("no late initialization required.")
 		return latest, nil
 	}
+	latestCopy := latest.DeepCopy()
 	lateInitConditionReason := ""
 	lateInitConditionMessage := ""
-	observed, err := rm.ReadOne(ctx, latest)
+	observed, err := rm.ReadOne(ctx, latestCopy)
 	if err != nil {
 		lateInitConditionMessage = "Unable to complete Read operation required for late initialization"
 		lateInitConditionReason = "Late Initialization Failure"
-		ackcondition.SetLateInitialized(latest, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
-		return latest, err
+		ackcondition.SetLateInitialized(latestCopy, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
+		return latestCopy, err
 	}
-	latest = rm.lateInitializeFromReadOneOutput(observed, latest)
-	incompleteInitialization := rm.incompleteLateInitialization(latest)
+	lateInitializedRes := rm.lateInitializeFromReadOneOutput(observed, latestCopy)
+	incompleteInitialization := rm.incompleteLateInitialization(lateInitializedRes)
 	if incompleteInitialization {
 		// Add the condition with LateInitialized=False
 		lateInitConditionMessage = "Late initialization did not complete, requeuing with delay of 5 seconds"
 		lateInitConditionReason = "Delayed Late Initialization"
-		ackcondition.SetLateInitialized(latest, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
-		return latest, ackrequeue.NeededAfter(nil, time.Duration(5)*time.Second)
+		ackcondition.SetLateInitialized(lateInitializedRes, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
+		return lateInitializedRes, ackrequeue.NeededAfter(nil, time.Duration(5)*time.Second)
 	}
-	// Set LateIntialized condition to True
+	// Set LateInitialized condition to True
 	lateInitConditionMessage = "Late initialization successful"
 	lateInitConditionReason = "Late initialization successful"
-	ackcondition.SetLateInitialized(latest, corev1.ConditionTrue, &lateInitConditionMessage, &lateInitConditionReason)
-	return latest, nil
+	ackcondition.SetLateInitialized(lateInitializedRes, corev1.ConditionTrue, &lateInitConditionMessage, &lateInitConditionReason)
+	return lateInitializedRes, nil
 }
 
 // incompleteLateInitialization return true if there are fields which were supposed to be
 // late initialized but are not. If all the fields are late initialized, false is returned
 func (rm *resourceManager) incompleteLateInitialization(
-	latest acktypes.AWSResource,
+	res acktypes.AWSResource,
 ) bool {
 	return false
 }
@@ -261,6 +270,9 @@ func (rm *resourceManager) onError(
 	r *resource,
 	err error,
 ) (acktypes.AWSResource, error) {
+	if ackcompare.IsNil(r) {
+		return nil, err
+	}
 	r1, updated := rm.updateConditions(r, false, err)
 	if !updated {
 		return r, err
@@ -281,6 +293,9 @@ func (rm *resourceManager) onError(
 func (rm *resourceManager) onSuccess(
 	r *resource,
 ) (acktypes.AWSResource, error) {
+	if ackcompare.IsNil(r) {
+		return nil, nil
+	}
 	r1, updated := rm.updateConditions(r, true, nil)
 	if !updated {
 		return r, nil
