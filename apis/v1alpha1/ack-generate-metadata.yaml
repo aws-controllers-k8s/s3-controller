@@ -1,7 +1,7 @@
 ack_generate_info:
-  build_date: "2021-09-08T23:04:44Z"
+  build_date: "2021-09-15T20:51:47Z"
   build_hash: 394e8294aabf0b221c35f7a5c7bc7e4e43bc6f10
-  go_version: go1.15 linux/amd64
+  go_version: go1.15.6 linux/amd64
   version: v0.13.2
 api_directory_checksum: dfcc21d3fc7fcd228ae29942f020128e7a3bdb8e
 api_version: v1alpha1
@@ -11,4 +11,4 @@ generator_config_info:
   original_file_name: generator.yaml
 last_modification:
   reason: API generation
-  timestamp: 2021-09-08 23:04:50.207083456 +0000 UTC
+  timestamp: 2021-09-15 20:51:53.255709113 +0000 UTC
