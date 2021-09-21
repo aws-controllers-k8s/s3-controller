@@ -95,6 +95,7 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
+	r.ko.Spec.Name = &identifier.NameOrID
 
 	return nil
 }

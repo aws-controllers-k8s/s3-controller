@@ -8,12 +8,15 @@ ignore:
   field_paths:
     # We cannot support MFA, so if it is set we cannot unset
     - "VersioningConfiguration.MFADelete"
-operations:
-  ListBuckets:
-    primary_identifier_field_name: Name
 resources:
   Bucket:
     fields:
+      Name:
+        is_primary_key: true
+        is_required: true
+        from:
+          operation: CreateBucket
+          path: Bucket
       Accelerate:
         from:
           operation: PutBucketAccelerateConfiguration
