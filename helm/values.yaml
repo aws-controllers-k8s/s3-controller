@@ -4,7 +4,7 @@
 
 image:
   repository: public.ecr.aws/aws-controllers-k8s/s3-controller
-  tag: v0.0.5
+  tag: v0.0.6
   pullPolicy: IfNotPresent
   pullSecrets: []
 
@@ -38,7 +38,6 @@ resources:
 aws:
   # If specified, use the AWS region for AWS API calls
   region: ""
-  account_id: ""
   endpoint_url: ""
 
 # log level for the controller
