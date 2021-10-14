@@ -1272,17 +1272,17 @@ func (rm *resourceManager) setResourcePublicAccessBlock(
 	resp *svcsdk.GetPublicAccessBlockOutput,
 ) *svcapitypes.PublicAccessBlockConfiguration {
 	res := &svcapitypes.PublicAccessBlockConfiguration{}
-	if resp.BlockPublicAcls != nil {
-		res.BlockPublicACLs = resp.BlockPublicAcls
+	if resp.PublicAccessBlockConfiguration.BlockPublicAcls != nil {
+		res.BlockPublicACLs = resp.PublicAccessBlockConfiguration.BlockPublicAcls
 	}
-	if resp.BlockPublicPolicy != nil {
-		res.BlockPublicPolicy = resp.BlockPublicPolicy
+	if resp.PublicAccessBlockConfiguration.BlockPublicPolicy != nil {
+		res.BlockPublicPolicy = resp.PublicAccessBlockConfiguration.BlockPublicPolicy
 	}
-	if resp.IgnorePublicAcls != nil {
-		res.IgnorePublicACLs = resp.IgnorePublicAcls
+	if resp.PublicAccessBlockConfiguration.IgnorePublicAcls != nil {
+		res.IgnorePublicACLs = resp.PublicAccessBlockConfiguration.IgnorePublicAcls
 	}
-	if resp.RestrictPublicBuckets != nil {
-		res.RestrictPublicBuckets = resp.RestrictPublicBuckets
+	if resp.PublicAccessBlockConfiguration.RestrictPublicBuckets != nil {
+		res.RestrictPublicBuckets = resp.PublicAccessBlockConfiguration.RestrictPublicBuckets
 	}
 
 	return res
