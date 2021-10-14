@@ -1242,6 +1242,52 @@ func (rm *resourceManager) setResourceOwnershipControls(
 	return res
 }
 
+// newPublicAccessBlockConfiguration returns a PublicAccessBlockConfiguration object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newPublicAccessBlockConfiguration(
+	r *resource,
+) *svcsdk.PublicAccessBlockConfiguration {
+	res := &svcsdk.PublicAccessBlockConfiguration{}
+
+	if r.ko.Spec.PublicAccessBlock.BlockPublicACLs != nil {
+		res.SetBlockPublicAcls(*r.ko.Spec.PublicAccessBlock.BlockPublicACLs)
+	}
+	if r.ko.Spec.PublicAccessBlock.BlockPublicPolicy != nil {
+		res.SetBlockPublicPolicy(*r.ko.Spec.PublicAccessBlock.BlockPublicPolicy)
+	}
+	if r.ko.Spec.PublicAccessBlock.IgnorePublicACLs != nil {
+		res.SetIgnorePublicAcls(*r.ko.Spec.PublicAccessBlock.IgnorePublicACLs)
+	}
+	if r.ko.Spec.PublicAccessBlock.RestrictPublicBuckets != nil {
+		res.SetRestrictPublicBuckets(*r.ko.Spec.PublicAccessBlock.RestrictPublicBuckets)
+	}
+
+	return res
+}
+
+// setResourcePublicAccessBlock sets the `PublicAccessBlock` spec field
+// given the output of a `GetPublicAccessBlock` operation.
+func (rm *resourceManager) setResourcePublicAccessBlock(
+	r *resource,
+	resp *svcsdk.GetPublicAccessBlockOutput,
+) *svcapitypes.PublicAccessBlockConfiguration {
+	res := &svcapitypes.PublicAccessBlockConfiguration{}
+	if resp.BlockPublicAcls != nil {
+		res.BlockPublicACLs = resp.BlockPublicAcls
+	}
+	if resp.BlockPublicPolicy != nil {
+		res.BlockPublicPolicy = resp.BlockPublicPolicy
+	}
+	if resp.IgnorePublicAcls != nil {
+		res.IgnorePublicACLs = resp.IgnorePublicAcls
+	}
+	if resp.RestrictPublicBuckets != nil {
+		res.RestrictPublicBuckets = resp.RestrictPublicBuckets
+	}
+
+	return res
+}
+
 // newReplicationConfiguration returns a ReplicationConfiguration object
 // with each the field set by the resource's corresponding spec field.
 func (rm *resourceManager) newReplicationConfiguration(

@@ -65,6 +65,10 @@ resources:
         from:
           operation: PutBucketPolicy
           path: Policy
+      PublicAccessBlock:
+        from:
+          operation: PutPublicAccessBlock
+          path: PublicAccessBlockConfiguration
       Replication:
         from:
           operation: PutBucketReplication

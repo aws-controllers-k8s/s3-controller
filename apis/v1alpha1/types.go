@@ -517,6 +517,18 @@ type OwnershipControlsRule struct {
 	ObjectOwnership *string `json:"objectOwnership,omitempty"`
 }
 
+// The PublicAccessBlock configuration that you want to apply to this Amazon
+// S3 bucket. You can enable the configuration options in any combination. For
+// more information about when Amazon S3 considers a bucket or object public,
+// see The Meaning of "Public" (https://docs.aws.amazon.com/AmazonS3/latest/dev/access-control-block-public-access.html#access-control-block-public-access-policy-status)
+// in the Amazon Simple Storage Service Developer Guide.
+type PublicAccessBlockConfiguration struct {
+	BlockPublicACLs       *bool `json:"blockPublicACLs,omitempty"`
+	BlockPublicPolicy     *bool `json:"blockPublicPolicy,omitempty"`
+	IgnorePublicACLs      *bool `json:"ignorePublicACLs,omitempty"`
+	RestrictPublicBuckets *bool `json:"restrictPublicBuckets,omitempty"`
+}
+
 // Specifies the configuration for publishing messages to an Amazon Simple Queue
 // Service (Amazon SQS) queue when Amazon S3 detects specified events.
 type QueueConfiguration struct {

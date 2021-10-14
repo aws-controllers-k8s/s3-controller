@@ -193,6 +193,38 @@ func newResourceDelta(
 			delta.Add("Spec.Policy", a.ko.Spec.Policy, b.ko.Spec.Policy)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.PublicAccessBlock, b.ko.Spec.PublicAccessBlock) {
+		delta.Add("Spec.PublicAccessBlock", a.ko.Spec.PublicAccessBlock, b.ko.Spec.PublicAccessBlock)
+	} else if a.ko.Spec.PublicAccessBlock != nil && b.ko.Spec.PublicAccessBlock != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.PublicAccessBlock.BlockPublicACLs, b.ko.Spec.PublicAccessBlock.BlockPublicACLs) {
+			delta.Add("Spec.PublicAccessBlock.BlockPublicACLs", a.ko.Spec.PublicAccessBlock.BlockPublicACLs, b.ko.Spec.PublicAccessBlock.BlockPublicACLs)
+		} else if a.ko.Spec.PublicAccessBlock.BlockPublicACLs != nil && b.ko.Spec.PublicAccessBlock.BlockPublicACLs != nil {
+			if *a.ko.Spec.PublicAccessBlock.BlockPublicACLs != *b.ko.Spec.PublicAccessBlock.BlockPublicACLs {
+				delta.Add("Spec.PublicAccessBlock.BlockPublicACLs", a.ko.Spec.PublicAccessBlock.BlockPublicACLs, b.ko.Spec.PublicAccessBlock.BlockPublicACLs)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.PublicAccessBlock.BlockPublicPolicy, b.ko.Spec.PublicAccessBlock.BlockPublicPolicy) {
+			delta.Add("Spec.PublicAccessBlock.BlockPublicPolicy", a.ko.Spec.PublicAccessBlock.BlockPublicPolicy, b.ko.Spec.PublicAccessBlock.BlockPublicPolicy)
+		} else if a.ko.Spec.PublicAccessBlock.BlockPublicPolicy != nil && b.ko.Spec.PublicAccessBlock.BlockPublicPolicy != nil {
+			if *a.ko.Spec.PublicAccessBlock.BlockPublicPolicy != *b.ko.Spec.PublicAccessBlock.BlockPublicPolicy {
+				delta.Add("Spec.PublicAccessBlock.BlockPublicPolicy", a.ko.Spec.PublicAccessBlock.BlockPublicPolicy, b.ko.Spec.PublicAccessBlock.BlockPublicPolicy)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.PublicAccessBlock.IgnorePublicACLs, b.ko.Spec.PublicAccessBlock.IgnorePublicACLs) {
+			delta.Add("Spec.PublicAccessBlock.IgnorePublicACLs", a.ko.Spec.PublicAccessBlock.IgnorePublicACLs, b.ko.Spec.PublicAccessBlock.IgnorePublicACLs)
+		} else if a.ko.Spec.PublicAccessBlock.IgnorePublicACLs != nil && b.ko.Spec.PublicAccessBlock.IgnorePublicACLs != nil {
+			if *a.ko.Spec.PublicAccessBlock.IgnorePublicACLs != *b.ko.Spec.PublicAccessBlock.IgnorePublicACLs {
+				delta.Add("Spec.PublicAccessBlock.IgnorePublicACLs", a.ko.Spec.PublicAccessBlock.IgnorePublicACLs, b.ko.Spec.PublicAccessBlock.IgnorePublicACLs)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.PublicAccessBlock.RestrictPublicBuckets, b.ko.Spec.PublicAccessBlock.RestrictPublicBuckets) {
+			delta.Add("Spec.PublicAccessBlock.RestrictPublicBuckets", a.ko.Spec.PublicAccessBlock.RestrictPublicBuckets, b.ko.Spec.PublicAccessBlock.RestrictPublicBuckets)
+		} else if a.ko.Spec.PublicAccessBlock.RestrictPublicBuckets != nil && b.ko.Spec.PublicAccessBlock.RestrictPublicBuckets != nil {
+			if *a.ko.Spec.PublicAccessBlock.RestrictPublicBuckets != *b.ko.Spec.PublicAccessBlock.RestrictPublicBuckets {
+				delta.Add("Spec.PublicAccessBlock.RestrictPublicBuckets", a.ko.Spec.PublicAccessBlock.RestrictPublicBuckets, b.ko.Spec.PublicAccessBlock.RestrictPublicBuckets)
+			}
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Replication, b.ko.Spec.Replication) {
 		delta.Add("Spec.Replication", a.ko.Spec.Replication, b.ko.Spec.Replication)
 	} else if a.ko.Spec.Replication != nil && b.ko.Spec.Replication != nil {
