@@ -25,13 +25,17 @@ import (
 )
 
 var (
-	DefaultAccelerationStatus = svcsdk.BucketAccelerateStatusSuspended
-	DefaultRequestPayer       = svcsdk.PayerBucketOwner
-	DefaultVersioningStatus   = svcsdk.BucketVersioningStatusSuspended
-	DefaultACL                = svcsdk.BucketCannedACLPrivate
-)
-
-var (
+	DefaultAccelerationStatus     = svcsdk.BucketAccelerateStatusSuspended
+	DefaultRequestPayer           = svcsdk.PayerBucketOwner
+	DefaultVersioningStatus       = svcsdk.BucketVersioningStatusSuspended
+	DefaultACL                    = svcsdk.BucketCannedACLPrivate
+	DefaultPublicBlockAccessValue = false
+	DefaultPublicBlockAccess      = svcapitypes.PublicAccessBlockConfiguration{
+		BlockPublicACLs:       &DefaultPublicBlockAccessValue,
+		BlockPublicPolicy:     &DefaultPublicBlockAccessValue,
+		IgnorePublicACLs:      &DefaultPublicBlockAccessValue,
+		RestrictPublicBuckets: &DefaultPublicBlockAccessValue,
+	}
 	CannedACLJoinDelimiter = "|"
 )
 
@@ -325,7 +329,11 @@ func (rm *resourceManager) addPutFieldsToSpec(
 			return err
 		}
 	}
-	ko.Spec.PublicAccessBlock = rm.setResourcePublicAccessBlock(r, getPublicAccessBlockResponse)
+	if getPublicAccessBlockResponse.PublicAccessBlockConfiguration != nil {
+		ko.Spec.PublicAccessBlock = rm.setResourcePublicAccessBlock(r, getPublicAccessBlockResponse)
+	} else {
+		ko.Spec.PublicAccessBlock = nil
+	}
 
 	getReplicationResponse, err := rm.sdkapi.GetBucketReplicationWithContext(ctx, rm.newGetBucketReplicationPayload(r))
 	if err != nil {
@@ -457,7 +465,7 @@ func customPreCompare(
 		a.ko.Spec.OwnershipControls = &svcapitypes.OwnershipControls{}
 	}
 	if a.ko.Spec.PublicAccessBlock == nil && b.ko.Spec.PublicAccessBlock != nil {
-		a.ko.Spec.PublicAccessBlock = &svcapitypes.PublicAccessBlockConfiguration{}
+		a.ko.Spec.PublicAccessBlock = &DefaultPublicBlockAccess
 	}
 	if a.ko.Spec.Replication == nil && b.ko.Spec.Replication != nil {
 		a.ko.Spec.Replication = &svcapitypes.ReplicationConfiguration{}
@@ -1172,7 +1180,7 @@ func (rm *resourceManager) syncPublicAccessBlock(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
-	if r.ko.Spec.PublicAccessBlock == nil {
+	if r.ko.Spec.PublicAccessBlock == nil || *r.ko.Spec.PublicAccessBlock == DefaultPublicBlockAccess {
 		return rm.deletePublicAccessBlock(ctx, r)
 	}
 	return rm.putPublicAccessBlock(ctx, r)
