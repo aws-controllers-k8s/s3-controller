@@ -136,6 +136,7 @@ class TestBucket:
         self._update_assert_notification(basic_bucket, s3_resource)
         self._update_assert_ownership_controls(basic_bucket, s3_client)
         self._update_assert_policy(basic_bucket, s3_resource)
+        self._update_assert_public_access_block(basic_bucket, s3_client)
         self._update_assert_replication(basic_bucket, s3_client)
         self._update_assert_request_payment(basic_bucket, s3_resource)
         self._update_assert_tagging(basic_bucket, s3_resource)
@@ -234,6 +235,17 @@ class TestBucket:
         latest = re.sub(r"\s+", "", policy.policy, flags=re.UNICODE)
 
         assert desired == latest
+
+    def _update_assert_public_access_block(self, bucket: Bucket, s3_client):
+        replace_bucket_spec(bucket, "bucket_public_access_block")
+
+        public_access_block = s3_client.get_public_access_block(Bucket=bucket.resource_name)
+
+        desired = bucket.resource_data["spec"]["publicAccessBlock"]
+        latest = public_access_block["PublicAccessBlockConfiguration"]
+
+        assert desired["blockPublicACLs"] == latest["BlockPublicAcls"]
+        assert desired["blockPublicPolicy"] == latest["BlockPublicPolicy"]
 
     def _update_assert_replication(self, bucket: Bucket, s3_client):
         replace_bucket_spec(bucket, "bucket_replication")

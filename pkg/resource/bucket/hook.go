@@ -25,13 +25,17 @@ import (
 )
 
 var (
-	DefaultAccelerationStatus = svcsdk.BucketAccelerateStatusSuspended
-	DefaultRequestPayer       = svcsdk.PayerBucketOwner
-	DefaultVersioningStatus   = svcsdk.BucketVersioningStatusSuspended
-	DefaultACL                = svcsdk.BucketCannedACLPrivate
-)
-
-var (
+	DefaultAccelerationStatus     = svcsdk.BucketAccelerateStatusSuspended
+	DefaultRequestPayer           = svcsdk.PayerBucketOwner
+	DefaultVersioningStatus       = svcsdk.BucketVersioningStatusSuspended
+	DefaultACL                    = svcsdk.BucketCannedACLPrivate
+	DefaultPublicBlockAccessValue = false
+	DefaultPublicBlockAccess      = svcapitypes.PublicAccessBlockConfiguration{
+		BlockPublicACLs:       &DefaultPublicBlockAccessValue,
+		BlockPublicPolicy:     &DefaultPublicBlockAccessValue,
+		IgnorePublicACLs:      &DefaultPublicBlockAccessValue,
+		RestrictPublicBuckets: &DefaultPublicBlockAccessValue,
+	}
 	CannedACLJoinDelimiter = "|"
 )
 
@@ -84,6 +88,11 @@ func (rm *resourceManager) createPutFields(
 	}
 	if r.ko.Spec.Policy != nil {
 		if err := rm.syncPolicy(ctx, r); err != nil {
+			return err
+		}
+	}
+	if r.ko.Spec.PublicAccessBlock != nil {
+		if err := rm.syncPublicAccessBlock(ctx, r); err != nil {
 			return err
 		}
 	}
@@ -175,6 +184,11 @@ func (rm *resourceManager) customUpdateBucket(
 	}
 	if delta.DifferentAt("Spec.Policy") {
 		if err := rm.syncPolicy(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.PublicAccessBlock") {
+		if err := rm.syncPublicAccessBlock(ctx, desired); err != nil {
 			return nil, err
 		}
 	}
@@ -307,6 +321,20 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.Policy = getPolicyResponse.Policy
 
+	getPublicAccessBlockResponse, err := rm.sdkapi.GetPublicAccessBlockWithContext(ctx, rm.newGetPublicAccessBlockPayload(r))
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchPublicAccessBlockConfiguration" {
+			getPublicAccessBlockResponse = &svcsdk.GetPublicAccessBlockOutput{}
+		} else {
+			return err
+		}
+	}
+	if getPublicAccessBlockResponse.PublicAccessBlockConfiguration != nil {
+		ko.Spec.PublicAccessBlock = rm.setResourcePublicAccessBlock(r, getPublicAccessBlockResponse)
+	} else {
+		ko.Spec.PublicAccessBlock = nil
+	}
+
 	getReplicationResponse, err := rm.sdkapi.GetBucketReplicationWithContext(ctx, rm.newGetBucketReplicationPayload(r))
 	if err != nil {
 		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "ReplicationConfigurationNotFoundError" {
@@ -435,6 +463,9 @@ func customPreCompare(
 	}
 	if a.ko.Spec.OwnershipControls == nil && b.ko.Spec.OwnershipControls != nil {
 		a.ko.Spec.OwnershipControls = &svcapitypes.OwnershipControls{}
+	}
+	if a.ko.Spec.PublicAccessBlock == nil && b.ko.Spec.PublicAccessBlock != nil {
+		a.ko.Spec.PublicAccessBlock = &DefaultPublicBlockAccess
 	}
 	if a.ko.Spec.Replication == nil && b.ko.Spec.Replication != nil {
 		a.ko.Spec.Replication = &svcapitypes.ReplicationConfiguration{}
@@ -1077,6 +1108,82 @@ func (rm *resourceManager) syncPolicy(
 		return rm.deletePolicy(ctx, r)
 	}
 	return rm.putPolicy(ctx, r)
+}
+
+//endregion
+
+//region publicaccessblock
+
+func (rm *resourceManager) newGetPublicAccessBlockPayload(
+	r *resource,
+) *svcsdk.GetPublicAccessBlockInput {
+	res := &svcsdk.GetPublicAccessBlockInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutPublicAccessBlockPayload(
+	r *resource,
+) *svcsdk.PutPublicAccessBlockInput {
+	res := &svcsdk.PutPublicAccessBlockInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetPublicAccessBlockConfiguration(rm.newPublicAccessBlockConfiguration(r))
+
+	return res
+}
+
+func (rm *resourceManager) newDeletePublicAccessBlockPayload(
+	r *resource,
+) *svcsdk.DeletePublicAccessBlockInput {
+	res := &svcsdk.DeletePublicAccessBlockInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) putPublicAccessBlock(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.putPublicAccessBlock")
+	defer exit(err)
+	input := rm.newPutPublicAccessBlockPayload(r)
+
+	_, err = rm.sdkapi.PutPublicAccessBlockWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutPublicAccessBlock", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) deletePublicAccessBlock(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deletePublicAccessBlock")
+	defer exit(err)
+	input := rm.newDeletePublicAccessBlockPayload(r)
+
+	_, err = rm.sdkapi.DeletePublicAccessBlockWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeletePublicAccessBlock", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) syncPublicAccessBlock(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	if r.ko.Spec.PublicAccessBlock == nil || *r.ko.Spec.PublicAccessBlock == DefaultPublicBlockAccess {
+		return rm.deletePublicAccessBlock(ctx, r)
+	}
+	return rm.putPublicAccessBlock(ctx, r)
 }
 
 //endregion

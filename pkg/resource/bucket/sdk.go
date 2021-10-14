@@ -1242,6 +1242,52 @@ func (rm *resourceManager) setResourceOwnershipControls(
 	return res
 }
 
+// newPublicAccessBlockConfiguration returns a PublicAccessBlockConfiguration object
+// with each the field set by the resource's corresponding spec field.
+func (rm *resourceManager) newPublicAccessBlockConfiguration(
+	r *resource,
+) *svcsdk.PublicAccessBlockConfiguration {
+	res := &svcsdk.PublicAccessBlockConfiguration{}
+
+	if r.ko.Spec.PublicAccessBlock.BlockPublicACLs != nil {
+		res.SetBlockPublicAcls(*r.ko.Spec.PublicAccessBlock.BlockPublicACLs)
+	}
+	if r.ko.Spec.PublicAccessBlock.BlockPublicPolicy != nil {
+		res.SetBlockPublicPolicy(*r.ko.Spec.PublicAccessBlock.BlockPublicPolicy)
+	}
+	if r.ko.Spec.PublicAccessBlock.IgnorePublicACLs != nil {
+		res.SetIgnorePublicAcls(*r.ko.Spec.PublicAccessBlock.IgnorePublicACLs)
+	}
+	if r.ko.Spec.PublicAccessBlock.RestrictPublicBuckets != nil {
+		res.SetRestrictPublicBuckets(*r.ko.Spec.PublicAccessBlock.RestrictPublicBuckets)
+	}
+
+	return res
+}
+
+// setResourcePublicAccessBlock sets the `PublicAccessBlock` spec field
+// given the output of a `GetPublicAccessBlock` operation.
+func (rm *resourceManager) setResourcePublicAccessBlock(
+	r *resource,
+	resp *svcsdk.GetPublicAccessBlockOutput,
+) *svcapitypes.PublicAccessBlockConfiguration {
+	res := &svcapitypes.PublicAccessBlockConfiguration{}
+	if resp.PublicAccessBlockConfiguration.BlockPublicAcls != nil {
+		res.BlockPublicACLs = resp.PublicAccessBlockConfiguration.BlockPublicAcls
+	}
+	if resp.PublicAccessBlockConfiguration.BlockPublicPolicy != nil {
+		res.BlockPublicPolicy = resp.PublicAccessBlockConfiguration.BlockPublicPolicy
+	}
+	if resp.PublicAccessBlockConfiguration.IgnorePublicAcls != nil {
+		res.IgnorePublicACLs = resp.PublicAccessBlockConfiguration.IgnorePublicAcls
+	}
+	if resp.PublicAccessBlockConfiguration.RestrictPublicBuckets != nil {
+		res.RestrictPublicBuckets = resp.PublicAccessBlockConfiguration.RestrictPublicBuckets
+	}
+
+	return res
+}
+
 // newReplicationConfiguration returns a ReplicationConfiguration object
 // with each the field set by the resource's corresponding spec field.
 func (rm *resourceManager) newReplicationConfiguration(
