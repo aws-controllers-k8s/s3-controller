@@ -369,8 +369,176 @@ func (rm *resourceManager) setResourceAccelerate(
 	resp *svcsdk.GetBucketAccelerateConfigurationOutput,
 ) *svcapitypes.AccelerateConfiguration {
 	res := &svcapitypes.AccelerateConfiguration{}
+
 	if resp.Status != nil {
 		res.Status = resp.Status
+	}
+
+	return res
+}
+
+// newAnalyticsConfiguration returns a AnalyticsConfiguration object
+// with each the field set by the corresponding configuration's fields.
+func (rm *resourceManager) newAnalyticsConfiguration(
+	c *svcapitypes.AnalyticsConfiguration,
+) *svcsdk.AnalyticsConfiguration {
+	res := &svcsdk.AnalyticsConfiguration{}
+
+	if c.Filter != nil {
+		resf0 := &svcsdk.AnalyticsFilter{}
+		if c.Filter.And != nil {
+			resf0f0 := &svcsdk.AnalyticsAndOperator{}
+			if c.Filter.And.Prefix != nil {
+				resf0f0.SetPrefix(*c.Filter.And.Prefix)
+			}
+			if c.Filter.And.Tags != nil {
+				resf0f0f1 := []*svcsdk.Tag{}
+				for _, resf0f0f1iter := range c.Filter.And.Tags {
+					resf0f0f1elem := &svcsdk.Tag{}
+					if resf0f0f1iter.Key != nil {
+						resf0f0f1elem.SetKey(*resf0f0f1iter.Key)
+					}
+					if resf0f0f1iter.Value != nil {
+						resf0f0f1elem.SetValue(*resf0f0f1iter.Value)
+					}
+					resf0f0f1 = append(resf0f0f1, resf0f0f1elem)
+				}
+				resf0f0.SetTags(resf0f0f1)
+			}
+			resf0.SetAnd(resf0f0)
+		}
+		if c.Filter.Prefix != nil {
+			resf0.SetPrefix(*c.Filter.Prefix)
+		}
+		if c.Filter.Tag != nil {
+			resf0f2 := &svcsdk.Tag{}
+			if c.Filter.Tag.Key != nil {
+				resf0f2.SetKey(*c.Filter.Tag.Key)
+			}
+			if c.Filter.Tag.Value != nil {
+				resf0f2.SetValue(*c.Filter.Tag.Value)
+			}
+			resf0.SetTag(resf0f2)
+		}
+		res.SetFilter(resf0)
+	}
+	if c.ID != nil {
+		res.SetId(*c.ID)
+	}
+	if c.StorageClassAnalysis != nil {
+		resf2 := &svcsdk.StorageClassAnalysis{}
+		if c.StorageClassAnalysis.DataExport != nil {
+			resf2f0 := &svcsdk.StorageClassAnalysisDataExport{}
+			if c.StorageClassAnalysis.DataExport.Destination != nil {
+				resf2f0f0 := &svcsdk.AnalyticsExportDestination{}
+				if c.StorageClassAnalysis.DataExport.Destination.S3BucketDestination != nil {
+					resf2f0f0f0 := &svcsdk.AnalyticsS3BucketDestination{}
+					if c.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket != nil {
+						resf2f0f0f0.SetBucket(*c.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket)
+					}
+					if c.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID != nil {
+						resf2f0f0f0.SetBucketAccountId(*c.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID)
+					}
+					if c.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format != nil {
+						resf2f0f0f0.SetFormat(*c.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format)
+					}
+					if c.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix != nil {
+						resf2f0f0f0.SetPrefix(*c.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix)
+					}
+					resf2f0f0.SetS3BucketDestination(resf2f0f0f0)
+				}
+				resf2f0.SetDestination(resf2f0f0)
+			}
+			if c.StorageClassAnalysis.DataExport.OutputSchemaVersion != nil {
+				resf2f0.SetOutputSchemaVersion(*c.StorageClassAnalysis.DataExport.OutputSchemaVersion)
+			}
+			resf2.SetDataExport(resf2f0)
+		}
+		res.SetStorageClassAnalysis(resf2)
+	}
+
+	return res
+}
+
+// setAnalyticsConfiguration sets a resource AnalyticsConfiguration type
+// given the SDK type.
+func (rm *resourceManager) setResourceAnalyticsConfiguration(
+	r *resource,
+	resp *svcsdk.AnalyticsConfiguration,
+) *svcapitypes.AnalyticsConfiguration {
+	res := &svcapitypes.AnalyticsConfiguration{}
+
+	if resp.Filter != nil {
+		resf0 := &svcapitypes.AnalyticsFilter{}
+		if resp.Filter.And != nil {
+			resf0f0 := &svcapitypes.AnalyticsAndOperator{}
+			if resp.Filter.And.Prefix != nil {
+				resf0f0.Prefix = resp.Filter.And.Prefix
+			}
+			if resp.Filter.And.Tags != nil {
+				resf0f0f1 := []*svcapitypes.Tag{}
+				for _, resf0f0f1iter := range resp.Filter.And.Tags {
+					resf0f0f1elem := &svcapitypes.Tag{}
+					if resf0f0f1iter.Key != nil {
+						resf0f0f1elem.Key = resf0f0f1iter.Key
+					}
+					if resf0f0f1iter.Value != nil {
+						resf0f0f1elem.Value = resf0f0f1iter.Value
+					}
+					resf0f0f1 = append(resf0f0f1, resf0f0f1elem)
+				}
+				resf0f0.Tags = resf0f0f1
+			}
+			resf0.And = resf0f0
+		}
+		if resp.Filter.Prefix != nil {
+			resf0.Prefix = resp.Filter.Prefix
+		}
+		if resp.Filter.Tag != nil {
+			resf0f2 := &svcapitypes.Tag{}
+			if resp.Filter.Tag.Key != nil {
+				resf0f2.Key = resp.Filter.Tag.Key
+			}
+			if resp.Filter.Tag.Value != nil {
+				resf0f2.Value = resp.Filter.Tag.Value
+			}
+			resf0.Tag = resf0f2
+		}
+		res.Filter = resf0
+	}
+	if resp.Id != nil {
+		res.ID = resp.Id
+	}
+	if resp.StorageClassAnalysis != nil {
+		resf2 := &svcapitypes.StorageClassAnalysis{}
+		if resp.StorageClassAnalysis.DataExport != nil {
+			resf2f0 := &svcapitypes.StorageClassAnalysisDataExport{}
+			if resp.StorageClassAnalysis.DataExport.Destination != nil {
+				resf2f0f0 := &svcapitypes.AnalyticsExportDestination{}
+				if resp.StorageClassAnalysis.DataExport.Destination.S3BucketDestination != nil {
+					resf2f0f0f0 := &svcapitypes.AnalyticsS3BucketDestination{}
+					if resp.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket != nil {
+						resf2f0f0f0.Bucket = resp.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket
+					}
+					if resp.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountId != nil {
+						resf2f0f0f0.BucketAccountID = resp.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountId
+					}
+					if resp.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format != nil {
+						resf2f0f0f0.Format = resp.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format
+					}
+					if resp.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix != nil {
+						resf2f0f0f0.Prefix = resp.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix
+					}
+					resf2f0f0.S3BucketDestination = resf2f0f0f0
+				}
+				resf2f0.Destination = resf2f0f0
+			}
+			if resp.StorageClassAnalysis.DataExport.OutputSchemaVersion != nil {
+				resf2f0.OutputSchemaVersion = resp.StorageClassAnalysis.DataExport.OutputSchemaVersion
+			}
+			resf2.DataExport = resf2f0
+		}
+		res.StorageClassAnalysis = resf2
 	}
 
 	return res
@@ -441,6 +609,7 @@ func (rm *resourceManager) setResourceCORS(
 	resp *svcsdk.GetBucketCorsOutput,
 ) *svcapitypes.CORSConfiguration {
 	res := &svcapitypes.CORSConfiguration{}
+
 	if resp.CORSRules != nil {
 		resf0 := []*svcapitypes.CORSRule{}
 		for _, resf0iter := range resp.CORSRules {
@@ -531,6 +700,7 @@ func (rm *resourceManager) setResourceEncryption(
 	resp *svcsdk.GetBucketEncryptionOutput,
 ) *svcapitypes.ServerSideEncryptionConfiguration {
 	res := &svcapitypes.ServerSideEncryptionConfiguration{}
+
 	if resp.ServerSideEncryptionConfiguration.Rules != nil {
 		resf0 := []*svcapitypes.ServerSideEncryptionRule{}
 		for _, resf0iter := range resp.ServerSideEncryptionConfiguration.Rules {
@@ -551,6 +721,294 @@ func (rm *resourceManager) setResourceEncryption(
 			resf0 = append(resf0, resf0elem)
 		}
 		res.Rules = resf0
+	}
+
+	return res
+}
+
+// newIntelligentTieringConfiguration returns a IntelligentTieringConfiguration object
+// with each the field set by the corresponding configuration's fields.
+func (rm *resourceManager) newIntelligentTieringConfiguration(
+	c *svcapitypes.IntelligentTieringConfiguration,
+) *svcsdk.IntelligentTieringConfiguration {
+	res := &svcsdk.IntelligentTieringConfiguration{}
+
+	if c.Filter != nil {
+		resf0 := &svcsdk.IntelligentTieringFilter{}
+		if c.Filter.And != nil {
+			resf0f0 := &svcsdk.IntelligentTieringAndOperator{}
+			if c.Filter.And.Prefix != nil {
+				resf0f0.SetPrefix(*c.Filter.And.Prefix)
+			}
+			if c.Filter.And.Tags != nil {
+				resf0f0f1 := []*svcsdk.Tag{}
+				for _, resf0f0f1iter := range c.Filter.And.Tags {
+					resf0f0f1elem := &svcsdk.Tag{}
+					if resf0f0f1iter.Key != nil {
+						resf0f0f1elem.SetKey(*resf0f0f1iter.Key)
+					}
+					if resf0f0f1iter.Value != nil {
+						resf0f0f1elem.SetValue(*resf0f0f1iter.Value)
+					}
+					resf0f0f1 = append(resf0f0f1, resf0f0f1elem)
+				}
+				resf0f0.SetTags(resf0f0f1)
+			}
+			resf0.SetAnd(resf0f0)
+		}
+		if c.Filter.Prefix != nil {
+			resf0.SetPrefix(*c.Filter.Prefix)
+		}
+		if c.Filter.Tag != nil {
+			resf0f2 := &svcsdk.Tag{}
+			if c.Filter.Tag.Key != nil {
+				resf0f2.SetKey(*c.Filter.Tag.Key)
+			}
+			if c.Filter.Tag.Value != nil {
+				resf0f2.SetValue(*c.Filter.Tag.Value)
+			}
+			resf0.SetTag(resf0f2)
+		}
+		res.SetFilter(resf0)
+	}
+	if c.ID != nil {
+		res.SetId(*c.ID)
+	}
+	if c.Status != nil {
+		res.SetStatus(*c.Status)
+	}
+	if c.Tierings != nil {
+		resf3 := []*svcsdk.Tiering{}
+		for _, resf3iter := range c.Tierings {
+			resf3elem := &svcsdk.Tiering{}
+			if resf3iter.AccessTier != nil {
+				resf3elem.SetAccessTier(*resf3iter.AccessTier)
+			}
+			if resf3iter.Days != nil {
+				resf3elem.SetDays(*resf3iter.Days)
+			}
+			resf3 = append(resf3, resf3elem)
+		}
+		res.SetTierings(resf3)
+	}
+
+	return res
+}
+
+// setIntelligentTieringConfiguration sets a resource IntelligentTieringConfiguration type
+// given the SDK type.
+func (rm *resourceManager) setResourceIntelligentTieringConfiguration(
+	r *resource,
+	resp *svcsdk.IntelligentTieringConfiguration,
+) *svcapitypes.IntelligentTieringConfiguration {
+	res := &svcapitypes.IntelligentTieringConfiguration{}
+
+	if resp.Filter != nil {
+		resf0 := &svcapitypes.IntelligentTieringFilter{}
+		if resp.Filter.And != nil {
+			resf0f0 := &svcapitypes.IntelligentTieringAndOperator{}
+			if resp.Filter.And.Prefix != nil {
+				resf0f0.Prefix = resp.Filter.And.Prefix
+			}
+			if resp.Filter.And.Tags != nil {
+				resf0f0f1 := []*svcapitypes.Tag{}
+				for _, resf0f0f1iter := range resp.Filter.And.Tags {
+					resf0f0f1elem := &svcapitypes.Tag{}
+					if resf0f0f1iter.Key != nil {
+						resf0f0f1elem.Key = resf0f0f1iter.Key
+					}
+					if resf0f0f1iter.Value != nil {
+						resf0f0f1elem.Value = resf0f0f1iter.Value
+					}
+					resf0f0f1 = append(resf0f0f1, resf0f0f1elem)
+				}
+				resf0f0.Tags = resf0f0f1
+			}
+			resf0.And = resf0f0
+		}
+		if resp.Filter.Prefix != nil {
+			resf0.Prefix = resp.Filter.Prefix
+		}
+		if resp.Filter.Tag != nil {
+			resf0f2 := &svcapitypes.Tag{}
+			if resp.Filter.Tag.Key != nil {
+				resf0f2.Key = resp.Filter.Tag.Key
+			}
+			if resp.Filter.Tag.Value != nil {
+				resf0f2.Value = resp.Filter.Tag.Value
+			}
+			resf0.Tag = resf0f2
+		}
+		res.Filter = resf0
+	}
+	if resp.Id != nil {
+		res.ID = resp.Id
+	}
+	if resp.Status != nil {
+		res.Status = resp.Status
+	}
+	if resp.Tierings != nil {
+		resf3 := []*svcapitypes.Tiering{}
+		for _, resf3iter := range resp.Tierings {
+			resf3elem := &svcapitypes.Tiering{}
+			if resf3iter.AccessTier != nil {
+				resf3elem.AccessTier = resf3iter.AccessTier
+			}
+			if resf3iter.Days != nil {
+				resf3elem.Days = resf3iter.Days
+			}
+			resf3 = append(resf3, resf3elem)
+		}
+		res.Tierings = resf3
+	}
+
+	return res
+}
+
+// newInventoryConfiguration returns a InventoryConfiguration object
+// with each the field set by the corresponding configuration's fields.
+func (rm *resourceManager) newInventoryConfiguration(
+	c *svcapitypes.InventoryConfiguration,
+) *svcsdk.InventoryConfiguration {
+	res := &svcsdk.InventoryConfiguration{}
+
+	if c.Destination != nil {
+		resf0 := &svcsdk.InventoryDestination{}
+		if c.Destination.S3BucketDestination != nil {
+			resf0f0 := &svcsdk.InventoryS3BucketDestination{}
+			if c.Destination.S3BucketDestination.AccountID != nil {
+				resf0f0.SetAccountId(*c.Destination.S3BucketDestination.AccountID)
+			}
+			if c.Destination.S3BucketDestination.Bucket != nil {
+				resf0f0.SetBucket(*c.Destination.S3BucketDestination.Bucket)
+			}
+			if c.Destination.S3BucketDestination.Encryption != nil {
+				resf0f0f2 := &svcsdk.InventoryEncryption{}
+				if c.Destination.S3BucketDestination.Encryption.SSEKMS != nil {
+					resf0f0f2f0 := &svcsdk.SSEKMS{}
+					if c.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID != nil {
+						resf0f0f2f0.SetKeyId(*c.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID)
+					}
+					resf0f0f2.SetSSEKMS(resf0f0f2f0)
+				}
+				resf0f0.SetEncryption(resf0f0f2)
+			}
+			if c.Destination.S3BucketDestination.Format != nil {
+				resf0f0.SetFormat(*c.Destination.S3BucketDestination.Format)
+			}
+			if c.Destination.S3BucketDestination.Prefix != nil {
+				resf0f0.SetPrefix(*c.Destination.S3BucketDestination.Prefix)
+			}
+			resf0.SetS3BucketDestination(resf0f0)
+		}
+		res.SetDestination(resf0)
+	}
+	if c.Filter != nil {
+		resf1 := &svcsdk.InventoryFilter{}
+		if c.Filter.Prefix != nil {
+			resf1.SetPrefix(*c.Filter.Prefix)
+		}
+		res.SetFilter(resf1)
+	}
+	if c.ID != nil {
+		res.SetId(*c.ID)
+	}
+	if c.IncludedObjectVersions != nil {
+		res.SetIncludedObjectVersions(*c.IncludedObjectVersions)
+	}
+	if c.IsEnabled != nil {
+		res.SetIsEnabled(*c.IsEnabled)
+	}
+	if c.OptionalFields != nil {
+		resf5 := []*string{}
+		for _, resf5iter := range c.OptionalFields {
+			var resf5elem string
+			resf5elem = *resf5iter
+			resf5 = append(resf5, &resf5elem)
+		}
+		res.SetOptionalFields(resf5)
+	}
+	if c.Schedule != nil {
+		resf6 := &svcsdk.InventorySchedule{}
+		if c.Schedule.Frequency != nil {
+			resf6.SetFrequency(*c.Schedule.Frequency)
+		}
+		res.SetSchedule(resf6)
+	}
+
+	return res
+}
+
+// setInventoryConfiguration sets a resource InventoryConfiguration type
+// given the SDK type.
+func (rm *resourceManager) setResourceInventoryConfiguration(
+	r *resource,
+	resp *svcsdk.InventoryConfiguration,
+) *svcapitypes.InventoryConfiguration {
+	res := &svcapitypes.InventoryConfiguration{}
+
+	if resp.Destination != nil {
+		resf0 := &svcapitypes.InventoryDestination{}
+		if resp.Destination.S3BucketDestination != nil {
+			resf0f0 := &svcapitypes.InventoryS3BucketDestination{}
+			if resp.Destination.S3BucketDestination.AccountId != nil {
+				resf0f0.AccountID = resp.Destination.S3BucketDestination.AccountId
+			}
+			if resp.Destination.S3BucketDestination.Bucket != nil {
+				resf0f0.Bucket = resp.Destination.S3BucketDestination.Bucket
+			}
+			if resp.Destination.S3BucketDestination.Encryption != nil {
+				resf0f0f2 := &svcapitypes.InventoryEncryption{}
+				if resp.Destination.S3BucketDestination.Encryption.SSEKMS != nil {
+					resf0f0f2f0 := &svcapitypes.SSEKMS{}
+					if resp.Destination.S3BucketDestination.Encryption.SSEKMS.KeyId != nil {
+						resf0f0f2f0.KeyID = resp.Destination.S3BucketDestination.Encryption.SSEKMS.KeyId
+					}
+					resf0f0f2.SSEKMS = resf0f0f2f0
+				}
+				resf0f0.Encryption = resf0f0f2
+			}
+			if resp.Destination.S3BucketDestination.Format != nil {
+				resf0f0.Format = resp.Destination.S3BucketDestination.Format
+			}
+			if resp.Destination.S3BucketDestination.Prefix != nil {
+				resf0f0.Prefix = resp.Destination.S3BucketDestination.Prefix
+			}
+			resf0.S3BucketDestination = resf0f0
+		}
+		res.Destination = resf0
+	}
+	if resp.Filter != nil {
+		resf1 := &svcapitypes.InventoryFilter{}
+		if resp.Filter.Prefix != nil {
+			resf1.Prefix = resp.Filter.Prefix
+		}
+		res.Filter = resf1
+	}
+	if resp.Id != nil {
+		res.ID = resp.Id
+	}
+	if resp.IncludedObjectVersions != nil {
+		res.IncludedObjectVersions = resp.IncludedObjectVersions
+	}
+	if resp.IsEnabled != nil {
+		res.IsEnabled = resp.IsEnabled
+	}
+	if resp.OptionalFields != nil {
+		resf5 := []*string{}
+		for _, resf5iter := range resp.OptionalFields {
+			var resf5elem string
+			resf5elem = *resf5iter
+			resf5 = append(resf5, &resf5elem)
+		}
+		res.OptionalFields = resf5
+	}
+	if resp.Schedule != nil {
+		resf6 := &svcapitypes.InventorySchedule{}
+		if resp.Schedule.Frequency != nil {
+			resf6.Frequency = resp.Schedule.Frequency
+		}
+		res.Schedule = resf6
 	}
 
 	return res
@@ -687,6 +1145,7 @@ func (rm *resourceManager) setResourceLifecycle(
 	resp *svcsdk.GetBucketLifecycleConfigurationOutput,
 ) *svcapitypes.BucketLifecycleConfiguration {
 	res := &svcapitypes.BucketLifecycleConfiguration{}
+
 	if resp.Rules != nil {
 		resf0 := []*svcapitypes.LifecycleRule{}
 		for _, resf0iter := range resp.Rules {
@@ -862,6 +1321,7 @@ func (rm *resourceManager) setResourceLogging(
 	resp *svcsdk.GetBucketLoggingOutput,
 ) *svcapitypes.BucketLoggingStatus {
 	res := &svcapitypes.BucketLoggingStatus{}
+
 	if resp.LoggingEnabled != nil {
 		resf0 := &svcapitypes.LoggingEnabled{}
 		if resp.LoggingEnabled.TargetBucket != nil {
@@ -901,6 +1361,111 @@ func (rm *resourceManager) setResourceLogging(
 			resf0.TargetPrefix = resp.LoggingEnabled.TargetPrefix
 		}
 		res.LoggingEnabled = resf0
+	}
+
+	return res
+}
+
+// newMetricsConfiguration returns a MetricsConfiguration object
+// with each the field set by the corresponding configuration's fields.
+func (rm *resourceManager) newMetricsConfiguration(
+	c *svcapitypes.MetricsConfiguration,
+) *svcsdk.MetricsConfiguration {
+	res := &svcsdk.MetricsConfiguration{}
+
+	if c.Filter != nil {
+		resf0 := &svcsdk.MetricsFilter{}
+		if c.Filter.And != nil {
+			resf0f0 := &svcsdk.MetricsAndOperator{}
+			if c.Filter.And.Prefix != nil {
+				resf0f0.SetPrefix(*c.Filter.And.Prefix)
+			}
+			if c.Filter.And.Tags != nil {
+				resf0f0f1 := []*svcsdk.Tag{}
+				for _, resf0f0f1iter := range c.Filter.And.Tags {
+					resf0f0f1elem := &svcsdk.Tag{}
+					if resf0f0f1iter.Key != nil {
+						resf0f0f1elem.SetKey(*resf0f0f1iter.Key)
+					}
+					if resf0f0f1iter.Value != nil {
+						resf0f0f1elem.SetValue(*resf0f0f1iter.Value)
+					}
+					resf0f0f1 = append(resf0f0f1, resf0f0f1elem)
+				}
+				resf0f0.SetTags(resf0f0f1)
+			}
+			resf0.SetAnd(resf0f0)
+		}
+		if c.Filter.Prefix != nil {
+			resf0.SetPrefix(*c.Filter.Prefix)
+		}
+		if c.Filter.Tag != nil {
+			resf0f2 := &svcsdk.Tag{}
+			if c.Filter.Tag.Key != nil {
+				resf0f2.SetKey(*c.Filter.Tag.Key)
+			}
+			if c.Filter.Tag.Value != nil {
+				resf0f2.SetValue(*c.Filter.Tag.Value)
+			}
+			resf0.SetTag(resf0f2)
+		}
+		res.SetFilter(resf0)
+	}
+	if c.ID != nil {
+		res.SetId(*c.ID)
+	}
+
+	return res
+}
+
+// setMetricsConfiguration sets a resource MetricsConfiguration type
+// given the SDK type.
+func (rm *resourceManager) setResourceMetricsConfiguration(
+	r *resource,
+	resp *svcsdk.MetricsConfiguration,
+) *svcapitypes.MetricsConfiguration {
+	res := &svcapitypes.MetricsConfiguration{}
+
+	if resp.Filter != nil {
+		resf0 := &svcapitypes.MetricsFilter{}
+		if resp.Filter.And != nil {
+			resf0f0 := &svcapitypes.MetricsAndOperator{}
+			if resp.Filter.And.Prefix != nil {
+				resf0f0.Prefix = resp.Filter.And.Prefix
+			}
+			if resp.Filter.And.Tags != nil {
+				resf0f0f1 := []*svcapitypes.Tag{}
+				for _, resf0f0f1iter := range resp.Filter.And.Tags {
+					resf0f0f1elem := &svcapitypes.Tag{}
+					if resf0f0f1iter.Key != nil {
+						resf0f0f1elem.Key = resf0f0f1iter.Key
+					}
+					if resf0f0f1iter.Value != nil {
+						resf0f0f1elem.Value = resf0f0f1iter.Value
+					}
+					resf0f0f1 = append(resf0f0f1, resf0f0f1elem)
+				}
+				resf0f0.Tags = resf0f0f1
+			}
+			resf0.And = resf0f0
+		}
+		if resp.Filter.Prefix != nil {
+			resf0.Prefix = resp.Filter.Prefix
+		}
+		if resp.Filter.Tag != nil {
+			resf0f2 := &svcapitypes.Tag{}
+			if resp.Filter.Tag.Key != nil {
+				resf0f2.Key = resp.Filter.Tag.Key
+			}
+			if resp.Filter.Tag.Value != nil {
+				resf0f2.Value = resp.Filter.Tag.Value
+			}
+			resf0.Tag = resf0f2
+		}
+		res.Filter = resf0
+	}
+	if resp.Id != nil {
+		res.ID = resp.Id
 	}
 
 	return res
@@ -1059,6 +1624,7 @@ func (rm *resourceManager) setResourceNotification(
 	resp *svcsdk.NotificationConfiguration,
 ) *svcapitypes.NotificationConfiguration {
 	res := &svcapitypes.NotificationConfiguration{}
+
 	if resp.LambdaFunctionConfigurations != nil {
 		resf0 := []*svcapitypes.LambdaFunctionConfiguration{}
 		for _, resf0iter := range resp.LambdaFunctionConfigurations {
@@ -1227,6 +1793,7 @@ func (rm *resourceManager) setResourceOwnershipControls(
 	resp *svcsdk.GetBucketOwnershipControlsOutput,
 ) *svcapitypes.OwnershipControls {
 	res := &svcapitypes.OwnershipControls{}
+
 	if resp.OwnershipControls.Rules != nil {
 		resf0 := []*svcapitypes.OwnershipControlsRule{}
 		for _, resf0iter := range resp.OwnershipControls.Rules {
@@ -1454,6 +2021,7 @@ func (rm *resourceManager) setResourceReplication(
 	resp *svcsdk.GetBucketReplicationOutput,
 ) *svcapitypes.ReplicationConfiguration {
 	res := &svcapitypes.ReplicationConfiguration{}
+
 	if resp.ReplicationConfiguration.Role != nil {
 		res.Role = resp.ReplicationConfiguration.Role
 	}
@@ -1627,6 +2195,7 @@ func (rm *resourceManager) setResourceRequestPayment(
 	resp *svcsdk.GetBucketRequestPaymentOutput,
 ) *svcapitypes.RequestPaymentConfiguration {
 	res := &svcapitypes.RequestPaymentConfiguration{}
+
 	if resp.Payer != nil {
 		res.Payer = resp.Payer
 	}
@@ -1666,6 +2235,7 @@ func (rm *resourceManager) setResourceTagging(
 	resp *svcsdk.GetBucketTaggingOutput,
 ) *svcapitypes.Tagging {
 	res := &svcapitypes.Tagging{}
+
 	if resp.TagSet != nil {
 		resf0 := []*svcapitypes.Tag{}
 		for _, resf0iter := range resp.TagSet {
@@ -1705,6 +2275,7 @@ func (rm *resourceManager) setResourceVersioning(
 	resp *svcsdk.GetBucketVersioningOutput,
 ) *svcapitypes.VersioningConfiguration {
 	res := &svcapitypes.VersioningConfiguration{}
+
 	if resp.Status != nil {
 		res.Status = resp.Status
 	}
@@ -1791,6 +2362,7 @@ func (rm *resourceManager) setResourceWebsite(
 	resp *svcsdk.GetBucketWebsiteOutput,
 ) *svcapitypes.WebsiteConfiguration {
 	res := &svcapitypes.WebsiteConfiguration{}
+
 	if resp.ErrorDocument != nil {
 		resf0 := &svcapitypes.ErrorDocument{}
 		if resp.ErrorDocument.Key != nil {
