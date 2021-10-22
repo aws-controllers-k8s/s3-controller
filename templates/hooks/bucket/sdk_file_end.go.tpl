@@ -70,6 +70,8 @@ func (rm *resourceManager) setResource{{ $specFieldName }}(
 
 {{- $memberRef := $customShape.Shape.MemberRef }}
 
+//region {{ ToLower $specFieldName }}
+
 // new{{ $memberRefName }} returns a {{ $memberRefName }} object 
 // with each the field set by the corresponding configuration's fields.
 func (rm *resourceManager) new{{ $memberRefName }}(
@@ -94,6 +96,140 @@ func (rm *resourceManager) setResource{{ $memberRefName }}(
 
     return res
 }
+
+// get{{$memberRefName}}Action returns the determined action for a given
+// configuration object, depending on the desired and latest values
+func get{{$memberRefName}}Action(
+    c *svcapitypes.{{ $memberRefName }},
+    latest *resource,
+) ConfigurationAction{
+    action := ConfigurationActionPut
+	if latest != nil {
+		for _, l := range latest.ko.Spec.{{ $specFieldName }} {
+			if *l.ID != *c.ID {
+				continue
+			}
+
+			// Don't perform any action if they are identical
+			if reflect.DeepEqual(*l, *c) {
+				action = ConfigurationActionNone
+			} else {
+				action = ConfigurationActionUpdate
+			}
+			break
+		}
+	}
+	return action
+}
+
+func (rm *resourceManager) newListBucket{{ $specFieldName }}Payload(
+	r *resource,
+) *svcsdk.ListBucket{{ $memberRefName }}sInput {
+	res := &svcsdk.ListBucket{{ $memberRefName }}sInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucket{{ $specFieldName }}Payload(
+	r *resource,
+	c svcapitypes.{{ $memberRefName }},
+) *svcsdk.PutBucket{{ $memberRefName }}Input {
+	res := &svcsdk.PutBucket{{ $memberRefName }}Input{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetId(*c.ID)
+	res.Set{{ $memberRefName }}(rm.new{{ $memberRefName }}(&c))
+
+	return res
+}
+
+func (rm *resourceManager) newDeleteBucket{{ $specFieldName }}Payload(
+	r *resource,
+	c svcapitypes.{{ $memberRefName }},
+) *svcsdk.DeleteBucket{{ $memberRefName }}Input {
+	res := &svcsdk.DeleteBucket{{ $memberRefName }}Input{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetId(*c.ID)
+
+	return res
+}
+
+func (rm *resourceManager) delete{{ $memberRefName }}(
+	ctx context.Context,
+	r *resource,
+	c svcapitypes.{{ $memberRefName }},
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.delete{{ $memberRefName }}")
+	defer exit(err)
+
+	input := rm.newDeleteBucket{{ $specFieldName }}Payload(r, c)
+	_, err = rm.sdkapi.DeleteBucket{{ $memberRefName }}WithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucket{{ $memberRefName }}", err)
+	return err
+}
+
+func (rm *resourceManager) put{{ $memberRefName }}(
+	ctx context.Context,
+	r *resource,
+	c svcapitypes.{{ $memberRefName }},
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.put{{ $memberRefName }}")
+	defer exit(err)
+
+	input := rm.newPutBucket{{ $specFieldName }}Payload(r, c)
+	_, err = rm.sdkapi.PutBucket{{ $memberRefName }}WithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucket{{ $memberRefName }}", err)
+	return err
+}
+
+func (rm *resourceManager) sync{{ $specFieldName }}(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.sync{{ $specFieldName }}")
+	defer exit(err)
+
+	for _, c := range desired.ko.Spec.{{ $specFieldName }} {
+		action := get{{ $memberRefName }}Action(c, latest)
+
+		switch action {
+		case ConfigurationActionUpdate:
+			fallthrough
+		case ConfigurationActionPut:
+			if err = rm.put{{ $memberRefName }}(ctx, desired, *c); err != nil {
+				return err
+			}
+		default:
+		}
+	}
+
+	if latest != nil {
+		// Find any configurations that are in the latest but not in desired
+		for _, l := range latest.ko.Spec.{{ $specFieldName }} {
+			exists := false
+			for _, c := range desired.ko.Spec.{{ $specFieldName }} {
+				if *c.ID != *l.ID {
+					continue
+				}
+				exists = true
+				break
+			}
+
+			if !exists {
+				if err = rm.delete{{ $memberRefName }}(ctx, desired, *l); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+//endregion {{ ToLower $specFieldName }}
 
 {{- end }}
 {{- end }}

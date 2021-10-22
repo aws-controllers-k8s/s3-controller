@@ -17,6 +17,7 @@ package bucket
 
 import (
 	"context"
+	"reflect"
 	"strings"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
@@ -377,6 +378,8 @@ func (rm *resourceManager) setResourceAccelerate(
 	return res
 }
 
+//region analytics
+
 // newAnalyticsConfiguration returns a AnalyticsConfiguration object
 // with each the field set by the corresponding configuration's fields.
 func (rm *resourceManager) newAnalyticsConfiguration(
@@ -543,6 +546,140 @@ func (rm *resourceManager) setResourceAnalyticsConfiguration(
 
 	return res
 }
+
+// getAnalyticsConfigurationAction returns the determined action for a given
+// configuration object, depending on the desired and latest values
+func getAnalyticsConfigurationAction(
+	c *svcapitypes.AnalyticsConfiguration,
+	latest *resource,
+) ConfigurationAction {
+	action := ConfigurationActionPut
+	if latest != nil {
+		for _, l := range latest.ko.Spec.Analytics {
+			if *l.ID != *c.ID {
+				continue
+			}
+
+			// Don't perform any action if they are identical
+			if reflect.DeepEqual(*l, *c) {
+				action = ConfigurationActionNone
+			} else {
+				action = ConfigurationActionUpdate
+			}
+			break
+		}
+	}
+	return action
+}
+
+func (rm *resourceManager) newListBucketAnalyticsPayload(
+	r *resource,
+) *svcsdk.ListBucketAnalyticsConfigurationsInput {
+	res := &svcsdk.ListBucketAnalyticsConfigurationsInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketAnalyticsPayload(
+	r *resource,
+	c svcapitypes.AnalyticsConfiguration,
+) *svcsdk.PutBucketAnalyticsConfigurationInput {
+	res := &svcsdk.PutBucketAnalyticsConfigurationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetId(*c.ID)
+	res.SetAnalyticsConfiguration(rm.newAnalyticsConfiguration(&c))
+
+	return res
+}
+
+func (rm *resourceManager) newDeleteBucketAnalyticsPayload(
+	r *resource,
+	c svcapitypes.AnalyticsConfiguration,
+) *svcsdk.DeleteBucketAnalyticsConfigurationInput {
+	res := &svcsdk.DeleteBucketAnalyticsConfigurationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetId(*c.ID)
+
+	return res
+}
+
+func (rm *resourceManager) deleteAnalyticsConfiguration(
+	ctx context.Context,
+	r *resource,
+	c svcapitypes.AnalyticsConfiguration,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteAnalyticsConfiguration")
+	defer exit(err)
+
+	input := rm.newDeleteBucketAnalyticsPayload(r, c)
+	_, err = rm.sdkapi.DeleteBucketAnalyticsConfigurationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketAnalyticsConfiguration", err)
+	return err
+}
+
+func (rm *resourceManager) putAnalyticsConfiguration(
+	ctx context.Context,
+	r *resource,
+	c svcapitypes.AnalyticsConfiguration,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.putAnalyticsConfiguration")
+	defer exit(err)
+
+	input := rm.newPutBucketAnalyticsPayload(r, c)
+	_, err = rm.sdkapi.PutBucketAnalyticsConfigurationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketAnalyticsConfiguration", err)
+	return err
+}
+
+func (rm *resourceManager) syncAnalytics(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncAnalytics")
+	defer exit(err)
+
+	for _, c := range desired.ko.Spec.Analytics {
+		action := getAnalyticsConfigurationAction(c, latest)
+
+		switch action {
+		case ConfigurationActionUpdate:
+			fallthrough
+		case ConfigurationActionPut:
+			if err = rm.putAnalyticsConfiguration(ctx, desired, *c); err != nil {
+				return err
+			}
+		default:
+		}
+	}
+
+	if latest != nil {
+		// Find any configurations that are in the latest but not in desired
+		for _, l := range latest.ko.Spec.Analytics {
+			exists := false
+			for _, c := range desired.ko.Spec.Analytics {
+				if *c.ID != *l.ID {
+					continue
+				}
+				exists = true
+				break
+			}
+
+			if !exists {
+				if err = rm.deleteAnalyticsConfiguration(ctx, desired, *l); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+//endregion analytics
 
 // newCORSConfiguration returns a CORSConfiguration object
 // with each the field set by the resource's corresponding spec field.
@@ -726,6 +863,8 @@ func (rm *resourceManager) setResourceEncryption(
 	return res
 }
 
+//region intelligenttiering
+
 // newIntelligentTieringConfiguration returns a IntelligentTieringConfiguration object
 // with each the field set by the corresponding configuration's fields.
 func (rm *resourceManager) newIntelligentTieringConfiguration(
@@ -864,6 +1003,142 @@ func (rm *resourceManager) setResourceIntelligentTieringConfiguration(
 
 	return res
 }
+
+// getIntelligentTieringConfigurationAction returns the determined action for a given
+// configuration object, depending on the desired and latest values
+func getIntelligentTieringConfigurationAction(
+	c *svcapitypes.IntelligentTieringConfiguration,
+	latest *resource,
+) ConfigurationAction {
+	action := ConfigurationActionPut
+	if latest != nil {
+		for _, l := range latest.ko.Spec.IntelligentTiering {
+			if *l.ID != *c.ID {
+				continue
+			}
+
+			// Don't perform any action if they are identical
+			if reflect.DeepEqual(*l, *c) {
+				action = ConfigurationActionNone
+			} else {
+				action = ConfigurationActionUpdate
+			}
+			break
+		}
+	}
+	return action
+}
+
+func (rm *resourceManager) newListBucketIntelligentTieringPayload(
+	r *resource,
+) *svcsdk.ListBucketIntelligentTieringConfigurationsInput {
+	res := &svcsdk.ListBucketIntelligentTieringConfigurationsInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketIntelligentTieringPayload(
+	r *resource,
+	c svcapitypes.IntelligentTieringConfiguration,
+) *svcsdk.PutBucketIntelligentTieringConfigurationInput {
+	res := &svcsdk.PutBucketIntelligentTieringConfigurationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetId(*c.ID)
+	res.SetIntelligentTieringConfiguration(rm.newIntelligentTieringConfiguration(&c))
+
+	return res
+}
+
+func (rm *resourceManager) newDeleteBucketIntelligentTieringPayload(
+	r *resource,
+	c svcapitypes.IntelligentTieringConfiguration,
+) *svcsdk.DeleteBucketIntelligentTieringConfigurationInput {
+	res := &svcsdk.DeleteBucketIntelligentTieringConfigurationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetId(*c.ID)
+
+	return res
+}
+
+func (rm *resourceManager) deleteIntelligentTieringConfiguration(
+	ctx context.Context,
+	r *resource,
+	c svcapitypes.IntelligentTieringConfiguration,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteIntelligentTieringConfiguration")
+	defer exit(err)
+
+	input := rm.newDeleteBucketIntelligentTieringPayload(r, c)
+	_, err = rm.sdkapi.DeleteBucketIntelligentTieringConfigurationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketIntelligentTieringConfiguration", err)
+	return err
+}
+
+func (rm *resourceManager) putIntelligentTieringConfiguration(
+	ctx context.Context,
+	r *resource,
+	c svcapitypes.IntelligentTieringConfiguration,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.putIntelligentTieringConfiguration")
+	defer exit(err)
+
+	input := rm.newPutBucketIntelligentTieringPayload(r, c)
+	_, err = rm.sdkapi.PutBucketIntelligentTieringConfigurationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketIntelligentTieringConfiguration", err)
+	return err
+}
+
+func (rm *resourceManager) syncIntelligentTiering(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncIntelligentTiering")
+	defer exit(err)
+
+	for _, c := range desired.ko.Spec.IntelligentTiering {
+		action := getIntelligentTieringConfigurationAction(c, latest)
+
+		switch action {
+		case ConfigurationActionUpdate:
+			fallthrough
+		case ConfigurationActionPut:
+			if err = rm.putIntelligentTieringConfiguration(ctx, desired, *c); err != nil {
+				return err
+			}
+		default:
+		}
+	}
+
+	if latest != nil {
+		// Find any configurations that are in the latest but not in desired
+		for _, l := range latest.ko.Spec.IntelligentTiering {
+			exists := false
+			for _, c := range desired.ko.Spec.IntelligentTiering {
+				if *c.ID != *l.ID {
+					continue
+				}
+				exists = true
+				break
+			}
+
+			if !exists {
+				if err = rm.deleteIntelligentTieringConfiguration(ctx, desired, *l); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+//endregion intelligenttiering
+
+//region inventory
 
 // newInventoryConfiguration returns a InventoryConfiguration object
 // with each the field set by the corresponding configuration's fields.
@@ -1013,6 +1288,140 @@ func (rm *resourceManager) setResourceInventoryConfiguration(
 
 	return res
 }
+
+// getInventoryConfigurationAction returns the determined action for a given
+// configuration object, depending on the desired and latest values
+func getInventoryConfigurationAction(
+	c *svcapitypes.InventoryConfiguration,
+	latest *resource,
+) ConfigurationAction {
+	action := ConfigurationActionPut
+	if latest != nil {
+		for _, l := range latest.ko.Spec.Inventory {
+			if *l.ID != *c.ID {
+				continue
+			}
+
+			// Don't perform any action if they are identical
+			if reflect.DeepEqual(*l, *c) {
+				action = ConfigurationActionNone
+			} else {
+				action = ConfigurationActionUpdate
+			}
+			break
+		}
+	}
+	return action
+}
+
+func (rm *resourceManager) newListBucketInventoryPayload(
+	r *resource,
+) *svcsdk.ListBucketInventoryConfigurationsInput {
+	res := &svcsdk.ListBucketInventoryConfigurationsInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketInventoryPayload(
+	r *resource,
+	c svcapitypes.InventoryConfiguration,
+) *svcsdk.PutBucketInventoryConfigurationInput {
+	res := &svcsdk.PutBucketInventoryConfigurationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetId(*c.ID)
+	res.SetInventoryConfiguration(rm.newInventoryConfiguration(&c))
+
+	return res
+}
+
+func (rm *resourceManager) newDeleteBucketInventoryPayload(
+	r *resource,
+	c svcapitypes.InventoryConfiguration,
+) *svcsdk.DeleteBucketInventoryConfigurationInput {
+	res := &svcsdk.DeleteBucketInventoryConfigurationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetId(*c.ID)
+
+	return res
+}
+
+func (rm *resourceManager) deleteInventoryConfiguration(
+	ctx context.Context,
+	r *resource,
+	c svcapitypes.InventoryConfiguration,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteInventoryConfiguration")
+	defer exit(err)
+
+	input := rm.newDeleteBucketInventoryPayload(r, c)
+	_, err = rm.sdkapi.DeleteBucketInventoryConfigurationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketInventoryConfiguration", err)
+	return err
+}
+
+func (rm *resourceManager) putInventoryConfiguration(
+	ctx context.Context,
+	r *resource,
+	c svcapitypes.InventoryConfiguration,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.putInventoryConfiguration")
+	defer exit(err)
+
+	input := rm.newPutBucketInventoryPayload(r, c)
+	_, err = rm.sdkapi.PutBucketInventoryConfigurationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketInventoryConfiguration", err)
+	return err
+}
+
+func (rm *resourceManager) syncInventory(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncInventory")
+	defer exit(err)
+
+	for _, c := range desired.ko.Spec.Inventory {
+		action := getInventoryConfigurationAction(c, latest)
+
+		switch action {
+		case ConfigurationActionUpdate:
+			fallthrough
+		case ConfigurationActionPut:
+			if err = rm.putInventoryConfiguration(ctx, desired, *c); err != nil {
+				return err
+			}
+		default:
+		}
+	}
+
+	if latest != nil {
+		// Find any configurations that are in the latest but not in desired
+		for _, l := range latest.ko.Spec.Inventory {
+			exists := false
+			for _, c := range desired.ko.Spec.Inventory {
+				if *c.ID != *l.ID {
+					continue
+				}
+				exists = true
+				break
+			}
+
+			if !exists {
+				if err = rm.deleteInventoryConfiguration(ctx, desired, *l); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+//endregion inventory
 
 // newLifecycleConfiguration returns a LifecycleConfiguration object
 // with each the field set by the resource's corresponding spec field.
@@ -1366,6 +1775,8 @@ func (rm *resourceManager) setResourceLogging(
 	return res
 }
 
+//region metrics
+
 // newMetricsConfiguration returns a MetricsConfiguration object
 // with each the field set by the corresponding configuration's fields.
 func (rm *resourceManager) newMetricsConfiguration(
@@ -1470,6 +1881,140 @@ func (rm *resourceManager) setResourceMetricsConfiguration(
 
 	return res
 }
+
+// getMetricsConfigurationAction returns the determined action for a given
+// configuration object, depending on the desired and latest values
+func getMetricsConfigurationAction(
+	c *svcapitypes.MetricsConfiguration,
+	latest *resource,
+) ConfigurationAction {
+	action := ConfigurationActionPut
+	if latest != nil {
+		for _, l := range latest.ko.Spec.Metrics {
+			if *l.ID != *c.ID {
+				continue
+			}
+
+			// Don't perform any action if they are identical
+			if reflect.DeepEqual(*l, *c) {
+				action = ConfigurationActionNone
+			} else {
+				action = ConfigurationActionUpdate
+			}
+			break
+		}
+	}
+	return action
+}
+
+func (rm *resourceManager) newListBucketMetricsPayload(
+	r *resource,
+) *svcsdk.ListBucketMetricsConfigurationsInput {
+	res := &svcsdk.ListBucketMetricsConfigurationsInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	return res
+}
+
+func (rm *resourceManager) newPutBucketMetricsPayload(
+	r *resource,
+	c svcapitypes.MetricsConfiguration,
+) *svcsdk.PutBucketMetricsConfigurationInput {
+	res := &svcsdk.PutBucketMetricsConfigurationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetId(*c.ID)
+	res.SetMetricsConfiguration(rm.newMetricsConfiguration(&c))
+
+	return res
+}
+
+func (rm *resourceManager) newDeleteBucketMetricsPayload(
+	r *resource,
+	c svcapitypes.MetricsConfiguration,
+) *svcsdk.DeleteBucketMetricsConfigurationInput {
+	res := &svcsdk.DeleteBucketMetricsConfigurationInput{}
+	res.SetBucket(*r.ko.Spec.Name)
+	res.SetId(*c.ID)
+
+	return res
+}
+
+func (rm *resourceManager) deleteMetricsConfiguration(
+	ctx context.Context,
+	r *resource,
+	c svcapitypes.MetricsConfiguration,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteMetricsConfiguration")
+	defer exit(err)
+
+	input := rm.newDeleteBucketMetricsPayload(r, c)
+	_, err = rm.sdkapi.DeleteBucketMetricsConfigurationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketMetricsConfiguration", err)
+	return err
+}
+
+func (rm *resourceManager) putMetricsConfiguration(
+	ctx context.Context,
+	r *resource,
+	c svcapitypes.MetricsConfiguration,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.putMetricsConfiguration")
+	defer exit(err)
+
+	input := rm.newPutBucketMetricsPayload(r, c)
+	_, err = rm.sdkapi.PutBucketMetricsConfigurationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketMetricsConfiguration", err)
+	return err
+}
+
+func (rm *resourceManager) syncMetrics(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncMetrics")
+	defer exit(err)
+
+	for _, c := range desired.ko.Spec.Metrics {
+		action := getMetricsConfigurationAction(c, latest)
+
+		switch action {
+		case ConfigurationActionUpdate:
+			fallthrough
+		case ConfigurationActionPut:
+			if err = rm.putMetricsConfiguration(ctx, desired, *c); err != nil {
+				return err
+			}
+		default:
+		}
+	}
+
+	if latest != nil {
+		// Find any configurations that are in the latest but not in desired
+		for _, l := range latest.ko.Spec.Metrics {
+			exists := false
+			for _, c := range desired.ko.Spec.Metrics {
+				if *c.ID != *l.ID {
+					continue
+				}
+				exists = true
+				break
+			}
+
+			if !exists {
+				if err = rm.deleteMetricsConfiguration(ctx, desired, *l); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+//endregion metrics
 
 // newNotificationConfiguration returns a NotificationConfiguration object
 // with each the field set by the resource's corresponding spec field.
