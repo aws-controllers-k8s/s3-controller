@@ -2,6 +2,7 @@
 {{ $SDKAPI := .SDKAPI }}
 
 {{ range $specFieldName, $specField := $CRD.Config.Resources.Bucket.Fields -}}
+{{- if $specField.From }}
 {{- $operationName := $specField.From.Operation }}
 {{- $path := $specField.From.Path }}
 {{- if (eq (slice $operationName 0 3) "Put") }}
@@ -49,6 +50,7 @@ func (rm *resourceManager) setResource{{ $specFieldName }}(
 
     return res
 }
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

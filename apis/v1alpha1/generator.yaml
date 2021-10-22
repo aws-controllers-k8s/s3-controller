@@ -21,10 +21,9 @@ resources:
         from:
           operation: PutBucketAccelerateConfiguration
           path: AccelerateConfiguration
-      # AnalyticsConfiguration:
-      #   from:
-      #     operation: PutBucketAnalyticsConfiguration
-      #     path: AnalyticsConfiguration # Double check about ID
+      Analytics:
+        custom_field:
+          list_of: AnalyticsConfiguration
       CORS:
         from:
           operation: PutBucketCors
@@ -33,14 +32,12 @@ resources:
         from:
           operation: PutBucketEncryption
           path: ServerSideEncryptionConfiguration
-      # IntelligentTieringConfiguration:
-      #   from:
-      #     operation: PutBucketIntelligentTieringConfiguration
-      #     path: IntelligentTieringConfiguration # Double check about ID
-      # InventoryConfiguration:
-      #   from:
-      #     operation: PutBucketInventoryConfiguration
-      #     path: InventoryConfiguration # Double check about ID
+      IntelligentTiering:
+        custom_field:
+          list_of: IntelligentTieringConfiguration
+      Inventory:
+        custom_field:
+          list_of: InventoryConfiguration
       Lifecycle:
         from:
           operation: PutBucketLifecycleConfiguration
@@ -49,10 +46,9 @@ resources:
         from:
           operation: PutBucketLogging
           path: BucketLoggingStatus
-      # MetricsConfiguration:
-      #   from:
-      #     operation: PutBucketMetricsConfiguration
-      #     path: MetricsConfiguration # Double check about ID
+      Metrics:
+        custom_field:
+          list_of: MetricsConfiguration
       Notification:
         from:
           operation: PutBucketNotificationConfiguration
