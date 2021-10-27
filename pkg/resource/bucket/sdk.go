@@ -43,6 +43,7 @@ var (
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
 	_ = &ackcondition.NotManagedMessage
+	_ = &reflect.Value{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -378,8 +379,6 @@ func (rm *resourceManager) setResourceAccelerate(
 	return res
 }
 
-//region analytics
-
 // newAnalyticsConfiguration returns a AnalyticsConfiguration object
 // with each the field set by the corresponding configuration's fields.
 func (rm *resourceManager) newAnalyticsConfiguration(
@@ -547,6 +546,116 @@ func (rm *resourceManager) setResourceAnalyticsConfiguration(
 	return res
 }
 
+func compareAnalyticsConfiguration(
+	a *svcapitypes.AnalyticsConfiguration,
+	b *svcapitypes.AnalyticsConfiguration,
+) *ackcompare.Delta {
+	delta := ackcompare.NewDelta()
+	if ackcompare.HasNilDifference(a.Filter, b.Filter) {
+		delta.Add("AnalyticsConfiguration.Filter", a.Filter, b.Filter)
+	} else if a.Filter != nil && b.Filter != nil {
+		if ackcompare.HasNilDifference(a.Filter.And, b.Filter.And) {
+			delta.Add("AnalyticsConfiguration.Filter.And", a.Filter.And, b.Filter.And)
+		} else if a.Filter.And != nil && b.Filter.And != nil {
+			if ackcompare.HasNilDifference(a.Filter.And.Prefix, b.Filter.And.Prefix) {
+				delta.Add("AnalyticsConfiguration.Filter.And.Prefix", a.Filter.And.Prefix, b.Filter.And.Prefix)
+			} else if a.Filter.And.Prefix != nil && b.Filter.And.Prefix != nil {
+				if *a.Filter.And.Prefix != *b.Filter.And.Prefix {
+					delta.Add("AnalyticsConfiguration.Filter.And.Prefix", a.Filter.And.Prefix, b.Filter.And.Prefix)
+				}
+			}
+			if !reflect.DeepEqual(a.Filter.And.Tags, b.Filter.And.Tags) {
+				delta.Add("AnalyticsConfiguration.Filter.And.Tags", a.Filter.And.Tags, b.Filter.And.Tags)
+			}
+		}
+		if ackcompare.HasNilDifference(a.Filter.Prefix, b.Filter.Prefix) {
+			delta.Add("AnalyticsConfiguration.Filter.Prefix", a.Filter.Prefix, b.Filter.Prefix)
+		} else if a.Filter.Prefix != nil && b.Filter.Prefix != nil {
+			if *a.Filter.Prefix != *b.Filter.Prefix {
+				delta.Add("AnalyticsConfiguration.Filter.Prefix", a.Filter.Prefix, b.Filter.Prefix)
+			}
+		}
+		if ackcompare.HasNilDifference(a.Filter.Tag, b.Filter.Tag) {
+			delta.Add("AnalyticsConfiguration.Filter.Tag", a.Filter.Tag, b.Filter.Tag)
+		} else if a.Filter.Tag != nil && b.Filter.Tag != nil {
+			if ackcompare.HasNilDifference(a.Filter.Tag.Key, b.Filter.Tag.Key) {
+				delta.Add("AnalyticsConfiguration.Filter.Tag.Key", a.Filter.Tag.Key, b.Filter.Tag.Key)
+			} else if a.Filter.Tag.Key != nil && b.Filter.Tag.Key != nil {
+				if *a.Filter.Tag.Key != *b.Filter.Tag.Key {
+					delta.Add("AnalyticsConfiguration.Filter.Tag.Key", a.Filter.Tag.Key, b.Filter.Tag.Key)
+				}
+			}
+			if ackcompare.HasNilDifference(a.Filter.Tag.Value, b.Filter.Tag.Value) {
+				delta.Add("AnalyticsConfiguration.Filter.Tag.Value", a.Filter.Tag.Value, b.Filter.Tag.Value)
+			} else if a.Filter.Tag.Value != nil && b.Filter.Tag.Value != nil {
+				if *a.Filter.Tag.Value != *b.Filter.Tag.Value {
+					delta.Add("AnalyticsConfiguration.Filter.Tag.Value", a.Filter.Tag.Value, b.Filter.Tag.Value)
+				}
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ID, b.ID) {
+		delta.Add("AnalyticsConfiguration.ID", a.ID, b.ID)
+	} else if a.ID != nil && b.ID != nil {
+		if *a.ID != *b.ID {
+			delta.Add("AnalyticsConfiguration.ID", a.ID, b.ID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.StorageClassAnalysis, b.StorageClassAnalysis) {
+		delta.Add("AnalyticsConfiguration.StorageClassAnalysis", a.StorageClassAnalysis, b.StorageClassAnalysis)
+	} else if a.StorageClassAnalysis != nil && b.StorageClassAnalysis != nil {
+		if ackcompare.HasNilDifference(a.StorageClassAnalysis.DataExport, b.StorageClassAnalysis.DataExport) {
+			delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport", a.StorageClassAnalysis.DataExport, b.StorageClassAnalysis.DataExport)
+		} else if a.StorageClassAnalysis.DataExport != nil && b.StorageClassAnalysis.DataExport != nil {
+			if ackcompare.HasNilDifference(a.StorageClassAnalysis.DataExport.Destination, b.StorageClassAnalysis.DataExport.Destination) {
+				delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.Destination", a.StorageClassAnalysis.DataExport.Destination, b.StorageClassAnalysis.DataExport.Destination)
+			} else if a.StorageClassAnalysis.DataExport.Destination != nil && b.StorageClassAnalysis.DataExport.Destination != nil {
+				if ackcompare.HasNilDifference(a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination) {
+					delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.Destination.S3BucketDestination", a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination)
+				} else if a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination != nil && b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination != nil {
+					if ackcompare.HasNilDifference(a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket) {
+						delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket", a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket)
+					} else if a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket != nil && b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket != nil {
+						if *a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket != *b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket {
+							delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket", a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket)
+						}
+					}
+					if ackcompare.HasNilDifference(a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID) {
+						delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID", a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID)
+					} else if a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID != nil && b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID != nil {
+						if *a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID != *b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID {
+							delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID", a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketAccountID)
+						}
+					}
+					if ackcompare.HasNilDifference(a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format) {
+						delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format", a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format)
+					} else if a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format != nil && b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format != nil {
+						if *a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format != *b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format {
+							delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format", a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Format)
+						}
+					}
+					if ackcompare.HasNilDifference(a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix) {
+						delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix", a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix)
+					} else if a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix != nil && b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix != nil {
+						if *a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix != *b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix {
+							delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix", a.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix, b.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Prefix)
+						}
+					}
+				}
+			}
+			if ackcompare.HasNilDifference(a.StorageClassAnalysis.DataExport.OutputSchemaVersion, b.StorageClassAnalysis.DataExport.OutputSchemaVersion) {
+				delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.OutputSchemaVersion", a.StorageClassAnalysis.DataExport.OutputSchemaVersion, b.StorageClassAnalysis.DataExport.OutputSchemaVersion)
+			} else if a.StorageClassAnalysis.DataExport.OutputSchemaVersion != nil && b.StorageClassAnalysis.DataExport.OutputSchemaVersion != nil {
+				if *a.StorageClassAnalysis.DataExport.OutputSchemaVersion != *b.StorageClassAnalysis.DataExport.OutputSchemaVersion {
+					delta.Add("AnalyticsConfiguration.StorageClassAnalysis.DataExport.OutputSchemaVersion", a.StorageClassAnalysis.DataExport.OutputSchemaVersion, b.StorageClassAnalysis.DataExport.OutputSchemaVersion)
+				}
+			}
+		}
+	}
+
+	return delta
+}
+
 // getAnalyticsConfigurationAction returns the determined action for a given
 // configuration object, depending on the desired and latest values
 func getAnalyticsConfigurationAction(
@@ -561,7 +670,8 @@ func getAnalyticsConfigurationAction(
 			}
 
 			// Don't perform any action if they are identical
-			if reflect.DeepEqual(*l, *c) {
+			delta := compareAnalyticsConfiguration(l, c)
+			if len(delta.Differences) > 0 {
 				action = ConfigurationActionNone
 			} else {
 				action = ConfigurationActionUpdate
@@ -678,8 +788,6 @@ func (rm *resourceManager) syncAnalytics(
 
 	return nil
 }
-
-//endregion analytics
 
 // newCORSConfiguration returns a CORSConfiguration object
 // with each the field set by the resource's corresponding spec field.
@@ -863,8 +971,6 @@ func (rm *resourceManager) setResourceEncryption(
 	return res
 }
 
-//region intelligenttiering
-
 // newIntelligentTieringConfiguration returns a IntelligentTieringConfiguration object
 // with each the field set by the corresponding configuration's fields.
 func (rm *resourceManager) newIntelligentTieringConfiguration(
@@ -1004,6 +1110,75 @@ func (rm *resourceManager) setResourceIntelligentTieringConfiguration(
 	return res
 }
 
+func compareIntelligentTieringConfiguration(
+	a *svcapitypes.IntelligentTieringConfiguration,
+	b *svcapitypes.IntelligentTieringConfiguration,
+) *ackcompare.Delta {
+	delta := ackcompare.NewDelta()
+	if ackcompare.HasNilDifference(a.Filter, b.Filter) {
+		delta.Add("IntelligentTieringConfiguration.Filter", a.Filter, b.Filter)
+	} else if a.Filter != nil && b.Filter != nil {
+		if ackcompare.HasNilDifference(a.Filter.And, b.Filter.And) {
+			delta.Add("IntelligentTieringConfiguration.Filter.And", a.Filter.And, b.Filter.And)
+		} else if a.Filter.And != nil && b.Filter.And != nil {
+			if ackcompare.HasNilDifference(a.Filter.And.Prefix, b.Filter.And.Prefix) {
+				delta.Add("IntelligentTieringConfiguration.Filter.And.Prefix", a.Filter.And.Prefix, b.Filter.And.Prefix)
+			} else if a.Filter.And.Prefix != nil && b.Filter.And.Prefix != nil {
+				if *a.Filter.And.Prefix != *b.Filter.And.Prefix {
+					delta.Add("IntelligentTieringConfiguration.Filter.And.Prefix", a.Filter.And.Prefix, b.Filter.And.Prefix)
+				}
+			}
+			if !reflect.DeepEqual(a.Filter.And.Tags, b.Filter.And.Tags) {
+				delta.Add("IntelligentTieringConfiguration.Filter.And.Tags", a.Filter.And.Tags, b.Filter.And.Tags)
+			}
+		}
+		if ackcompare.HasNilDifference(a.Filter.Prefix, b.Filter.Prefix) {
+			delta.Add("IntelligentTieringConfiguration.Filter.Prefix", a.Filter.Prefix, b.Filter.Prefix)
+		} else if a.Filter.Prefix != nil && b.Filter.Prefix != nil {
+			if *a.Filter.Prefix != *b.Filter.Prefix {
+				delta.Add("IntelligentTieringConfiguration.Filter.Prefix", a.Filter.Prefix, b.Filter.Prefix)
+			}
+		}
+		if ackcompare.HasNilDifference(a.Filter.Tag, b.Filter.Tag) {
+			delta.Add("IntelligentTieringConfiguration.Filter.Tag", a.Filter.Tag, b.Filter.Tag)
+		} else if a.Filter.Tag != nil && b.Filter.Tag != nil {
+			if ackcompare.HasNilDifference(a.Filter.Tag.Key, b.Filter.Tag.Key) {
+				delta.Add("IntelligentTieringConfiguration.Filter.Tag.Key", a.Filter.Tag.Key, b.Filter.Tag.Key)
+			} else if a.Filter.Tag.Key != nil && b.Filter.Tag.Key != nil {
+				if *a.Filter.Tag.Key != *b.Filter.Tag.Key {
+					delta.Add("IntelligentTieringConfiguration.Filter.Tag.Key", a.Filter.Tag.Key, b.Filter.Tag.Key)
+				}
+			}
+			if ackcompare.HasNilDifference(a.Filter.Tag.Value, b.Filter.Tag.Value) {
+				delta.Add("IntelligentTieringConfiguration.Filter.Tag.Value", a.Filter.Tag.Value, b.Filter.Tag.Value)
+			} else if a.Filter.Tag.Value != nil && b.Filter.Tag.Value != nil {
+				if *a.Filter.Tag.Value != *b.Filter.Tag.Value {
+					delta.Add("IntelligentTieringConfiguration.Filter.Tag.Value", a.Filter.Tag.Value, b.Filter.Tag.Value)
+				}
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ID, b.ID) {
+		delta.Add("IntelligentTieringConfiguration.ID", a.ID, b.ID)
+	} else if a.ID != nil && b.ID != nil {
+		if *a.ID != *b.ID {
+			delta.Add("IntelligentTieringConfiguration.ID", a.ID, b.ID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.Status, b.Status) {
+		delta.Add("IntelligentTieringConfiguration.Status", a.Status, b.Status)
+	} else if a.Status != nil && b.Status != nil {
+		if *a.Status != *b.Status {
+			delta.Add("IntelligentTieringConfiguration.Status", a.Status, b.Status)
+		}
+	}
+	if !reflect.DeepEqual(a.Tierings, b.Tierings) {
+		delta.Add("IntelligentTieringConfiguration.Tierings", a.Tierings, b.Tierings)
+	}
+
+	return delta
+}
+
 // getIntelligentTieringConfigurationAction returns the determined action for a given
 // configuration object, depending on the desired and latest values
 func getIntelligentTieringConfigurationAction(
@@ -1018,7 +1193,8 @@ func getIntelligentTieringConfigurationAction(
 			}
 
 			// Don't perform any action if they are identical
-			if reflect.DeepEqual(*l, *c) {
+			delta := compareIntelligentTieringConfiguration(l, c)
+			if len(delta.Differences) > 0 {
 				action = ConfigurationActionNone
 			} else {
 				action = ConfigurationActionUpdate
@@ -1135,10 +1311,6 @@ func (rm *resourceManager) syncIntelligentTiering(
 
 	return nil
 }
-
-//endregion intelligenttiering
-
-//region inventory
 
 // newInventoryConfiguration returns a InventoryConfiguration object
 // with each the field set by the corresponding configuration's fields.
@@ -1289,6 +1461,112 @@ func (rm *resourceManager) setResourceInventoryConfiguration(
 	return res
 }
 
+func compareInventoryConfiguration(
+	a *svcapitypes.InventoryConfiguration,
+	b *svcapitypes.InventoryConfiguration,
+) *ackcompare.Delta {
+	delta := ackcompare.NewDelta()
+	if ackcompare.HasNilDifference(a.Destination, b.Destination) {
+		delta.Add("InventoryConfiguration.Destination", a.Destination, b.Destination)
+	} else if a.Destination != nil && b.Destination != nil {
+		if ackcompare.HasNilDifference(a.Destination.S3BucketDestination, b.Destination.S3BucketDestination) {
+			delta.Add("InventoryConfiguration.Destination.S3BucketDestination", a.Destination.S3BucketDestination, b.Destination.S3BucketDestination)
+		} else if a.Destination.S3BucketDestination != nil && b.Destination.S3BucketDestination != nil {
+			if ackcompare.HasNilDifference(a.Destination.S3BucketDestination.AccountID, b.Destination.S3BucketDestination.AccountID) {
+				delta.Add("InventoryConfiguration.Destination.S3BucketDestination.AccountID", a.Destination.S3BucketDestination.AccountID, b.Destination.S3BucketDestination.AccountID)
+			} else if a.Destination.S3BucketDestination.AccountID != nil && b.Destination.S3BucketDestination.AccountID != nil {
+				if *a.Destination.S3BucketDestination.AccountID != *b.Destination.S3BucketDestination.AccountID {
+					delta.Add("InventoryConfiguration.Destination.S3BucketDestination.AccountID", a.Destination.S3BucketDestination.AccountID, b.Destination.S3BucketDestination.AccountID)
+				}
+			}
+			if ackcompare.HasNilDifference(a.Destination.S3BucketDestination.Bucket, b.Destination.S3BucketDestination.Bucket) {
+				delta.Add("InventoryConfiguration.Destination.S3BucketDestination.Bucket", a.Destination.S3BucketDestination.Bucket, b.Destination.S3BucketDestination.Bucket)
+			} else if a.Destination.S3BucketDestination.Bucket != nil && b.Destination.S3BucketDestination.Bucket != nil {
+				if *a.Destination.S3BucketDestination.Bucket != *b.Destination.S3BucketDestination.Bucket {
+					delta.Add("InventoryConfiguration.Destination.S3BucketDestination.Bucket", a.Destination.S3BucketDestination.Bucket, b.Destination.S3BucketDestination.Bucket)
+				}
+			}
+			if ackcompare.HasNilDifference(a.Destination.S3BucketDestination.Encryption, b.Destination.S3BucketDestination.Encryption) {
+				delta.Add("InventoryConfiguration.Destination.S3BucketDestination.Encryption", a.Destination.S3BucketDestination.Encryption, b.Destination.S3BucketDestination.Encryption)
+			} else if a.Destination.S3BucketDestination.Encryption != nil && b.Destination.S3BucketDestination.Encryption != nil {
+				if ackcompare.HasNilDifference(a.Destination.S3BucketDestination.Encryption.SSEKMS, b.Destination.S3BucketDestination.Encryption.SSEKMS) {
+					delta.Add("InventoryConfiguration.Destination.S3BucketDestination.Encryption.SSEKMS", a.Destination.S3BucketDestination.Encryption.SSEKMS, b.Destination.S3BucketDestination.Encryption.SSEKMS)
+				} else if a.Destination.S3BucketDestination.Encryption.SSEKMS != nil && b.Destination.S3BucketDestination.Encryption.SSEKMS != nil {
+					if ackcompare.HasNilDifference(a.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID, b.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID) {
+						delta.Add("InventoryConfiguration.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID", a.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID, b.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID)
+					} else if a.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID != nil && b.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID != nil {
+						if *a.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID != *b.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID {
+							delta.Add("InventoryConfiguration.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID", a.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID, b.Destination.S3BucketDestination.Encryption.SSEKMS.KeyID)
+						}
+					}
+				}
+			}
+			if ackcompare.HasNilDifference(a.Destination.S3BucketDestination.Format, b.Destination.S3BucketDestination.Format) {
+				delta.Add("InventoryConfiguration.Destination.S3BucketDestination.Format", a.Destination.S3BucketDestination.Format, b.Destination.S3BucketDestination.Format)
+			} else if a.Destination.S3BucketDestination.Format != nil && b.Destination.S3BucketDestination.Format != nil {
+				if *a.Destination.S3BucketDestination.Format != *b.Destination.S3BucketDestination.Format {
+					delta.Add("InventoryConfiguration.Destination.S3BucketDestination.Format", a.Destination.S3BucketDestination.Format, b.Destination.S3BucketDestination.Format)
+				}
+			}
+			if ackcompare.HasNilDifference(a.Destination.S3BucketDestination.Prefix, b.Destination.S3BucketDestination.Prefix) {
+				delta.Add("InventoryConfiguration.Destination.S3BucketDestination.Prefix", a.Destination.S3BucketDestination.Prefix, b.Destination.S3BucketDestination.Prefix)
+			} else if a.Destination.S3BucketDestination.Prefix != nil && b.Destination.S3BucketDestination.Prefix != nil {
+				if *a.Destination.S3BucketDestination.Prefix != *b.Destination.S3BucketDestination.Prefix {
+					delta.Add("InventoryConfiguration.Destination.S3BucketDestination.Prefix", a.Destination.S3BucketDestination.Prefix, b.Destination.S3BucketDestination.Prefix)
+				}
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.Filter, b.Filter) {
+		delta.Add("InventoryConfiguration.Filter", a.Filter, b.Filter)
+	} else if a.Filter != nil && b.Filter != nil {
+		if ackcompare.HasNilDifference(a.Filter.Prefix, b.Filter.Prefix) {
+			delta.Add("InventoryConfiguration.Filter.Prefix", a.Filter.Prefix, b.Filter.Prefix)
+		} else if a.Filter.Prefix != nil && b.Filter.Prefix != nil {
+			if *a.Filter.Prefix != *b.Filter.Prefix {
+				delta.Add("InventoryConfiguration.Filter.Prefix", a.Filter.Prefix, b.Filter.Prefix)
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ID, b.ID) {
+		delta.Add("InventoryConfiguration.ID", a.ID, b.ID)
+	} else if a.ID != nil && b.ID != nil {
+		if *a.ID != *b.ID {
+			delta.Add("InventoryConfiguration.ID", a.ID, b.ID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.IncludedObjectVersions, b.IncludedObjectVersions) {
+		delta.Add("InventoryConfiguration.IncludedObjectVersions", a.IncludedObjectVersions, b.IncludedObjectVersions)
+	} else if a.IncludedObjectVersions != nil && b.IncludedObjectVersions != nil {
+		if *a.IncludedObjectVersions != *b.IncludedObjectVersions {
+			delta.Add("InventoryConfiguration.IncludedObjectVersions", a.IncludedObjectVersions, b.IncludedObjectVersions)
+		}
+	}
+	if ackcompare.HasNilDifference(a.IsEnabled, b.IsEnabled) {
+		delta.Add("InventoryConfiguration.IsEnabled", a.IsEnabled, b.IsEnabled)
+	} else if a.IsEnabled != nil && b.IsEnabled != nil {
+		if *a.IsEnabled != *b.IsEnabled {
+			delta.Add("InventoryConfiguration.IsEnabled", a.IsEnabled, b.IsEnabled)
+		}
+	}
+	if !ackcompare.SliceStringPEqual(a.OptionalFields, b.OptionalFields) {
+		delta.Add("InventoryConfiguration.OptionalFields", a.OptionalFields, b.OptionalFields)
+	}
+	if ackcompare.HasNilDifference(a.Schedule, b.Schedule) {
+		delta.Add("InventoryConfiguration.Schedule", a.Schedule, b.Schedule)
+	} else if a.Schedule != nil && b.Schedule != nil {
+		if ackcompare.HasNilDifference(a.Schedule.Frequency, b.Schedule.Frequency) {
+			delta.Add("InventoryConfiguration.Schedule.Frequency", a.Schedule.Frequency, b.Schedule.Frequency)
+		} else if a.Schedule.Frequency != nil && b.Schedule.Frequency != nil {
+			if *a.Schedule.Frequency != *b.Schedule.Frequency {
+				delta.Add("InventoryConfiguration.Schedule.Frequency", a.Schedule.Frequency, b.Schedule.Frequency)
+			}
+		}
+	}
+
+	return delta
+}
+
 // getInventoryConfigurationAction returns the determined action for a given
 // configuration object, depending on the desired and latest values
 func getInventoryConfigurationAction(
@@ -1303,7 +1581,8 @@ func getInventoryConfigurationAction(
 			}
 
 			// Don't perform any action if they are identical
-			if reflect.DeepEqual(*l, *c) {
+			delta := compareInventoryConfiguration(l, c)
+			if len(delta.Differences) > 0 {
 				action = ConfigurationActionNone
 			} else {
 				action = ConfigurationActionUpdate
@@ -1420,8 +1699,6 @@ func (rm *resourceManager) syncInventory(
 
 	return nil
 }
-
-//endregion inventory
 
 // newLifecycleConfiguration returns a LifecycleConfiguration object
 // with each the field set by the resource's corresponding spec field.
@@ -1775,8 +2052,6 @@ func (rm *resourceManager) setResourceLogging(
 	return res
 }
 
-//region metrics
-
 // newMetricsConfiguration returns a MetricsConfiguration object
 // with each the field set by the corresponding configuration's fields.
 func (rm *resourceManager) newMetricsConfiguration(
@@ -1882,6 +2157,65 @@ func (rm *resourceManager) setResourceMetricsConfiguration(
 	return res
 }
 
+func compareMetricsConfiguration(
+	a *svcapitypes.MetricsConfiguration,
+	b *svcapitypes.MetricsConfiguration,
+) *ackcompare.Delta {
+	delta := ackcompare.NewDelta()
+	if ackcompare.HasNilDifference(a.Filter, b.Filter) {
+		delta.Add("MetricsConfiguration.Filter", a.Filter, b.Filter)
+	} else if a.Filter != nil && b.Filter != nil {
+		if ackcompare.HasNilDifference(a.Filter.And, b.Filter.And) {
+			delta.Add("MetricsConfiguration.Filter.And", a.Filter.And, b.Filter.And)
+		} else if a.Filter.And != nil && b.Filter.And != nil {
+			if ackcompare.HasNilDifference(a.Filter.And.Prefix, b.Filter.And.Prefix) {
+				delta.Add("MetricsConfiguration.Filter.And.Prefix", a.Filter.And.Prefix, b.Filter.And.Prefix)
+			} else if a.Filter.And.Prefix != nil && b.Filter.And.Prefix != nil {
+				if *a.Filter.And.Prefix != *b.Filter.And.Prefix {
+					delta.Add("MetricsConfiguration.Filter.And.Prefix", a.Filter.And.Prefix, b.Filter.And.Prefix)
+				}
+			}
+			if !reflect.DeepEqual(a.Filter.And.Tags, b.Filter.And.Tags) {
+				delta.Add("MetricsConfiguration.Filter.And.Tags", a.Filter.And.Tags, b.Filter.And.Tags)
+			}
+		}
+		if ackcompare.HasNilDifference(a.Filter.Prefix, b.Filter.Prefix) {
+			delta.Add("MetricsConfiguration.Filter.Prefix", a.Filter.Prefix, b.Filter.Prefix)
+		} else if a.Filter.Prefix != nil && b.Filter.Prefix != nil {
+			if *a.Filter.Prefix != *b.Filter.Prefix {
+				delta.Add("MetricsConfiguration.Filter.Prefix", a.Filter.Prefix, b.Filter.Prefix)
+			}
+		}
+		if ackcompare.HasNilDifference(a.Filter.Tag, b.Filter.Tag) {
+			delta.Add("MetricsConfiguration.Filter.Tag", a.Filter.Tag, b.Filter.Tag)
+		} else if a.Filter.Tag != nil && b.Filter.Tag != nil {
+			if ackcompare.HasNilDifference(a.Filter.Tag.Key, b.Filter.Tag.Key) {
+				delta.Add("MetricsConfiguration.Filter.Tag.Key", a.Filter.Tag.Key, b.Filter.Tag.Key)
+			} else if a.Filter.Tag.Key != nil && b.Filter.Tag.Key != nil {
+				if *a.Filter.Tag.Key != *b.Filter.Tag.Key {
+					delta.Add("MetricsConfiguration.Filter.Tag.Key", a.Filter.Tag.Key, b.Filter.Tag.Key)
+				}
+			}
+			if ackcompare.HasNilDifference(a.Filter.Tag.Value, b.Filter.Tag.Value) {
+				delta.Add("MetricsConfiguration.Filter.Tag.Value", a.Filter.Tag.Value, b.Filter.Tag.Value)
+			} else if a.Filter.Tag.Value != nil && b.Filter.Tag.Value != nil {
+				if *a.Filter.Tag.Value != *b.Filter.Tag.Value {
+					delta.Add("MetricsConfiguration.Filter.Tag.Value", a.Filter.Tag.Value, b.Filter.Tag.Value)
+				}
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ID, b.ID) {
+		delta.Add("MetricsConfiguration.ID", a.ID, b.ID)
+	} else if a.ID != nil && b.ID != nil {
+		if *a.ID != *b.ID {
+			delta.Add("MetricsConfiguration.ID", a.ID, b.ID)
+		}
+	}
+
+	return delta
+}
+
 // getMetricsConfigurationAction returns the determined action for a given
 // configuration object, depending on the desired and latest values
 func getMetricsConfigurationAction(
@@ -1896,7 +2230,8 @@ func getMetricsConfigurationAction(
 			}
 
 			// Don't perform any action if they are identical
-			if reflect.DeepEqual(*l, *c) {
+			delta := compareMetricsConfiguration(l, c)
+			if len(delta.Differences) > 0 {
 				action = ConfigurationActionNone
 			} else {
 				action = ConfigurationActionUpdate
@@ -2013,8 +2348,6 @@ func (rm *resourceManager) syncMetrics(
 
 	return nil
 }
-
-//endregion metrics
 
 // newNotificationConfiguration returns a NotificationConfiguration object
 // with each the field set by the resource's corresponding spec field.

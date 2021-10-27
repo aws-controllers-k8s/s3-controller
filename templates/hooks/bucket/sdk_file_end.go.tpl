@@ -70,8 +70,6 @@ func (rm *resourceManager) setResource{{ $specFieldName }}(
 
 {{- $memberRef := $customShape.Shape.MemberRef }}
 
-//region {{ ToLower $specFieldName }}
-
 // new{{ $memberRefName }} returns a {{ $memberRefName }} object 
 // with each the field set by the corresponding configuration's fields.
 func (rm *resourceManager) new{{ $memberRefName }}(
@@ -97,6 +95,15 @@ func (rm *resourceManager) setResource{{ $memberRefName }}(
     return res
 }
 
+func compare{{$memberRefName}} (
+	a *svcapitypes.{{ $memberRefName }},
+	b *svcapitypes.{{ $memberRefName }},
+) *ackcompare.Delta {
+	delta := ackcompare.NewDelta()
+{{ GoCodeCompareStruct $CRD $memberRef.Shape "delta" "a" "b" $memberRefName 1 }}
+	return delta
+}
+
 // get{{$memberRefName}}Action returns the determined action for a given
 // configuration object, depending on the desired and latest values
 func get{{$memberRefName}}Action(
@@ -111,7 +118,8 @@ func get{{$memberRefName}}Action(
 			}
 
 			// Don't perform any action if they are identical
-			if reflect.DeepEqual(*l, *c) {
+			delta := compare{{$memberRefName}}(l, c)
+			if len(delta.Differences) > 0 {
 				action = ConfigurationActionNone
 			} else {
 				action = ConfigurationActionUpdate
@@ -228,8 +236,6 @@ func (rm *resourceManager) sync{{ $specFieldName }}(
 
 	return nil
 }
-
-//endregion {{ ToLower $specFieldName }}
 
 {{- end }}
 {{- end }}
