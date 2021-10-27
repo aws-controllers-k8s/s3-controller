@@ -39,6 +39,17 @@ var (
 	CannedACLJoinDelimiter = "|"
 )
 
+// ConfigurationAction stores the possible actions that can be performed on
+// any of the elements of a configuration list
+type ConfigurationAction int
+
+const (
+	ConfigurationActionNone ConfigurationAction = iota
+	ConfigurationActionPut
+	ConfigurationActionDelete
+	ConfigurationActionUpdate
+)
+
 func (rm *resourceManager) createPutFields(
 	ctx context.Context,
 	r *resource,
@@ -56,6 +67,11 @@ func (rm *resourceManager) createPutFields(
 			return err
 		}
 	}
+	if len(r.ko.Spec.Analytics) != 0 {
+		if err := rm.syncAnalytics(ctx, r, nil); err != nil {
+			return err
+		}
+	}
 	if r.ko.Spec.CORS != nil {
 		if err := rm.syncCORS(ctx, r); err != nil {
 			return err
@@ -66,6 +82,16 @@ func (rm *resourceManager) createPutFields(
 			return err
 		}
 	}
+	if len(r.ko.Spec.IntelligentTiering) != 0 {
+		if err := rm.syncIntelligentTiering(ctx, r, nil); err != nil {
+			return err
+		}
+	}
+	if len(r.ko.Spec.Inventory) != 0 {
+		if err := rm.syncInventory(ctx, r, nil); err != nil {
+			return err
+		}
+	}
 	if r.ko.Spec.Lifecycle != nil {
 		if err := rm.syncLifecycle(ctx, r); err != nil {
 			return err
@@ -73,6 +99,11 @@ func (rm *resourceManager) createPutFields(
 	}
 	if r.ko.Spec.Logging != nil {
 		if err := rm.syncLogging(ctx, r); err != nil {
+			return err
+		}
+	}
+	if len(r.ko.Spec.Metrics) != 0 {
+		if err := rm.syncMetrics(ctx, r, nil); err != nil {
 			return err
 		}
 	}
@@ -142,6 +173,11 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, err
 		}
 	}
+	if delta.DifferentAt("Spec.Analytics") {
+		if err := rm.syncAnalytics(ctx, desired, latest); err != nil {
+			return nil, err
+		}
+	}
 	if delta.DifferentAt("Spec.ACL") ||
 		delta.DifferentAt("Spec.GrantFullControl") ||
 		delta.DifferentAt("Spec.GrantRead") ||
@@ -162,6 +198,16 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, err
 		}
 	}
+	if delta.DifferentAt("Spec.IntelligentTiering") {
+		if err := rm.syncIntelligentTiering(ctx, desired, latest); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.Inventory") {
+		if err := rm.syncInventory(ctx, desired, latest); err != nil {
+			return nil, err
+		}
+	}
 	if delta.DifferentAt("Spec.Lifecycle") {
 		if err := rm.syncLifecycle(ctx, desired); err != nil {
 			return nil, err
@@ -169,6 +215,11 @@ func (rm *resourceManager) customUpdateBucket(
 	}
 	if delta.DifferentAt("Spec.Logging") {
 		if err := rm.syncLogging(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.Metrics") {
+		if err := rm.syncMetrics(ctx, desired, latest); err != nil {
 			return nil, err
 		}
 	}
@@ -245,6 +296,15 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
 
+	listAnalyticsResponse, err := rm.sdkapi.ListBucketAnalyticsConfigurationsWithContext(ctx, rm.newListBucketAnalyticsPayload(r))
+	if err != nil {
+		return err
+	}
+	ko.Spec.Analytics = make([]*svcapitypes.AnalyticsConfiguration, len(listAnalyticsResponse.AnalyticsConfigurationList))
+	for i, analyticsConfiguration := range listAnalyticsResponse.AnalyticsConfigurationList {
+		ko.Spec.Analytics[i] = rm.setResourceAnalyticsConfiguration(r, analyticsConfiguration)
+	}
+
 	getACLResponse, err := rm.sdkapi.GetBucketAclWithContext(ctx, rm.newGetBucketACLPayload(r))
 	if err != nil {
 		return err
@@ -273,6 +333,24 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.Encryption = rm.setResourceEncryption(r, getEncryptionResponse)
 
+	listIntelligentTieringResponse, err := rm.sdkapi.ListBucketIntelligentTieringConfigurationsWithContext(ctx, rm.newListBucketIntelligentTieringPayload(r))
+	if err != nil {
+		return err
+	}
+	ko.Spec.IntelligentTiering = make([]*svcapitypes.IntelligentTieringConfiguration, len(listIntelligentTieringResponse.IntelligentTieringConfigurationList))
+	for i, intelligentTieringConfiguration := range listIntelligentTieringResponse.IntelligentTieringConfigurationList {
+		ko.Spec.IntelligentTiering[i] = rm.setResourceIntelligentTieringConfiguration(r, intelligentTieringConfiguration)
+	}
+
+	listInventoryResponse, err := rm.sdkapi.ListBucketInventoryConfigurationsWithContext(ctx, rm.newListBucketInventoryPayload(r))
+	if err != nil {
+		return err
+	}
+	ko.Spec.Inventory = make([]*svcapitypes.InventoryConfiguration, len(listInventoryResponse.InventoryConfigurationList))
+	for i, inventoryConfiguration := range listInventoryResponse.InventoryConfigurationList {
+		ko.Spec.Inventory[i] = rm.setResourceInventoryConfiguration(r, inventoryConfiguration)
+	}
+
 	getLifecycleResponse, err := rm.sdkapi.GetBucketLifecycleConfigurationWithContext(ctx, rm.newGetBucketLifecyclePayload(r))
 	if err != nil {
 		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchLifecycleConfiguration" {
@@ -288,6 +366,15 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		return err
 	}
 	ko.Spec.Logging = rm.setResourceLogging(r, getLoggingResponse)
+
+	listMetricsResponse, err := rm.sdkapi.ListBucketMetricsConfigurationsWithContext(ctx, rm.newListBucketMetricsPayload(r))
+	if err != nil {
+		return err
+	}
+	ko.Spec.Metrics = make([]*svcapitypes.MetricsConfiguration, len(listMetricsResponse.MetricsConfigurationList))
+	for i, metricsConfiguration := range listMetricsResponse.MetricsConfigurationList {
+		ko.Spec.Metrics[i] = rm.setResourceMetricsConfiguration(r, metricsConfiguration)
+	}
 
 	getNotificationResponse, err := rm.sdkapi.GetBucketNotificationConfigurationWithContext(ctx, rm.newGetBucketNotificationPayload(r))
 	if err != nil {
@@ -398,6 +485,9 @@ func customPreCompare(
 			a.ko.Spec.Accelerate.Status = &DefaultAccelerationStatus
 		}
 	}
+	if a.ko.Spec.Analytics == nil && b.ko.Spec.Analytics != nil {
+		a.ko.Spec.Analytics = make([]*svcapitypes.AnalyticsConfiguration, 0)
+	}
 	if a.ko.Spec.ACL != nil {
 		// Don't diff grant headers if a canned ACL has been used
 		b.ko.Spec.GrantFullControl = nil
@@ -452,11 +542,20 @@ func customPreCompare(
 	if a.ko.Spec.Encryption == nil && b.ko.Spec.Encryption != nil {
 		a.ko.Spec.Encryption = &svcapitypes.ServerSideEncryptionConfiguration{}
 	}
+	if a.ko.Spec.IntelligentTiering == nil && b.ko.Spec.IntelligentTiering != nil {
+		a.ko.Spec.IntelligentTiering = make([]*svcapitypes.IntelligentTieringConfiguration, 0)
+	}
+	if a.ko.Spec.Inventory == nil && b.ko.Spec.Inventory != nil {
+		a.ko.Spec.Inventory = make([]*svcapitypes.InventoryConfiguration, 0)
+	}
 	if a.ko.Spec.Lifecycle == nil && b.ko.Spec.Lifecycle != nil {
 		a.ko.Spec.Lifecycle = &svcapitypes.BucketLifecycleConfiguration{}
 	}
 	if a.ko.Spec.Logging == nil && b.ko.Spec.Logging != nil {
 		a.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
+	}
+	if a.ko.Spec.Metrics == nil && b.ko.Spec.Metrics != nil {
+		a.ko.Spec.Metrics = make([]*svcapitypes.MetricsConfiguration, 0)
 	}
 	if a.ko.Spec.Notification == nil && b.ko.Spec.Notification != nil {
 		a.ko.Spec.Notification = &svcapitypes.NotificationConfiguration{}

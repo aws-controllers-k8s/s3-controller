@@ -63,11 +63,35 @@ type AnalyticsAndOperator struct {
 	Tags   []*Tag  `json:"tags,omitempty"`
 }
 
+// Specifies the configuration and any analyses for the analytics filter of
+// an Amazon S3 bucket.
+type AnalyticsConfiguration struct {
+	// The filter used to describe a set of objects for analyses. A filter must
+	// have exactly one prefix, one tag, or one conjunction (AnalyticsAndOperator).
+	// If no filter is provided, all objects will be considered in any analysis.
+	Filter *AnalyticsFilter `json:"filter,omitempty"`
+	ID     *string          `json:"id,omitempty"`
+	// Specifies data related to access patterns to be collected and made available
+	// to analyze the tradeoffs between different storage classes for an Amazon
+	// S3 bucket.
+	StorageClassAnalysis *StorageClassAnalysis `json:"storageClassAnalysis,omitempty"`
+}
+
+// Where to publish the analytics results.
+type AnalyticsExportDestination struct {
+	// Contains information about where to publish the analytics results.
+	S3BucketDestination *AnalyticsS3BucketDestination `json:"s3BucketDestination,omitempty"`
+}
+
 // The filter used to describe a set of objects for analyses. A filter must
 // have exactly one prefix, one tag, or one conjunction (AnalyticsAndOperator).
 // If no filter is provided, all objects will be considered in any analysis.
 type AnalyticsFilter struct {
-	Prefix *string `json:"prefix,omitempty"`
+	// A conjunction (logical AND) of predicates, which is used in evaluating a
+	// metrics filter. The operator must have at least two predicates in any combination,
+	// and an object must match all of the predicates for the filter to apply.
+	And    *AnalyticsAndOperator `json:"and,omitempty"`
+	Prefix *string               `json:"prefix,omitempty"`
 	// A container of a key value name pair.
 	Tag *Tag `json:"tag,omitempty"`
 }
@@ -76,6 +100,7 @@ type AnalyticsFilter struct {
 type AnalyticsS3BucketDestination struct {
 	Bucket          *string `json:"bucket,omitempty"`
 	BucketAccountID *string `json:"bucketAccountID,omitempty"`
+	Format          *string `json:"format,omitempty"`
 	Prefix          *string `json:"prefix,omitempty"`
 }
 
@@ -277,12 +302,60 @@ type IntelligentTieringAndOperator struct {
 	Tags   []*Tag  `json:"tags,omitempty"`
 }
 
+// Specifies the S3 Intelligent-Tiering configuration for an Amazon S3 bucket.
+//
+// For information about the S3 Intelligent-Tiering storage class, see Storage
+// class for automatically optimizing frequently and infrequently accessed objects
+// (https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-class-intro.html#sc-dynamic-data-access).
+type IntelligentTieringConfiguration struct {
+	// The Filter is used to identify objects that the S3 Intelligent-Tiering configuration
+	// applies to.
+	Filter   *IntelligentTieringFilter `json:"filter,omitempty"`
+	ID       *string                   `json:"id,omitempty"`
+	Status   *string                   `json:"status,omitempty"`
+	Tierings []*Tiering                `json:"tierings,omitempty"`
+}
+
 // The Filter is used to identify objects that the S3 Intelligent-Tiering configuration
 // applies to.
 type IntelligentTieringFilter struct {
-	Prefix *string `json:"prefix,omitempty"`
+	// A container for specifying S3 Intelligent-Tiering filters. The filters determine
+	// the subset of objects to which the rule applies.
+	And    *IntelligentTieringAndOperator `json:"and,omitempty"`
+	Prefix *string                        `json:"prefix,omitempty"`
 	// A container of a key value name pair.
 	Tag *Tag `json:"tag,omitempty"`
+}
+
+// Specifies the inventory configuration for an Amazon S3 bucket. For more information,
+// see GET Bucket inventory (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETInventoryConfig.html)
+// in the Amazon Simple Storage Service API Reference.
+type InventoryConfiguration struct {
+	// Specifies the inventory configuration for an Amazon S3 bucket.
+	Destination *InventoryDestination `json:"destination,omitempty"`
+	// Specifies an inventory filter. The inventory only includes objects that meet
+	// the filter's criteria.
+	Filter                 *InventoryFilter `json:"filter,omitempty"`
+	ID                     *string          `json:"id,omitempty"`
+	IncludedObjectVersions *string          `json:"includedObjectVersions,omitempty"`
+	IsEnabled              *bool            `json:"isEnabled,omitempty"`
+	OptionalFields         []*string        `json:"optionalFields,omitempty"`
+	// Specifies the schedule for generating inventory results.
+	Schedule *InventorySchedule `json:"schedule,omitempty"`
+}
+
+// Specifies the inventory configuration for an Amazon S3 bucket.
+type InventoryDestination struct {
+	// Contains the bucket name, file format, bucket owner (optional), and prefix
+	// (optional) where inventory results are published.
+	S3BucketDestination *InventoryS3BucketDestination `json:"s3BucketDestination,omitempty"`
+}
+
+// Contains the type of server-side encryption used to encrypt the inventory
+// results.
+type InventoryEncryption struct {
+	// Specifies the use of SSE-KMS to encrypt delivered inventory reports.
+	SSEKMS *SSEKMS `json:"sseKMS,omitempty"`
 }
 
 // Specifies an inventory filter. The inventory only includes objects that meet
@@ -296,7 +369,16 @@ type InventoryFilter struct {
 type InventoryS3BucketDestination struct {
 	AccountID *string `json:"accountID,omitempty"`
 	Bucket    *string `json:"bucket,omitempty"`
-	Prefix    *string `json:"prefix,omitempty"`
+	// Contains the type of server-side encryption used to encrypt the inventory
+	// results.
+	Encryption *InventoryEncryption `json:"encryption,omitempty"`
+	Format     *string              `json:"format,omitempty"`
+	Prefix     *string              `json:"prefix,omitempty"`
+}
+
+// Specifies the schedule for generating inventory results.
+type InventorySchedule struct {
+	Frequency *string `json:"frequency,omitempty"`
 }
 
 // A container for object key name prefix and suffix filtering rules.
@@ -408,11 +490,30 @@ type MetricsAndOperator struct {
 	Tags   []*Tag  `json:"tags,omitempty"`
 }
 
+// Specifies a metrics configuration for the CloudWatch request metrics (specified
+// by the metrics configuration ID) from an Amazon S3 bucket. If you're updating
+// an existing metrics configuration, note that this is a full replacement of
+// the existing metrics configuration. If you don't include the elements you
+// want to keep, they are erased. For more information, see PUT Bucket metrics
+// (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTMetricConfiguration.html)
+// in the Amazon Simple Storage Service API Reference.
+type MetricsConfiguration struct {
+	// Specifies a metrics configuration filter. The metrics configuration only
+	// includes objects that meet the filter's criteria. A filter must be a prefix,
+	// a tag, or a conjunction (MetricsAndOperator).
+	Filter *MetricsFilter `json:"filter,omitempty"`
+	ID     *string        `json:"id,omitempty"`
+}
+
 // Specifies a metrics configuration filter. The metrics configuration only
 // includes objects that meet the filter's criteria. A filter must be a prefix,
 // a tag, or a conjunction (MetricsAndOperator).
 type MetricsFilter struct {
-	Prefix *string `json:"prefix,omitempty"`
+	// A conjunction (logical AND) of predicates, which is used in evaluating a
+	// metrics filter. The operator must have at least two predicates, and an object
+	// must match all of the predicates in order for the filter to apply.
+	And    *MetricsAndOperator `json:"and,omitempty"`
+	Prefix *string             `json:"prefix,omitempty"`
 	// A container of a key value name pair.
 	Tag *Tag `json:"tag,omitempty"`
 }
@@ -805,6 +906,23 @@ type SourceSelectionCriteria struct {
 	SSEKMSEncryptedObjects *SSEKMSEncryptedObjects `json:"sseKMSEncryptedObjects,omitempty"`
 }
 
+// Specifies data related to access patterns to be collected and made available
+// to analyze the tradeoffs between different storage classes for an Amazon
+// S3 bucket.
+type StorageClassAnalysis struct {
+	// Container for data related to the storage class analysis for an Amazon S3
+	// bucket for export.
+	DataExport *StorageClassAnalysisDataExport `json:"dataExport,omitempty"`
+}
+
+// Container for data related to the storage class analysis for an Amazon S3
+// bucket for export.
+type StorageClassAnalysisDataExport struct {
+	// Where to publish the analytics results.
+	Destination         *AnalyticsExportDestination `json:"destination,omitempty"`
+	OutputSchemaVersion *string                     `json:"outputSchemaVersion,omitempty"`
+}
+
 // A container of a key value name pair.
 type Tag struct {
 	Key   *string `json:"key,omitempty"`
@@ -821,6 +939,14 @@ type TargetGrant struct {
 	// Container for the person being granted permissions.
 	Grantee    *Grantee `json:"grantee,omitempty"`
 	Permission *string  `json:"permission,omitempty"`
+}
+
+// The S3 Intelligent-Tiering storage class is designed to optimize storage
+// costs by automatically moving data to the most cost-effective storage access
+// tier, without additional operational overhead.
+type Tiering struct {
+	AccessTier *string `json:"accessTier,omitempty"`
+	Days       *int64  `json:"days,omitempty"`
 }
 
 // A container for specifying the configuration for publication of messages

@@ -60,6 +60,9 @@ func newResourceDelta(
 			}
 		}
 	}
+	if !reflect.DeepEqual(a.ko.Spec.Analytics, b.ko.Spec.Analytics) {
+		delta.Add("Spec.Analytics", a.ko.Spec.Analytics, b.ko.Spec.Analytics)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CORS, b.ko.Spec.CORS) {
 		delta.Add("Spec.CORS", a.ko.Spec.CORS, b.ko.Spec.CORS)
 	} else if a.ko.Spec.CORS != nil && b.ko.Spec.CORS != nil {
@@ -120,6 +123,12 @@ func newResourceDelta(
 			delta.Add("Spec.GrantWriteACP", a.ko.Spec.GrantWriteACP, b.ko.Spec.GrantWriteACP)
 		}
 	}
+	if !reflect.DeepEqual(a.ko.Spec.IntelligentTiering, b.ko.Spec.IntelligentTiering) {
+		delta.Add("Spec.IntelligentTiering", a.ko.Spec.IntelligentTiering, b.ko.Spec.IntelligentTiering)
+	}
+	if !reflect.DeepEqual(a.ko.Spec.Inventory, b.ko.Spec.Inventory) {
+		delta.Add("Spec.Inventory", a.ko.Spec.Inventory, b.ko.Spec.Inventory)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Lifecycle, b.ko.Spec.Lifecycle) {
 		delta.Add("Spec.Lifecycle", a.ko.Spec.Lifecycle, b.ko.Spec.Lifecycle)
 	} else if a.ko.Spec.Lifecycle != nil && b.ko.Spec.Lifecycle != nil {
@@ -151,6 +160,9 @@ func newResourceDelta(
 				}
 			}
 		}
+	}
+	if !reflect.DeepEqual(a.ko.Spec.Metrics, b.ko.Spec.Metrics) {
+		delta.Add("Spec.Metrics", a.ko.Spec.Metrics, b.ko.Spec.Metrics)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)

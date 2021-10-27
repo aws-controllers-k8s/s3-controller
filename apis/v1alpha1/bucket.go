@@ -29,6 +29,8 @@ type BucketSpec struct {
 	ACL *string `json:"acl,omitempty"`
 	// Container for setting the transfer acceleration state.
 	Accelerate *AccelerateConfiguration `json:"accelerate,omitempty"`
+
+	Analytics []*AnalyticsConfiguration `json:"analytics,omitempty"`
 	// Describes the cross-origin access configuration for objects in an Amazon
 	// S3 bucket. For more information, see Enabling Cross-Origin Resource Sharing
 	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html) in the Amazon
@@ -49,10 +51,16 @@ type BucketSpec struct {
 	GrantWrite *string `json:"grantWrite,omitempty"`
 	// Allows grantee to write the ACL for the applicable bucket.
 	GrantWriteACP *string `json:"grantWriteACP,omitempty"`
+
+	IntelligentTiering []*IntelligentTieringConfiguration `json:"intelligentTiering,omitempty"`
+
+	Inventory []*InventoryConfiguration `json:"inventory,omitempty"`
 	// Container for lifecycle rules. You can add as many as 1,000 rules.
 	Lifecycle *BucketLifecycleConfiguration `json:"lifecycle,omitempty"`
 	// Container for logging status information.
 	Logging *BucketLoggingStatus `json:"logging,omitempty"`
+
+	Metrics []*MetricsConfiguration `json:"metrics,omitempty"`
 	// The name of the bucket to create.
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
