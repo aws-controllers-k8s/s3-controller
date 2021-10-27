@@ -47,6 +47,82 @@ spec:
               acl:
                 description: The canned ACL to apply to the bucket.
                 type: string
+              analytics:
+                items:
+                  description: Specifies the configuration and any analyses for the
+                    analytics filter of an Amazon S3 bucket.
+                  properties:
+                    filter:
+                      description: The filter used to describe a set of objects for
+                        analyses. A filter must have exactly one prefix, one tag,
+                        or one conjunction (AnalyticsAndOperator). If no filter is
+                        provided, all objects will be considered in any analysis.
+                      properties:
+                        and:
+                          description: A conjunction (logical AND) of predicates,
+                            which is used in evaluating a metrics filter. The operator
+                            must have at least two predicates in any combination,
+                            and an object must match all of the predicates for the
+                            filter to apply.
+                          properties:
+                            prefix:
+                              type: string
+                            tags:
+                              items:
+                                description: A container of a key value name pair.
+                                properties:
+                                  key:
+                                    type: string
+                                  value:
+                                    type: string
+                                type: object
+                              type: array
+                          type: object
+                        prefix:
+                          type: string
+                        tag:
+                          description: A container of a key value name pair.
+                          properties:
+                            key:
+                              type: string
+                            value:
+                              type: string
+                          type: object
+                      type: object
+                    id:
+                      type: string
+                    storageClassAnalysis:
+                      description: Specifies data related to access patterns to be
+                        collected and made available to analyze the tradeoffs between
+                        different storage classes for an Amazon S3 bucket.
+                      properties:
+                        dataExport:
+                          description: Container for data related to the storage class
+                            analysis for an Amazon S3 bucket for export.
+                          properties:
+                            destination:
+                              description: Where to publish the analytics results.
+                              properties:
+                                s3BucketDestination:
+                                  description: Contains information about where to
+                                    publish the analytics results.
+                                  properties:
+                                    bucket:
+                                      type: string
+                                    bucketAccountID:
+                                      type: string
+                                    format:
+                                      type: string
+                                    prefix:
+                                      type: string
+                                  type: object
+                              type: object
+                            outputSchemaVersion:
+                              type: string
+                          type: object
+                      type: object
+                  type: object
+                type: array
               cors:
                 description: Describes the cross-origin access configuration for objects
                   in an Amazon S3 bucket. For more information, see Enabling Cross-Origin
@@ -128,6 +204,129 @@ spec:
               grantWriteACP:
                 description: Allows grantee to write the ACL for the applicable bucket.
                 type: string
+              intelligentTiering:
+                items:
+                  description: "Specifies the S3 Intelligent-Tiering configuration
+                    for an Amazon S3 bucket. \n For information about the S3 Intelligent-Tiering
+                    storage class, see Storage class for automatically optimizing
+                    frequently and infrequently accessed objects (https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-class-intro.html#sc-dynamic-data-access)."
+                  properties:
+                    filter:
+                      description: The Filter is used to identify objects that the
+                        S3 Intelligent-Tiering configuration applies to.
+                      properties:
+                        and:
+                          description: A container for specifying S3 Intelligent-Tiering
+                            filters. The filters determine the subset of objects to
+                            which the rule applies.
+                          properties:
+                            prefix:
+                              type: string
+                            tags:
+                              items:
+                                description: A container of a key value name pair.
+                                properties:
+                                  key:
+                                    type: string
+                                  value:
+                                    type: string
+                                type: object
+                              type: array
+                          type: object
+                        prefix:
+                          type: string
+                        tag:
+                          description: A container of a key value name pair.
+                          properties:
+                            key:
+                              type: string
+                            value:
+                              type: string
+                          type: object
+                      type: object
+                    id:
+                      type: string
+                    status:
+                      type: string
+                    tierings:
+                      items:
+                        description: The S3 Intelligent-Tiering storage class is designed
+                          to optimize storage costs by automatically moving data to
+                          the most cost-effective storage access tier, without additional
+                          operational overhead.
+                        properties:
+                          accessTier:
+                            type: string
+                          days:
+                            format: int64
+                            type: integer
+                        type: object
+                      type: array
+                  type: object
+                type: array
+              inventory:
+                items:
+                  description: Specifies the inventory configuration for an Amazon
+                    S3 bucket. For more information, see GET Bucket inventory (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETInventoryConfig.html)
+                    in the Amazon Simple Storage Service API Reference.
+                  properties:
+                    destination:
+                      description: Specifies the inventory configuration for an Amazon
+                        S3 bucket.
+                      properties:
+                        s3BucketDestination:
+                          description: Contains the bucket name, file format, bucket
+                            owner (optional), and prefix (optional) where inventory
+                            results are published.
+                          properties:
+                            accountID:
+                              type: string
+                            bucket:
+                              type: string
+                            encryption:
+                              description: Contains the type of server-side encryption
+                                used to encrypt the inventory results.
+                              properties:
+                                sseKMS:
+                                  description: Specifies the use of SSE-KMS to encrypt
+                                    delivered inventory reports.
+                                  properties:
+                                    keyID:
+                                      type: string
+                                  type: object
+                              type: object
+                            format:
+                              type: string
+                            prefix:
+                              type: string
+                          type: object
+                      type: object
+                    filter:
+                      description: Specifies an inventory filter. The inventory only
+                        includes objects that meet the filter's criteria.
+                      properties:
+                        prefix:
+                          type: string
+                      type: object
+                    id:
+                      type: string
+                    includedObjectVersions:
+                      type: string
+                    isEnabled:
+                      type: boolean
+                    optionalFields:
+                      items:
+                        type: string
+                      type: array
+                    schedule:
+                      description: Specifies the schedule for generating inventory
+                        results.
+                      properties:
+                        frequency:
+                          type: string
+                      type: object
+                  type: object
+                type: array
               lifecycle:
                 description: Container for lifecycle rules. You can add as many as
                   1,000 rules.
@@ -293,6 +492,57 @@ spec:
                         type: string
                     type: object
                 type: object
+              metrics:
+                items:
+                  description: Specifies a metrics configuration for the CloudWatch
+                    request metrics (specified by the metrics configuration ID) from
+                    an Amazon S3 bucket. If you're updating an existing metrics configuration,
+                    note that this is a full replacement of the existing metrics configuration.
+                    If you don't include the elements you want to keep, they are erased.
+                    For more information, see PUT Bucket metrics (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTMetricConfiguration.html)
+                    in the Amazon Simple Storage Service API Reference.
+                  properties:
+                    filter:
+                      description: Specifies a metrics configuration filter. The metrics
+                        configuration only includes objects that meet the filter's
+                        criteria. A filter must be a prefix, a tag, or a conjunction
+                        (MetricsAndOperator).
+                      properties:
+                        and:
+                          description: A conjunction (logical AND) of predicates,
+                            which is used in evaluating a metrics filter. The operator
+                            must have at least two predicates, and an object must
+                            match all of the predicates in order for the filter to
+                            apply.
+                          properties:
+                            prefix:
+                              type: string
+                            tags:
+                              items:
+                                description: A container of a key value name pair.
+                                properties:
+                                  key:
+                                    type: string
+                                  value:
+                                    type: string
+                                type: object
+                              type: array
+                          type: object
+                        prefix:
+                          type: string
+                        tag:
+                          description: A container of a key value name pair.
+                          properties:
+                            key:
+                              type: string
+                            value:
+                              type: string
+                          type: object
+                      type: object
+                    id:
+                      type: string
+                  type: object
+                type: array
               name:
                 description: The name of the bucket to create.
                 type: string
