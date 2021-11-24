@@ -672,9 +672,9 @@ func getAnalyticsConfigurationAction(
 			// Don't perform any action if they are identical
 			delta := compareAnalyticsConfiguration(l, c)
 			if len(delta.Differences) > 0 {
-				action = ConfigurationActionNone
-			} else {
 				action = ConfigurationActionUpdate
+			} else {
+				action = ConfigurationActionNone
 			}
 			break
 		}
@@ -724,7 +724,7 @@ func (rm *resourceManager) deleteAnalyticsConfiguration(
 
 	input := rm.newDeleteBucketAnalyticsPayload(r, c)
 	_, err = rm.sdkapi.DeleteBucketAnalyticsConfigurationWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketAnalyticsConfiguration", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketAnalyticsConfiguration", err)
 	return err
 }
 
@@ -1195,9 +1195,9 @@ func getIntelligentTieringConfigurationAction(
 			// Don't perform any action if they are identical
 			delta := compareIntelligentTieringConfiguration(l, c)
 			if len(delta.Differences) > 0 {
-				action = ConfigurationActionNone
-			} else {
 				action = ConfigurationActionUpdate
+			} else {
+				action = ConfigurationActionNone
 			}
 			break
 		}
@@ -1247,7 +1247,7 @@ func (rm *resourceManager) deleteIntelligentTieringConfiguration(
 
 	input := rm.newDeleteBucketIntelligentTieringPayload(r, c)
 	_, err = rm.sdkapi.DeleteBucketIntelligentTieringConfigurationWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketIntelligentTieringConfiguration", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketIntelligentTieringConfiguration", err)
 	return err
 }
 
@@ -1583,9 +1583,9 @@ func getInventoryConfigurationAction(
 			// Don't perform any action if they are identical
 			delta := compareInventoryConfiguration(l, c)
 			if len(delta.Differences) > 0 {
-				action = ConfigurationActionNone
-			} else {
 				action = ConfigurationActionUpdate
+			} else {
+				action = ConfigurationActionNone
 			}
 			break
 		}
@@ -1635,7 +1635,7 @@ func (rm *resourceManager) deleteInventoryConfiguration(
 
 	input := rm.newDeleteBucketInventoryPayload(r, c)
 	_, err = rm.sdkapi.DeleteBucketInventoryConfigurationWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketInventoryConfiguration", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketInventoryConfiguration", err)
 	return err
 }
 
@@ -2232,9 +2232,9 @@ func getMetricsConfigurationAction(
 			// Don't perform any action if they are identical
 			delta := compareMetricsConfiguration(l, c)
 			if len(delta.Differences) > 0 {
-				action = ConfigurationActionNone
-			} else {
 				action = ConfigurationActionUpdate
+			} else {
+				action = ConfigurationActionNone
 			}
 			break
 		}
@@ -2284,7 +2284,7 @@ func (rm *resourceManager) deleteMetricsConfiguration(
 
 	input := rm.newDeleteBucketMetricsPayload(r, c)
 	_, err = rm.sdkapi.DeleteBucketMetricsConfigurationWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketMetricsConfiguration", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketMetricsConfiguration", err)
 	return err
 }
 
@@ -2717,6 +2717,7 @@ func (rm *resourceManager) setResourcePublicAccessBlock(
 	resp *svcsdk.GetPublicAccessBlockOutput,
 ) *svcapitypes.PublicAccessBlockConfiguration {
 	res := &svcapitypes.PublicAccessBlockConfiguration{}
+
 	if resp.PublicAccessBlockConfiguration.BlockPublicAcls != nil {
 		res.BlockPublicACLs = resp.PublicAccessBlockConfiguration.BlockPublicAcls
 	}

@@ -799,7 +799,7 @@ func (rm *resourceManager) deleteCORS(
 	input := rm.newDeleteBucketCORSPayload(r)
 
 	_, err = rm.sdkapi.DeleteBucketCorsWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketCors", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketCors", err)
 	if err != nil {
 		return err
 	}
@@ -876,7 +876,7 @@ func (rm *resourceManager) deleteEncryption(
 	input := rm.newDeleteBucketEncryptionPayload(r)
 
 	_, err = rm.sdkapi.DeleteBucketEncryptionWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketEncryption", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketEncryption", err)
 	if err != nil {
 		return err
 	}
@@ -951,7 +951,7 @@ func (rm *resourceManager) deleteLifecycle(
 	input := rm.newDeleteBucketLifecyclePayload(r)
 
 	_, err = rm.sdkapi.DeleteBucketLifecycleWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketLifecycle", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketLifecycle", err)
 	if err != nil {
 		return err
 	}
@@ -1114,7 +1114,7 @@ func (rm *resourceManager) deleteOwnershipControls(
 	input := rm.newDeleteBucketOwnershipControlsPayload(r)
 
 	_, err = rm.sdkapi.DeleteBucketOwnershipControlsWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketOwnershipControls", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketOwnershipControls", err)
 	if err != nil {
 		return err
 	}
@@ -1191,7 +1191,7 @@ func (rm *resourceManager) deletePolicy(
 	input := rm.newDeleteBucketPolicyPayload(r)
 
 	_, err = rm.sdkapi.DeleteBucketPolicyWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketPolicy", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketPolicy", err)
 	if err != nil {
 		return err
 	}
@@ -1267,7 +1267,7 @@ func (rm *resourceManager) deletePublicAccessBlock(
 	input := rm.newDeletePublicAccessBlockPayload(r)
 
 	_, err = rm.sdkapi.DeletePublicAccessBlockWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeletePublicAccessBlock", err)
+	rm.metrics.RecordAPICall("DELETE", "DeletePublicAccessBlock", err)
 	if err != nil {
 		return err
 	}
@@ -1342,7 +1342,7 @@ func (rm *resourceManager) deleteReplication(
 	input := rm.newDeleteBucketReplicationPayload(r)
 
 	_, err = rm.sdkapi.DeleteBucketReplicationWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketReplication", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketReplication", err)
 	if err != nil {
 		return err
 	}
@@ -1467,7 +1467,7 @@ func (rm *resourceManager) deleteTagging(
 	input := rm.newDeleteBucketTaggingPayload(r)
 
 	_, err = rm.sdkapi.DeleteBucketTaggingWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketTagging", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketTagging", err)
 	if err != nil {
 		return err
 	}
@@ -1592,7 +1592,7 @@ func (rm *resourceManager) deleteWebsite(
 	input := rm.newDeleteBucketWebsitePayload(r)
 
 	_, err = rm.sdkapi.DeleteBucketWebsiteWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucketWebsite", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucketWebsite", err)
 	if err != nil {
 		return err
 	}

@@ -43,15 +43,15 @@ func (rm *resourceManager) setResource{{ $specFieldName }}(
 
 {{/* Some operations have wrapping structures in their response */}}
 {{- if (eq $operationName "PutBucketEncryption") }}
-{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp.ServerSideEncryptionConfiguration" $memberRef 1 }}
+{{ GoCodeSetResourceForStruct $CRD $specFieldName "res" $memberRef "resp.ServerSideEncryptionConfiguration" $memberRef 1 }}
 {{- else if (eq $operationName "PutBucketOwnershipControls") }}
-{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp.OwnershipControls" $memberRef 1 }}
+{{ GoCodeSetResourceForStruct $CRD $specFieldName "res" $memberRef "resp.OwnershipControls" $memberRef 1 }}
 {{- else if (eq $operationName "PutBucketReplication") }}
-{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp.ReplicationConfiguration" $memberRef 1 }}
+{{ GoCodeSetResourceForStruct $CRD $specFieldName "res" $memberRef "resp.ReplicationConfiguration" $memberRef 1 }}
 {{- else if (eq $operationName "PutPublicAccessBlock") }}
-{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp.PublicAccessBlockConfiguration" $memberRef 1 }}
+{{ GoCodeSetResourceForStruct $CRD $specFieldName "res" $memberRef "resp.PublicAccessBlockConfiguration" $memberRef 1 }}
 {{- else }}
-{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp" $memberRef 1 }}
+{{ GoCodeSetResourceForStruct $CRD $specFieldName "res" $memberRef "resp" $memberRef 1 }}
 {{ end }}
 
     return res
@@ -90,7 +90,7 @@ func (rm *resourceManager) setResource{{ $memberRefName }}(
 ) *svcapitypes.{{ $memberRefName }} {
     res := &svcapitypes.{{ $memberRefName }}{}
 
-{{ GoCodeSetResourceForStruct $CRD "" "res" $memberRef "resp" $memberRef 1 }}
+{{ GoCodeSetResourceForStruct $CRD $specFieldName "res" $memberRef "resp" $memberRef 1 }}
 
     return res
 }
@@ -120,9 +120,9 @@ func get{{$memberRefName}}Action(
 			// Don't perform any action if they are identical
 			delta := compare{{$memberRefName}}(l, c)
 			if len(delta.Differences) > 0 {
-				action = ConfigurationActionNone
-			} else {
 				action = ConfigurationActionUpdate
+			} else {
+				action = ConfigurationActionNone
 			}
 			break
 		}
@@ -172,7 +172,7 @@ func (rm *resourceManager) delete{{ $memberRefName }}(
 
 	input := rm.newDeleteBucket{{ $specFieldName }}Payload(r, c)
 	_, err = rm.sdkapi.DeleteBucket{{ $memberRefName }}WithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "DeleteBucket{{ $memberRefName }}", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteBucket{{ $memberRefName }}", err)
 	return err
 }
 
