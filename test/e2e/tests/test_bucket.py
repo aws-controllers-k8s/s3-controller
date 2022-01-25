@@ -18,15 +18,19 @@ import pytest
 import time
 import logging
 import re
+import boto3
 from typing import Generator
 from dataclasses import dataclass
 
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
+from acktest.aws.identity import get_region
+from acktest import adoption as adoption
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_s3_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import BootstrapResources, get_bootstrap_resources
 
+RESOURCE_KIND = "Bucket"
 RESOURCE_PLURAL = "buckets"
 
 CREATE_WAIT_AFTER_SECONDS = 10
@@ -120,6 +124,32 @@ def basic_bucket(s3_client) -> Generator[Bucket, None, None]:
     delete_bucket(bucket)
     exists = bucket_exists(s3_client, bucket)
     assert not exists
+
+class TestAdoptBucket(adoption.AbstractAdoptionTest):
+    RESOURCE_PLURAL: str = RESOURCE_PLURAL
+    RESOURCE_VERSION: str = CRD_VERSION
+
+    _bucket_name: str = random_suffix_name("ack-adopted-bucket", 63)
+
+    def bootstrap_resource(self):
+        client = boto3.client('s3')
+        region = get_region()
+        if region == "us-east-1":
+            client.create_bucket(Bucket=self._bucket_name)
+        else:
+            client.create_bucket(
+                Bucket=self._bucket_name, CreateBucketConfiguration={"LocationConstraint": region}
+            )
+
+    def cleanup_resource(self):
+        client = boto3.client('s3')
+        client.delete_bucket(Bucket=self._bucket_name)
+
+    def get_resource_spec(self) -> adoption.AdoptedResourceSpec:
+        return adoption.AdoptedResourceSpec(
+            aws=adoption.AdoptedResourceNameOrIDIdentifier(additionalKeys={}, nameOrID=self._bucket_name),
+            kubernetes=adoption.AdoptedResourceKubernetesIdentifiers(CRD_GROUP, RESOURCE_KIND),
+        )
 
 @service_marker
 class TestBucket:
