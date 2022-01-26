@@ -490,14 +490,21 @@ func customPreCompare(
 	}
 	if a.ko.Spec.ACL != nil {
 		// Don't diff grant headers if a canned ACL has been used
+		a.ko.Spec.GrantFullControl = nil
 		b.ko.Spec.GrantFullControl = nil
+		a.ko.Spec.GrantRead = nil
 		b.ko.Spec.GrantRead = nil
+		a.ko.Spec.GrantReadACP = nil
 		b.ko.Spec.GrantReadACP = nil
+		a.ko.Spec.GrantWrite = nil
 		b.ko.Spec.GrantWrite = nil
+		a.ko.Spec.GrantWriteACP = nil
 		b.ko.Spec.GrantWriteACP = nil
 
 		// Find the canned ACL from the joined possibility string
 		if b.ko.Spec.ACL != nil {
+			// Take the first ACL in case they are defined as delimited list
+			a.ko.Spec.ACL = &strings.Split(*a.ko.Spec.ACL, CannedACLJoinDelimiter)[0]
 			b.ko.Spec.ACL = matchPossibleCannedACL(*a.ko.Spec.ACL, *b.ko.Spec.ACL)
 		}
 	} else {
@@ -687,22 +694,24 @@ func (rm *resourceManager) newPutBucketACLPayload(
 	res.SetBucket(*r.ko.Spec.Name)
 	if r.ko.Spec.ACL != nil {
 		res.SetACL(*r.ko.Spec.ACL)
-	}
+	} else {
+		// Only put grants on bucket if there is no canned ACL to match
 
-	if r.ko.Spec.GrantFullControl != nil {
-		res.SetGrantFullControl(*r.ko.Spec.GrantFullControl)
-	}
-	if r.ko.Spec.GrantRead != nil {
-		res.SetGrantRead(*r.ko.Spec.GrantRead)
-	}
-	if r.ko.Spec.GrantReadACP != nil {
-		res.SetGrantReadACP(*r.ko.Spec.GrantReadACP)
-	}
-	if r.ko.Spec.GrantWrite != nil {
-		res.SetGrantWrite(*r.ko.Spec.GrantWrite)
-	}
-	if r.ko.Spec.GrantWriteACP != nil {
-		res.SetGrantWriteACP(*r.ko.Spec.GrantWriteACP)
+		if r.ko.Spec.GrantFullControl != nil {
+			res.SetGrantFullControl(*r.ko.Spec.GrantFullControl)
+		}
+		if r.ko.Spec.GrantRead != nil {
+			res.SetGrantRead(*r.ko.Spec.GrantRead)
+		}
+		if r.ko.Spec.GrantReadACP != nil {
+			res.SetGrantReadACP(*r.ko.Spec.GrantReadACP)
+		}
+		if r.ko.Spec.GrantWrite != nil {
+			res.SetGrantWrite(*r.ko.Spec.GrantWrite)
+		}
+		if r.ko.Spec.GrantWriteACP != nil {
+			res.SetGrantWriteACP(*r.ko.Spec.GrantWriteACP)
+		}
 	}
 
 	// Check that there is at least some ACL on the bucket
