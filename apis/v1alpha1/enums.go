@@ -217,6 +217,7 @@ const (
 	InventoryOptionalField_ObjectLockMode               InventoryOptionalField = "ObjectLockMode"
 	InventoryOptionalField_ObjectLockLegalHoldStatus    InventoryOptionalField = "ObjectLockLegalHoldStatus"
 	InventoryOptionalField_IntelligentTieringAccessTier InventoryOptionalField = "IntelligentTieringAccessTier"
+	InventoryOptionalField_BucketKeyStatus              InventoryOptionalField = "BucketKeyStatus"
 )
 
 type JSONType string

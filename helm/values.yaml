@@ -4,7 +4,7 @@
 
 image:
   repository: public.ecr.aws/aws-controllers-k8s/s3-controller
-  tag: v0.0.11
+  tag: v0.0.12
   pullPolicy: IfNotPresent
   pullSecrets: []
 
