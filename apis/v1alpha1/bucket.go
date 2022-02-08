@@ -23,7 +23,8 @@ import (
 // BucketSpec defines the desired state of Bucket.
 //
 // In terms of implementation, a Bucket is a resource. An Amazon S3 bucket name
-// is globally unique, and the namespace is shared by all AWS accounts.
+// is globally unique, and the namespace is shared by all Amazon Web Services
+// accounts.
 type BucketSpec struct {
 	// The canned ACL to apply to the bucket.
 	ACL *string `json:"acl,omitempty"`
@@ -34,7 +35,7 @@ type BucketSpec struct {
 	// Describes the cross-origin access configuration for objects in an Amazon
 	// S3 bucket. For more information, see Enabling Cross-Origin Resource Sharing
 	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html) in the Amazon
-	// Simple Storage Service Developer Guide.
+	// S3 User Guide.
 	CORS *CORSConfiguration `json:"cors,omitempty"`
 	// The configuration information for the bucket.
 	CreateBucketConfiguration *CreateBucketConfiguration `json:"createBucketConfiguration,omitempty"`
@@ -47,7 +48,10 @@ type BucketSpec struct {
 	GrantRead *string `json:"grantRead,omitempty"`
 	// Allows grantee to read the bucket ACL.
 	GrantReadACP *string `json:"grantReadACP,omitempty"`
-	// Allows grantee to create, overwrite, and delete any object in the bucket.
+	// Allows grantee to create new objects in the bucket.
+	//
+	// For the bucket and object owners of existing objects, also allows deletions
+	// and overwrites of those objects.
 	GrantWrite *string `json:"grantWrite,omitempty"`
 	// Allows grantee to write the ACL for the applicable bucket.
 	GrantWriteACP *string `json:"grantWriteACP,omitempty"`
@@ -77,7 +81,7 @@ type BucketSpec struct {
 	// S3 bucket. You can enable the configuration options in any combination. For
 	// more information about when Amazon S3 considers a bucket or object public,
 	// see The Meaning of "Public" (https://docs.aws.amazon.com/AmazonS3/latest/dev/access-control-block-public-access.html#access-control-block-public-access-policy-status)
-	// in the Amazon Simple Storage Service Developer Guide.
+	// in the Amazon S3 User Guide.
 	PublicAccessBlock *PublicAccessBlockConfiguration `json:"publicAccessBlock,omitempty"`
 
 	Replication *ReplicationConfiguration `json:"replication,omitempty"`
