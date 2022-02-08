@@ -836,6 +836,9 @@ func (rm *resourceManager) newCORSConfiguration(
 				}
 				resf0elem.SetExposeHeaders(resf0elemf3)
 			}
+			if resf0iter.ID != nil {
+				resf0elem.SetID(*resf0iter.ID)
+			}
 			if resf0iter.MaxAgeSeconds != nil {
 				resf0elem.SetMaxAgeSeconds(*resf0iter.MaxAgeSeconds)
 			}
@@ -894,6 +897,9 @@ func (rm *resourceManager) setResourceCORS(
 					resf0elemf3 = append(resf0elemf3, &resf0elemf3elem)
 				}
 				resf0elem.ExposeHeaders = resf0elemf3
+			}
+			if resf0iter.ID != nil {
+				resf0elem.ID = resf0iter.ID
 			}
 			if resf0iter.MaxAgeSeconds != nil {
 				resf0elem.MaxAgeSeconds = resf0iter.MaxAgeSeconds
@@ -2061,39 +2067,45 @@ func (rm *resourceManager) newMetricsConfiguration(
 
 	if c.Filter != nil {
 		resf0 := &svcsdk.MetricsFilter{}
+		if c.Filter.AccessPointARN != nil {
+			resf0.SetAccessPointArn(*c.Filter.AccessPointARN)
+		}
 		if c.Filter.And != nil {
-			resf0f0 := &svcsdk.MetricsAndOperator{}
+			resf0f1 := &svcsdk.MetricsAndOperator{}
+			if c.Filter.And.AccessPointARN != nil {
+				resf0f1.SetAccessPointArn(*c.Filter.And.AccessPointARN)
+			}
 			if c.Filter.And.Prefix != nil {
-				resf0f0.SetPrefix(*c.Filter.And.Prefix)
+				resf0f1.SetPrefix(*c.Filter.And.Prefix)
 			}
 			if c.Filter.And.Tags != nil {
-				resf0f0f1 := []*svcsdk.Tag{}
-				for _, resf0f0f1iter := range c.Filter.And.Tags {
-					resf0f0f1elem := &svcsdk.Tag{}
-					if resf0f0f1iter.Key != nil {
-						resf0f0f1elem.SetKey(*resf0f0f1iter.Key)
+				resf0f1f2 := []*svcsdk.Tag{}
+				for _, resf0f1f2iter := range c.Filter.And.Tags {
+					resf0f1f2elem := &svcsdk.Tag{}
+					if resf0f1f2iter.Key != nil {
+						resf0f1f2elem.SetKey(*resf0f1f2iter.Key)
 					}
-					if resf0f0f1iter.Value != nil {
-						resf0f0f1elem.SetValue(*resf0f0f1iter.Value)
+					if resf0f1f2iter.Value != nil {
+						resf0f1f2elem.SetValue(*resf0f1f2iter.Value)
 					}
-					resf0f0f1 = append(resf0f0f1, resf0f0f1elem)
+					resf0f1f2 = append(resf0f1f2, resf0f1f2elem)
 				}
-				resf0f0.SetTags(resf0f0f1)
+				resf0f1.SetTags(resf0f1f2)
 			}
-			resf0.SetAnd(resf0f0)
+			resf0.SetAnd(resf0f1)
 		}
 		if c.Filter.Prefix != nil {
 			resf0.SetPrefix(*c.Filter.Prefix)
 		}
 		if c.Filter.Tag != nil {
-			resf0f2 := &svcsdk.Tag{}
+			resf0f3 := &svcsdk.Tag{}
 			if c.Filter.Tag.Key != nil {
-				resf0f2.SetKey(*c.Filter.Tag.Key)
+				resf0f3.SetKey(*c.Filter.Tag.Key)
 			}
 			if c.Filter.Tag.Value != nil {
-				resf0f2.SetValue(*c.Filter.Tag.Value)
+				resf0f3.SetValue(*c.Filter.Tag.Value)
 			}
-			resf0.SetTag(resf0f2)
+			resf0.SetTag(resf0f3)
 		}
 		res.SetFilter(resf0)
 	}
@@ -2114,39 +2126,45 @@ func (rm *resourceManager) setResourceMetricsConfiguration(
 
 	if resp.Filter != nil {
 		resf0 := &svcapitypes.MetricsFilter{}
+		if resp.Filter.AccessPointArn != nil {
+			resf0.AccessPointARN = resp.Filter.AccessPointArn
+		}
 		if resp.Filter.And != nil {
-			resf0f0 := &svcapitypes.MetricsAndOperator{}
+			resf0f1 := &svcapitypes.MetricsAndOperator{}
+			if resp.Filter.And.AccessPointArn != nil {
+				resf0f1.AccessPointARN = resp.Filter.And.AccessPointArn
+			}
 			if resp.Filter.And.Prefix != nil {
-				resf0f0.Prefix = resp.Filter.And.Prefix
+				resf0f1.Prefix = resp.Filter.And.Prefix
 			}
 			if resp.Filter.And.Tags != nil {
-				resf0f0f1 := []*svcapitypes.Tag{}
-				for _, resf0f0f1iter := range resp.Filter.And.Tags {
-					resf0f0f1elem := &svcapitypes.Tag{}
-					if resf0f0f1iter.Key != nil {
-						resf0f0f1elem.Key = resf0f0f1iter.Key
+				resf0f1f2 := []*svcapitypes.Tag{}
+				for _, resf0f1f2iter := range resp.Filter.And.Tags {
+					resf0f1f2elem := &svcapitypes.Tag{}
+					if resf0f1f2iter.Key != nil {
+						resf0f1f2elem.Key = resf0f1f2iter.Key
 					}
-					if resf0f0f1iter.Value != nil {
-						resf0f0f1elem.Value = resf0f0f1iter.Value
+					if resf0f1f2iter.Value != nil {
+						resf0f1f2elem.Value = resf0f1f2iter.Value
 					}
-					resf0f0f1 = append(resf0f0f1, resf0f0f1elem)
+					resf0f1f2 = append(resf0f1f2, resf0f1f2elem)
 				}
-				resf0f0.Tags = resf0f0f1
+				resf0f1.Tags = resf0f1f2
 			}
-			resf0.And = resf0f0
+			resf0.And = resf0f1
 		}
 		if resp.Filter.Prefix != nil {
 			resf0.Prefix = resp.Filter.Prefix
 		}
 		if resp.Filter.Tag != nil {
-			resf0f2 := &svcapitypes.Tag{}
+			resf0f3 := &svcapitypes.Tag{}
 			if resp.Filter.Tag.Key != nil {
-				resf0f2.Key = resp.Filter.Tag.Key
+				resf0f3.Key = resp.Filter.Tag.Key
 			}
 			if resp.Filter.Tag.Value != nil {
-				resf0f2.Value = resp.Filter.Tag.Value
+				resf0f3.Value = resp.Filter.Tag.Value
 			}
-			resf0.Tag = resf0f2
+			resf0.Tag = resf0f3
 		}
 		res.Filter = resf0
 	}
@@ -2165,9 +2183,23 @@ func compareMetricsConfiguration(
 	if ackcompare.HasNilDifference(a.Filter, b.Filter) {
 		delta.Add("MetricsConfiguration.Filter", a.Filter, b.Filter)
 	} else if a.Filter != nil && b.Filter != nil {
+		if ackcompare.HasNilDifference(a.Filter.AccessPointARN, b.Filter.AccessPointARN) {
+			delta.Add("MetricsConfiguration.Filter.AccessPointARN", a.Filter.AccessPointARN, b.Filter.AccessPointARN)
+		} else if a.Filter.AccessPointARN != nil && b.Filter.AccessPointARN != nil {
+			if *a.Filter.AccessPointARN != *b.Filter.AccessPointARN {
+				delta.Add("MetricsConfiguration.Filter.AccessPointARN", a.Filter.AccessPointARN, b.Filter.AccessPointARN)
+			}
+		}
 		if ackcompare.HasNilDifference(a.Filter.And, b.Filter.And) {
 			delta.Add("MetricsConfiguration.Filter.And", a.Filter.And, b.Filter.And)
 		} else if a.Filter.And != nil && b.Filter.And != nil {
+			if ackcompare.HasNilDifference(a.Filter.And.AccessPointARN, b.Filter.And.AccessPointARN) {
+				delta.Add("MetricsConfiguration.Filter.And.AccessPointARN", a.Filter.And.AccessPointARN, b.Filter.And.AccessPointARN)
+			} else if a.Filter.And.AccessPointARN != nil && b.Filter.And.AccessPointARN != nil {
+				if *a.Filter.And.AccessPointARN != *b.Filter.And.AccessPointARN {
+					delta.Add("MetricsConfiguration.Filter.And.AccessPointARN", a.Filter.And.AccessPointARN, b.Filter.And.AccessPointARN)
+				}
+			}
 			if ackcompare.HasNilDifference(a.Filter.And.Prefix, b.Filter.And.Prefix) {
 				delta.Add("MetricsConfiguration.Filter.And.Prefix", a.Filter.And.Prefix, b.Filter.And.Prefix)
 			} else if a.Filter.And.Prefix != nil && b.Filter.And.Prefix != nil {
