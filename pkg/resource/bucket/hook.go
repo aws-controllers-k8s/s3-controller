@@ -17,6 +17,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/pkg/errors"
+	
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -50,6 +52,8 @@ const (
 	ConfigurationActionUpdate
 )
 
+const ErrSyncingPutProperty = "Error syncing property '%s'"
+
 func (rm *resourceManager) createPutFields(
 	ctx context.Context,
 	r *resource,
@@ -64,87 +68,87 @@ func (rm *resourceManager) createPutFields(
 
 	if r.ko.Spec.Accelerate != nil {
 		if err := rm.syncAccelerate(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Accelerate")
 		}
 	}
 	if len(r.ko.Spec.Analytics) != 0 {
 		if err := rm.syncAnalytics(ctx, r, nil); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Analytics")
 		}
 	}
 	if r.ko.Spec.CORS != nil {
 		if err := rm.syncCORS(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "CORS")
 		}
 	}
 	if r.ko.Spec.Encryption != nil {
 		if err := rm.syncEncryption(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Encryption")
 		}
 	}
 	if len(r.ko.Spec.IntelligentTiering) != 0 {
 		if err := rm.syncIntelligentTiering(ctx, r, nil); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "IntelligentTiering")
 		}
 	}
 	if len(r.ko.Spec.Inventory) != 0 {
 		if err := rm.syncInventory(ctx, r, nil); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Inventory")
 		}
 	}
 	if r.ko.Spec.Lifecycle != nil {
 		if err := rm.syncLifecycle(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Lifecycle")
 		}
 	}
 	if r.ko.Spec.Logging != nil {
 		if err := rm.syncLogging(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Logging")
 		}
 	}
 	if len(r.ko.Spec.Metrics) != 0 {
 		if err := rm.syncMetrics(ctx, r, nil); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Metrics")
 		}
 	}
 	if r.ko.Spec.Notification != nil {
 		if err := rm.syncNotification(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Notification")
 		}
 	}
 	if r.ko.Spec.OwnershipControls != nil {
 		if err := rm.syncOwnershipControls(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "OwnershipControls")
 		}
 	}
 	if r.ko.Spec.Policy != nil {
 		if err := rm.syncPolicy(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Policy")
 		}
 	}
 	if r.ko.Spec.PublicAccessBlock != nil {
 		if err := rm.syncPublicAccessBlock(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "PublicAccessBlock")
 		}
 	}
 	if r.ko.Spec.Replication != nil {
 		if err := rm.syncReplication(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Replication")
 		}
 	}
 	if r.ko.Spec.RequestPayment != nil {
 		if err := rm.syncRequestPayment(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "RequestPayment")
 		}
 	}
 	if r.ko.Spec.Tagging != nil {
 		if err := rm.syncTagging(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Tagging")
 		}
 	}
 	if r.ko.Spec.Website != nil {
 		if err := rm.syncWebsite(ctx, r); err != nil {
-			return err
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Website")
 		}
 	}
 	return nil
@@ -170,12 +174,12 @@ func (rm *resourceManager) customUpdateBucket(
 
 	if delta.DifferentAt("Spec.Accelerate") {
 		if err := rm.syncAccelerate(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Accelerate")
 		}
 	}
 	if delta.DifferentAt("Spec.Analytics") {
 		if err := rm.syncAnalytics(ctx, desired, latest); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Analytics")
 		}
 	}
 	if delta.DifferentAt("Spec.ACL") ||
@@ -185,77 +189,77 @@ func (rm *resourceManager) customUpdateBucket(
 		delta.DifferentAt("Spec.GrantWrite") ||
 		delta.DifferentAt("Spec.GrantWriteACP") {
 		if err := rm.syncACL(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "ACLs or Grant Headers")
 		}
 	}
 	if delta.DifferentAt("Spec.CORS") {
 		if err := rm.syncCORS(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "CORS")
 		}
 	}
 	if delta.DifferentAt("Spec.Encryption") {
 		if err := rm.syncEncryption(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Encryption")
 		}
 	}
 	if delta.DifferentAt("Spec.IntelligentTiering") {
 		if err := rm.syncIntelligentTiering(ctx, desired, latest); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "IntelligentTiering")
 		}
 	}
 	if delta.DifferentAt("Spec.Inventory") {
 		if err := rm.syncInventory(ctx, desired, latest); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Inventory")
 		}
 	}
 	if delta.DifferentAt("Spec.Lifecycle") {
 		if err := rm.syncLifecycle(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Lifecycle")
 		}
 	}
 	if delta.DifferentAt("Spec.Logging") {
 		if err := rm.syncLogging(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Logging")
 		}
 	}
 	if delta.DifferentAt("Spec.Metrics") {
 		if err := rm.syncMetrics(ctx, desired, latest); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Metrics")
 		}
 	}
 	if delta.DifferentAt("Spec.Notification") {
 		if err := rm.syncNotification(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Notification")
 		}
 	}
 	if delta.DifferentAt("Spec.OwnershipControls") {
 		if err := rm.syncOwnershipControls(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "OwnershipControls")
 		}
 	}
 	if delta.DifferentAt("Spec.Policy") {
 		if err := rm.syncPolicy(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Policy")
 		}
 	}
 	if delta.DifferentAt("Spec.PublicAccessBlock") {
 		if err := rm.syncPublicAccessBlock(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "PublicAccessBlock")
 		}
 	}
 	if delta.DifferentAt("Spec.RequestPayment") {
 		if err := rm.syncRequestPayment(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "RequestPayment")
 		}
 	}
 	if delta.DifferentAt("Spec.Tagging") {
 		if err := rm.syncTagging(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Tagging")
 		}
 	}
 	if delta.DifferentAt("Spec.Website") {
 		if err := rm.syncWebsite(ctx, desired); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Website")
 		}
 	}
 
@@ -265,17 +269,17 @@ func (rm *resourceManager) customUpdateBucket(
 	if delta.DifferentAt("Spec.Replication") || delta.DifferentAt("Spec.Versioning") {
 		if desired.ko.Spec.Replication == nil || desired.ko.Spec.Replication.Rules == nil {
 			if err := rm.syncReplication(ctx, desired); err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Replication")
 			}
 			if err := rm.syncVersioning(ctx, desired); err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Versioningc")
 			}
 		} else {
 			if err := rm.syncVersioning(ctx, desired); err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Versioningc")
 			}
 			if err := rm.syncReplication(ctx, desired); err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Replication")
 			}
 		}
 	}
@@ -292,7 +296,14 @@ func (rm *resourceManager) addPutFieldsToSpec(
 ) (err error) {
 	getAccelerateResponse, err := rm.sdkapi.GetBucketAccelerateConfigurationWithContext(ctx, rm.newGetBucketAcceleratePayload(r))
 	if err != nil {
-		return err
+		// This method is not supported in every region, ignore any errors if
+		// we attempt to describe this property in a region in which it's not
+		// supported.
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "MethodNotAllowed" {
+			getAccelerateResponse = &svcsdk.GetBucketAccelerateConfigurationOutput{}
+		} else {
+			return err
+		}
 	}
 	ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
 
