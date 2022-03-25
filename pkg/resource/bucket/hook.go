@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	
+
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"

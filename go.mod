@@ -3,9 +3,10 @@ module github.com/aws-controllers-k8s/s3-controller
 go 1.17
 
 require (
-	github.com/aws-controllers-k8s/runtime v0.18.0
+	github.com/aws-controllers-k8s/runtime v0.18.1
 	github.com/aws/aws-sdk-go v1.42.0
 	github.com/go-logr/logr v1.2.0
+	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	k8s.io/api v0.23.0
@@ -37,7 +38,6 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.11.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
