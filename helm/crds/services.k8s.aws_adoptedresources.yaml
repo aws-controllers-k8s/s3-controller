@@ -57,8 +57,9 @@ spec:
                     type: string
                 type: object
               kubernetes:
-                description: ResourceWithMetadata provides the values necessary to
-                  create a Kubernetes resource and override any of its metadata values.
+                description: TargetKubernetesResource provides all the values necessary
+                  to identify a given ACK type and override any metadata values when
+                  creating a resource of that type.
                 properties:
                   group:
                     type: string
