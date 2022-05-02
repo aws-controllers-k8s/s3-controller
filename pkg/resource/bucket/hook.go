@@ -519,6 +519,11 @@ func customPreCompare(
 			b.ko.Spec.ACL = matchPossibleCannedACL(*a.ko.Spec.ACL, *b.ko.Spec.ACL)
 		}
 	} else {
+		// Ignore diff if possible canned ACLs are the default
+		if b.ko.Spec.ACL != nil && isDefaultCannedACLPossibilities(*b.ko.Spec.ACL) {
+			b.ko.Spec.ACL = nil
+		}
+
 		// If we are sure the grants weren't set from the header strings
 		if a.ko.Spec.GrantFullControl == nil &&
 			a.ko.Spec.GrantRead == nil &&
@@ -675,19 +680,6 @@ func (rm *resourceManager) setResourceACL(
 	cannedACLs := GetPossibleCannedACLsFromGrants(resp)
 	joinedACLs := strings.Join(cannedACLs, CannedACLJoinDelimiter)
 	ko.Spec.ACL = &joinedACLs
-}
-
-// matchPossibleCannedACL attempts to find a canned ACL string in a joined
-// list of possibilities. If any of the possibilities matches, it will be
-// returned, otherwise nil.
-func matchPossibleCannedACL(search string, joinedPossibilities string) *string {
-	splitPossibilities := strings.Split(joinedPossibilities, CannedACLJoinDelimiter)
-	for _, possible := range splitPossibilities {
-		if search == possible {
-			return &possible
-		}
-	}
-	return nil
 }
 
 func (rm *resourceManager) newGetBucketACLPayload(
