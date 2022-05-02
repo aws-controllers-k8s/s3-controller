@@ -151,6 +151,25 @@ func formGrantHeader(grants []*svcsdk.Grant) string {
 	return strings.Join(headers, ",")
 }
 
+// isDefaultCannedACLPossibilities determines whether the list of joined ACL
+// possibilites is the default for a bucket.
+func isDefaultCannedACLPossibilities(joinedPossibilities string) bool {
+	return matchPossibleCannedACL(CannedACLPrivate, joinedPossibilities) != nil
+}
+
+// matchPossibleCannedACL attempts to find a canned ACL string in a joined
+// list of possibilities. If any of the possibilities matches, it will be
+// returned, otherwise nil.
+func matchPossibleCannedACL(search string, joinedPossibilities string) *string {
+	splitPossibilities := strings.Split(joinedPossibilities, CannedACLJoinDelimiter)
+	for _, possible := range splitPossibilities {
+		if search == possible {
+			return &possible
+		}
+	}
+	return nil
+}
+
 // GetHeadersFromGrants will return a list of grant headers from grants
 func GetHeadersFromGrants(
 	resp *svcsdk.GetBucketAclOutput,
