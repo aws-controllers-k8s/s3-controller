@@ -26,6 +26,7 @@ from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from acktest.aws.identity import get_region
 from acktest import adoption as adoption
+from acktest import tags as tags
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_s3_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import BootstrapResources, get_bootstrap_resources
@@ -310,7 +311,7 @@ class TestBucket:
         tagging = latest.Tagging()
 
         desired = bucket.resource_data["spec"]["tagging"]["tagSet"]
-        latest = tagging.tag_set
+        latest = tags.clean(tagging.tag_set)
 
         for i in range(2):
             assert desired[i]["key"] == latest[i]["Key"]
