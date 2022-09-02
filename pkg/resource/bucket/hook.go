@@ -299,7 +299,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		// This method is not supported in every region, ignore any errors if
 		// we attempt to describe this property in a region in which it's not
 		// supported.
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "MethodNotAllowed" {
+		if awsErr, ok := ackerr.AWSError(err); ok && (awsErr.Code() == "MethodNotAllowed" || awsErr.Code() == "UnsupportedArgument") {
 			getAccelerateResponse = &svcsdk.GetBucketAccelerateConfigurationOutput{}
 		} else {
 			return err
