@@ -439,6 +439,7 @@ spec:
                         prefix:
                           type: string
                         status:
+                          description: Whether the rule is active or inactive. Must be set to Enabled or Disabled.
                           type: string
                         transitions:
                           items:
