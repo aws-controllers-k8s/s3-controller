@@ -402,6 +402,9 @@ spec:
                           type: object
                         id:
                           type: string
+                          description: Optional unique identifier of the rule.
+                            Must be a value no longer than 255 characters.
+                            If you don't provide one, Amazon S3 will assign an ID.
                         noncurrentVersionExpiration:
                           description: Specifies when noncurrent object versions expire.
                             Upon expiration, Amazon S3 permanently deletes the noncurrent
