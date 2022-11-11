@@ -445,8 +445,10 @@ type LifecycleRule struct {
 // more predicates. The Lifecycle Rule will apply to any object matching all
 // of the predicates configured inside the And operator.
 type LifecycleRuleAndOperator struct {
-	Prefix *string `json:"prefix,omitempty"`
-	Tags   []*Tag  `json:"tags,omitempty"`
+	ObjectSizeGreaterThan *int64  `json:"objectSizeGreaterThan,omitempty"`
+	ObjectSizeLessThan    *int64  `json:"objectSizeLessThan,omitempty"`
+	Prefix                *string `json:"prefix,omitempty"`
+	Tags                  []*Tag  `json:"tags,omitempty"`
 }
 
 // The Filter is used to identify objects that a Lifecycle Rule applies to.
@@ -455,8 +457,10 @@ type LifecycleRuleFilter struct {
 	// This is used in a Lifecycle Rule Filter to apply a logical AND to two or
 	// more predicates. The Lifecycle Rule will apply to any object matching all
 	// of the predicates configured inside the And operator.
-	And    *LifecycleRuleAndOperator `json:"and,omitempty"`
-	Prefix *string                   `json:"prefix,omitempty"`
+	And                   *LifecycleRuleAndOperator `json:"and,omitempty"`
+	ObjectSizeGreaterThan *int64                    `json:"objectSizeGreaterThan,omitempty"`
+	ObjectSizeLessThan    *int64                    `json:"objectSizeLessThan,omitempty"`
+	Prefix                *string                   `json:"prefix,omitempty"`
 	// A container of a key value name pair.
 	Tag *Tag `json:"tag,omitempty"`
 }
@@ -542,19 +546,21 @@ type MultipartUpload struct {
 // to request that Amazon S3 delete noncurrent object versions at a specific
 // period in the object's lifetime.
 type NoncurrentVersionExpiration struct {
-	NoncurrentDays *int64 `json:"noncurrentDays,omitempty"`
+	NewerNoncurrentVersions *int64 `json:"newerNoncurrentVersions,omitempty"`
+	NoncurrentDays          *int64 `json:"noncurrentDays,omitempty"`
 }
 
 // Container for the transition rule that describes when noncurrent objects
-// transition to the STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING, GLACIER,
-// or DEEP_ARCHIVE storage class. If your bucket is versioning-enabled (or versioning
-// is suspended), you can set this action to request that Amazon S3 transition
-// noncurrent object versions to the STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING,
-// GLACIER, or DEEP_ARCHIVE storage class at a specific period in the object's
-// lifetime.
+// transition to the STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING, GLACIER_IR,
+// GLACIER, or DEEP_ARCHIVE storage class. If your bucket is versioning-enabled
+// (or versioning is suspended), you can set this action to request that Amazon
+// S3 transition noncurrent object versions to the STANDARD_IA, ONEZONE_IA,
+// INTELLIGENT_TIERING, GLACIER_IR, GLACIER, or DEEP_ARCHIVE storage class at
+// a specific period in the object's lifetime.
 type NoncurrentVersionTransition struct {
-	NoncurrentDays *int64  `json:"noncurrentDays,omitempty"`
-	StorageClass   *string `json:"storageClass,omitempty"`
+	NewerNoncurrentVersions *int64  `json:"newerNoncurrentVersions,omitempty"`
+	NoncurrentDays          *int64  `json:"noncurrentDays,omitempty"`
+	StorageClass            *string `json:"storageClass,omitempty"`
 }
 
 // A container for specifying the notification configuration of the bucket.
@@ -625,6 +631,12 @@ type OwnershipControlsRule struct {
 	//
 	// ObjectWriter - The uploading account will own the object if the object is
 	// uploaded with the bucket-owner-full-control canned ACL.
+	//
+	// BucketOwnerEnforced - Access control lists (ACLs) are disabled and no longer
+	// affect permissions. The bucket owner automatically owns and has full control
+	// over every object in the bucket. The bucket only accepts PUT requests that
+	// don't specify an ACL or bucket owner full control ACLs, such as the bucket-owner-full-control
+	// canned ACL or an equivalent form of this ACL expressed in the XML format.
 	ObjectOwnership *string `json:"objectOwnership,omitempty"`
 }
 
@@ -843,12 +855,12 @@ type Rule struct {
 	// period in the object's lifetime.
 	NoncurrentVersionExpiration *NoncurrentVersionExpiration `json:"noncurrentVersionExpiration,omitempty"`
 	// Container for the transition rule that describes when noncurrent objects
-	// transition to the STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING, GLACIER,
-	// or DEEP_ARCHIVE storage class. If your bucket is versioning-enabled (or versioning
-	// is suspended), you can set this action to request that Amazon S3 transition
-	// noncurrent object versions to the STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING,
-	// GLACIER, or DEEP_ARCHIVE storage class at a specific period in the object's
-	// lifetime.
+	// transition to the STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING, GLACIER_IR,
+	// GLACIER, or DEEP_ARCHIVE storage class. If your bucket is versioning-enabled
+	// (or versioning is suspended), you can set this action to request that Amazon
+	// S3 transition noncurrent object versions to the STANDARD_IA, ONEZONE_IA,
+	// INTELLIGENT_TIERING, GLACIER_IR, GLACIER, or DEEP_ARCHIVE storage class at
+	// a specific period in the object's lifetime.
 	NoncurrentVersionTransition *NoncurrentVersionTransition `json:"noncurrentVersionTransition,omitempty"`
 	Prefix                      *string                      `json:"prefix,omitempty"`
 	Status                      *string                      `json:"status,omitempty"`
@@ -872,8 +884,12 @@ type SSEKMSEncryptedObjects struct {
 
 // Describes the default server-side encryption to apply to new objects in the
 // bucket. If a PUT Object request doesn't specify any server-side encryption,
-// this default encryption will be applied. For more information, see PUT Bucket
-// encryption (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTencryption.html)
+// this default encryption will be applied. If you don't specify a customer
+// managed key at configuration, Amazon S3 automatically creates an Amazon Web
+// Services KMS key in your Amazon Web Services account the first time that
+// you add an object encrypted with SSE-KMS to a bucket. By default, Amazon
+// S3 uses this KMS key for SSE-KMS. For more information, see PUT Bucket encryption
+// (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTencryption.html)
 // in the Amazon S3 API Reference.
 type ServerSideEncryptionByDefault struct {
 	KMSMasterKeyID *string `json:"kmsMasterKeyID,omitempty"`
@@ -889,8 +905,12 @@ type ServerSideEncryptionConfiguration struct {
 type ServerSideEncryptionRule struct {
 	// Describes the default server-side encryption to apply to new objects in the
 	// bucket. If a PUT Object request doesn't specify any server-side encryption,
-	// this default encryption will be applied. For more information, see PUT Bucket
-	// encryption (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTencryption.html)
+	// this default encryption will be applied. If you don't specify a customer
+	// managed key at configuration, Amazon S3 automatically creates an Amazon Web
+	// Services KMS key in your Amazon Web Services account the first time that
+	// you add an object encrypted with SSE-KMS to a bucket. By default, Amazon
+	// S3 uses this KMS key for SSE-KMS. For more information, see PUT Bucket encryption
+	// (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTencryption.html)
 	// in the Amazon S3 API Reference.
 	ApplyServerSideEncryptionByDefault *ServerSideEncryptionByDefault `json:"applyServerSideEncryptionByDefault,omitempty"`
 	BucketKeyEnabled                   *bool                          `json:"bucketKeyEnabled,omitempty"`
@@ -947,6 +967,11 @@ type Tagging struct {
 }
 
 // Container for granting information.
+//
+// Buckets that use the bucket owner enforced setting for Object Ownership don't
+// support target grants. For more information, see Permissions server access
+// log delivery (https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-server-access-logging.html#grant-log-delivery-permissions-general)
+// in the Amazon S3 User Guide.
 type TargetGrant struct {
 	// Container for the person being granted permissions.
 	Grantee    *Grantee `json:"grantee,omitempty"`

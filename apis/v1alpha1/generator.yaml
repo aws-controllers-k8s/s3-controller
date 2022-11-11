@@ -8,6 +8,8 @@ ignore:
   field_paths:
     # We cannot support MFA, so if it is set we cannot unset
     - "VersioningConfiguration.MFADelete"
+    # This subfield struct has no members...
+    - "NotificationConfiguration.EventBridgeConfiguration"
 resources:
   Bucket:
     fields:

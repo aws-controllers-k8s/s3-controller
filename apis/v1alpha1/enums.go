@@ -89,6 +89,21 @@ const (
 	BucketVersioningStatus_Suspended BucketVersioningStatus = "Suspended"
 )
 
+type ChecksumAlgorithm string
+
+const (
+	ChecksumAlgorithm_CRC32  ChecksumAlgorithm = "CRC32"
+	ChecksumAlgorithm_CRC32C ChecksumAlgorithm = "CRC32C"
+	ChecksumAlgorithm_SHA1   ChecksumAlgorithm = "SHA1"
+	ChecksumAlgorithm_SHA256 ChecksumAlgorithm = "SHA256"
+)
+
+type ChecksumMode string
+
+const (
+	ChecksumMode_ENABLED ChecksumMode = "ENABLED"
+)
+
 type CompressionType string
 
 const (
@@ -130,6 +145,16 @@ const (
 	Event_s3_Replication_OperationNotTracked               Event = "s3:Replication:OperationNotTracked"
 	Event_s3_Replication_OperationMissedThreshold          Event = "s3:Replication:OperationMissedThreshold"
 	Event_s3_Replication_OperationReplicatedAfterThreshold Event = "s3:Replication:OperationReplicatedAfterThreshold"
+	Event_s3_ObjectRestore_Delete                          Event = "s3:ObjectRestore:Delete"
+	Event_s3_LifecycleTransition                           Event = "s3:LifecycleTransition"
+	Event_s3_IntelligentTiering                            Event = "s3:IntelligentTiering"
+	Event_s3_ObjectAcl_Put                                 Event = "s3:ObjectAcl:Put"
+	Event_s3_LifecycleExpiration__                         Event = "s3:LifecycleExpiration:*"
+	Event_s3_LifecycleExpiration_Delete                    Event = "s3:LifecycleExpiration:Delete"
+	Event_s3_LifecycleExpiration_DeleteMarkerCreated       Event = "s3:LifecycleExpiration:DeleteMarkerCreated"
+	Event_s3_ObjectTagging__                               Event = "s3:ObjectTagging:*"
+	Event_s3_ObjectTagging_Put                             Event = "s3:ObjectTagging:Put"
+	Event_s3_ObjectTagging_Delete                          Event = "s3:ObjectTagging:Delete"
 )
 
 type ExistingObjectReplicationStatus string
@@ -218,6 +243,7 @@ const (
 	InventoryOptionalField_ObjectLockLegalHoldStatus    InventoryOptionalField = "ObjectLockLegalHoldStatus"
 	InventoryOptionalField_IntelligentTieringAccessTier InventoryOptionalField = "IntelligentTieringAccessTier"
 	InventoryOptionalField_BucketKeyStatus              InventoryOptionalField = "BucketKeyStatus"
+	InventoryOptionalField_ChecksumAlgorithm            InventoryOptionalField = "ChecksumAlgorithm"
 )
 
 type JSONType string
@@ -253,6 +279,16 @@ type MetricsStatus string
 const (
 	MetricsStatus_Enabled  MetricsStatus = "Enabled"
 	MetricsStatus_Disabled MetricsStatus = "Disabled"
+)
+
+type ObjectAttributes string
+
+const (
+	ObjectAttributes_ETag         ObjectAttributes = "ETag"
+	ObjectAttributes_Checksum     ObjectAttributes = "Checksum"
+	ObjectAttributes_ObjectParts  ObjectAttributes = "ObjectParts"
+	ObjectAttributes_StorageClass ObjectAttributes = "StorageClass"
+	ObjectAttributes_ObjectSize   ObjectAttributes = "ObjectSize"
 )
 
 type ObjectCannedACL string
@@ -299,6 +335,7 @@ type ObjectOwnership string
 const (
 	ObjectOwnership_BucketOwnerPreferred ObjectOwnership = "BucketOwnerPreferred"
 	ObjectOwnership_ObjectWriter         ObjectOwnership = "ObjectWriter"
+	ObjectOwnership_BucketOwnerEnforced  ObjectOwnership = "BucketOwnerEnforced"
 )
 
 type ObjectStorageClass string
@@ -312,6 +349,7 @@ const (
 	ObjectStorageClass_INTELLIGENT_TIERING ObjectStorageClass = "INTELLIGENT_TIERING"
 	ObjectStorageClass_DEEP_ARCHIVE        ObjectStorageClass = "DEEP_ARCHIVE"
 	ObjectStorageClass_OUTPOSTS            ObjectStorageClass = "OUTPOSTS"
+	ObjectStorageClass_GLACIER_IR          ObjectStorageClass = "GLACIER_IR"
 )
 
 type ObjectVersionStorageClass string
@@ -430,6 +468,7 @@ const (
 	StorageClass_GLACIER             StorageClass = "GLACIER"
 	StorageClass_DEEP_ARCHIVE        StorageClass = "DEEP_ARCHIVE"
 	StorageClass_OUTPOSTS            StorageClass = "OUTPOSTS"
+	StorageClass_GLACIER_IR          StorageClass = "GLACIER_IR"
 )
 
 type StorageClassAnalysisSchemaVersion string
@@ -461,6 +500,7 @@ const (
 	TransitionStorageClass_ONEZONE_IA          TransitionStorageClass = "ONEZONE_IA"
 	TransitionStorageClass_INTELLIGENT_TIERING TransitionStorageClass = "INTELLIGENT_TIERING"
 	TransitionStorageClass_DEEP_ARCHIVE        TransitionStorageClass = "DEEP_ARCHIVE"
+	TransitionStorageClass_GLACIER_IR          TransitionStorageClass = "GLACIER_IR"
 )
 
 type Type string

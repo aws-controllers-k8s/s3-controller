@@ -211,6 +211,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.ObjectLockEnabledForBucket != nil {
 		res.SetObjectLockEnabledForBucket(*r.ko.Spec.ObjectLockEnabledForBucket)
 	}
+	if r.ko.Spec.ObjectOwnership != nil {
+		res.SetObjectOwnership(*r.ko.Spec.ObjectOwnership)
+	}
 
 	return res, nil
 }
@@ -1755,37 +1758,49 @@ func (rm *resourceManager) newLifecycleConfiguration(
 				resf0elemf2 := &svcsdk.LifecycleRuleFilter{}
 				if resf0iter.Filter.And != nil {
 					resf0elemf2f0 := &svcsdk.LifecycleRuleAndOperator{}
+					if resf0iter.Filter.And.ObjectSizeGreaterThan != nil {
+						resf0elemf2f0.SetObjectSizeGreaterThan(*resf0iter.Filter.And.ObjectSizeGreaterThan)
+					}
+					if resf0iter.Filter.And.ObjectSizeLessThan != nil {
+						resf0elemf2f0.SetObjectSizeLessThan(*resf0iter.Filter.And.ObjectSizeLessThan)
+					}
 					if resf0iter.Filter.And.Prefix != nil {
 						resf0elemf2f0.SetPrefix(*resf0iter.Filter.And.Prefix)
 					}
 					if resf0iter.Filter.And.Tags != nil {
-						resf0elemf2f0f1 := []*svcsdk.Tag{}
-						for _, resf0elemf2f0f1iter := range resf0iter.Filter.And.Tags {
-							resf0elemf2f0f1elem := &svcsdk.Tag{}
-							if resf0elemf2f0f1iter.Key != nil {
-								resf0elemf2f0f1elem.SetKey(*resf0elemf2f0f1iter.Key)
+						resf0elemf2f0f3 := []*svcsdk.Tag{}
+						for _, resf0elemf2f0f3iter := range resf0iter.Filter.And.Tags {
+							resf0elemf2f0f3elem := &svcsdk.Tag{}
+							if resf0elemf2f0f3iter.Key != nil {
+								resf0elemf2f0f3elem.SetKey(*resf0elemf2f0f3iter.Key)
 							}
-							if resf0elemf2f0f1iter.Value != nil {
-								resf0elemf2f0f1elem.SetValue(*resf0elemf2f0f1iter.Value)
+							if resf0elemf2f0f3iter.Value != nil {
+								resf0elemf2f0f3elem.SetValue(*resf0elemf2f0f3iter.Value)
 							}
-							resf0elemf2f0f1 = append(resf0elemf2f0f1, resf0elemf2f0f1elem)
+							resf0elemf2f0f3 = append(resf0elemf2f0f3, resf0elemf2f0f3elem)
 						}
-						resf0elemf2f0.SetTags(resf0elemf2f0f1)
+						resf0elemf2f0.SetTags(resf0elemf2f0f3)
 					}
 					resf0elemf2.SetAnd(resf0elemf2f0)
+				}
+				if resf0iter.Filter.ObjectSizeGreaterThan != nil {
+					resf0elemf2.SetObjectSizeGreaterThan(*resf0iter.Filter.ObjectSizeGreaterThan)
+				}
+				if resf0iter.Filter.ObjectSizeLessThan != nil {
+					resf0elemf2.SetObjectSizeLessThan(*resf0iter.Filter.ObjectSizeLessThan)
 				}
 				if resf0iter.Filter.Prefix != nil {
 					resf0elemf2.SetPrefix(*resf0iter.Filter.Prefix)
 				}
 				if resf0iter.Filter.Tag != nil {
-					resf0elemf2f2 := &svcsdk.Tag{}
+					resf0elemf2f4 := &svcsdk.Tag{}
 					if resf0iter.Filter.Tag.Key != nil {
-						resf0elemf2f2.SetKey(*resf0iter.Filter.Tag.Key)
+						resf0elemf2f4.SetKey(*resf0iter.Filter.Tag.Key)
 					}
 					if resf0iter.Filter.Tag.Value != nil {
-						resf0elemf2f2.SetValue(*resf0iter.Filter.Tag.Value)
+						resf0elemf2f4.SetValue(*resf0iter.Filter.Tag.Value)
 					}
-					resf0elemf2.SetTag(resf0elemf2f2)
+					resf0elemf2.SetTag(resf0elemf2f4)
 				}
 				resf0elem.SetFilter(resf0elemf2)
 			}
@@ -1794,6 +1809,9 @@ func (rm *resourceManager) newLifecycleConfiguration(
 			}
 			if resf0iter.NoncurrentVersionExpiration != nil {
 				resf0elemf4 := &svcsdk.NoncurrentVersionExpiration{}
+				if resf0iter.NoncurrentVersionExpiration.NewerNoncurrentVersions != nil {
+					resf0elemf4.SetNewerNoncurrentVersions(*resf0iter.NoncurrentVersionExpiration.NewerNoncurrentVersions)
+				}
 				if resf0iter.NoncurrentVersionExpiration.NoncurrentDays != nil {
 					resf0elemf4.SetNoncurrentDays(*resf0iter.NoncurrentVersionExpiration.NoncurrentDays)
 				}
@@ -1803,6 +1821,9 @@ func (rm *resourceManager) newLifecycleConfiguration(
 				resf0elemf5 := []*svcsdk.NoncurrentVersionTransition{}
 				for _, resf0elemf5iter := range resf0iter.NoncurrentVersionTransitions {
 					resf0elemf5elem := &svcsdk.NoncurrentVersionTransition{}
+					if resf0elemf5iter.NewerNoncurrentVersions != nil {
+						resf0elemf5elem.SetNewerNoncurrentVersions(*resf0elemf5iter.NewerNoncurrentVersions)
+					}
 					if resf0elemf5iter.NoncurrentDays != nil {
 						resf0elemf5elem.SetNoncurrentDays(*resf0elemf5iter.NoncurrentDays)
 					}
@@ -1880,37 +1901,49 @@ func (rm *resourceManager) setResourceLifecycle(
 				resf0elemf2 := &svcapitypes.LifecycleRuleFilter{}
 				if resf0iter.Filter.And != nil {
 					resf0elemf2f0 := &svcapitypes.LifecycleRuleAndOperator{}
+					if resf0iter.Filter.And.ObjectSizeGreaterThan != nil {
+						resf0elemf2f0.ObjectSizeGreaterThan = resf0iter.Filter.And.ObjectSizeGreaterThan
+					}
+					if resf0iter.Filter.And.ObjectSizeLessThan != nil {
+						resf0elemf2f0.ObjectSizeLessThan = resf0iter.Filter.And.ObjectSizeLessThan
+					}
 					if resf0iter.Filter.And.Prefix != nil {
 						resf0elemf2f0.Prefix = resf0iter.Filter.And.Prefix
 					}
 					if resf0iter.Filter.And.Tags != nil {
-						resf0elemf2f0f1 := []*svcapitypes.Tag{}
-						for _, resf0elemf2f0f1iter := range resf0iter.Filter.And.Tags {
-							resf0elemf2f0f1elem := &svcapitypes.Tag{}
-							if resf0elemf2f0f1iter.Key != nil {
-								resf0elemf2f0f1elem.Key = resf0elemf2f0f1iter.Key
+						resf0elemf2f0f3 := []*svcapitypes.Tag{}
+						for _, resf0elemf2f0f3iter := range resf0iter.Filter.And.Tags {
+							resf0elemf2f0f3elem := &svcapitypes.Tag{}
+							if resf0elemf2f0f3iter.Key != nil {
+								resf0elemf2f0f3elem.Key = resf0elemf2f0f3iter.Key
 							}
-							if resf0elemf2f0f1iter.Value != nil {
-								resf0elemf2f0f1elem.Value = resf0elemf2f0f1iter.Value
+							if resf0elemf2f0f3iter.Value != nil {
+								resf0elemf2f0f3elem.Value = resf0elemf2f0f3iter.Value
 							}
-							resf0elemf2f0f1 = append(resf0elemf2f0f1, resf0elemf2f0f1elem)
+							resf0elemf2f0f3 = append(resf0elemf2f0f3, resf0elemf2f0f3elem)
 						}
-						resf0elemf2f0.Tags = resf0elemf2f0f1
+						resf0elemf2f0.Tags = resf0elemf2f0f3
 					}
 					resf0elemf2.And = resf0elemf2f0
+				}
+				if resf0iter.Filter.ObjectSizeGreaterThan != nil {
+					resf0elemf2.ObjectSizeGreaterThan = resf0iter.Filter.ObjectSizeGreaterThan
+				}
+				if resf0iter.Filter.ObjectSizeLessThan != nil {
+					resf0elemf2.ObjectSizeLessThan = resf0iter.Filter.ObjectSizeLessThan
 				}
 				if resf0iter.Filter.Prefix != nil {
 					resf0elemf2.Prefix = resf0iter.Filter.Prefix
 				}
 				if resf0iter.Filter.Tag != nil {
-					resf0elemf2f2 := &svcapitypes.Tag{}
+					resf0elemf2f4 := &svcapitypes.Tag{}
 					if resf0iter.Filter.Tag.Key != nil {
-						resf0elemf2f2.Key = resf0iter.Filter.Tag.Key
+						resf0elemf2f4.Key = resf0iter.Filter.Tag.Key
 					}
 					if resf0iter.Filter.Tag.Value != nil {
-						resf0elemf2f2.Value = resf0iter.Filter.Tag.Value
+						resf0elemf2f4.Value = resf0iter.Filter.Tag.Value
 					}
-					resf0elemf2.Tag = resf0elemf2f2
+					resf0elemf2.Tag = resf0elemf2f4
 				}
 				resf0elem.Filter = resf0elemf2
 			}
@@ -1919,6 +1952,9 @@ func (rm *resourceManager) setResourceLifecycle(
 			}
 			if resf0iter.NoncurrentVersionExpiration != nil {
 				resf0elemf4 := &svcapitypes.NoncurrentVersionExpiration{}
+				if resf0iter.NoncurrentVersionExpiration.NewerNoncurrentVersions != nil {
+					resf0elemf4.NewerNoncurrentVersions = resf0iter.NoncurrentVersionExpiration.NewerNoncurrentVersions
+				}
 				if resf0iter.NoncurrentVersionExpiration.NoncurrentDays != nil {
 					resf0elemf4.NoncurrentDays = resf0iter.NoncurrentVersionExpiration.NoncurrentDays
 				}
@@ -1928,6 +1964,9 @@ func (rm *resourceManager) setResourceLifecycle(
 				resf0elemf5 := []*svcapitypes.NoncurrentVersionTransition{}
 				for _, resf0elemf5iter := range resf0iter.NoncurrentVersionTransitions {
 					resf0elemf5elem := &svcapitypes.NoncurrentVersionTransition{}
+					if resf0elemf5iter.NewerNoncurrentVersions != nil {
+						resf0elemf5elem.NewerNoncurrentVersions = resf0elemf5iter.NewerNoncurrentVersions
+					}
 					if resf0elemf5iter.NoncurrentDays != nil {
 						resf0elemf5elem.NoncurrentDays = resf0elemf5iter.NoncurrentDays
 					}

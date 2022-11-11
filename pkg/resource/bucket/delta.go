@@ -191,6 +191,13 @@ func newResourceDelta(
 			delta.Add("Spec.ObjectLockEnabledForBucket", a.ko.Spec.ObjectLockEnabledForBucket, b.ko.Spec.ObjectLockEnabledForBucket)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.ObjectOwnership, b.ko.Spec.ObjectOwnership) {
+		delta.Add("Spec.ObjectOwnership", a.ko.Spec.ObjectOwnership, b.ko.Spec.ObjectOwnership)
+	} else if a.ko.Spec.ObjectOwnership != nil && b.ko.Spec.ObjectOwnership != nil {
+		if *a.ko.Spec.ObjectOwnership != *b.ko.Spec.ObjectOwnership {
+			delta.Add("Spec.ObjectOwnership", a.ko.Spec.ObjectOwnership, b.ko.Spec.ObjectOwnership)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.OwnershipControls, b.ko.Spec.OwnershipControls) {
 		delta.Add("Spec.OwnershipControls", a.ko.Spec.OwnershipControls, b.ko.Spec.OwnershipControls)
 	} else if a.ko.Spec.OwnershipControls != nil && b.ko.Spec.OwnershipControls != nil {

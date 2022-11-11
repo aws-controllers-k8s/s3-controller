@@ -72,8 +72,10 @@ type BucketSpec struct {
 	Notification *NotificationConfiguration `json:"notification,omitempty"`
 	// Specifies whether you want S3 Object Lock to be enabled for the new bucket.
 	ObjectLockEnabledForBucket *bool `json:"objectLockEnabledForBucket,omitempty"`
-	// The OwnershipControls (BucketOwnerPreferred or ObjectWriter) that you want
-	// to apply to this Amazon S3 bucket.
+
+	ObjectOwnership *string `json:"objectOwnership,omitempty"`
+	// The OwnershipControls (BucketOwnerEnforced, BucketOwnerPreferred, or ObjectWriter)
+	// that you want to apply to this Amazon S3 bucket.
 	OwnershipControls *OwnershipControls `json:"ownershipControls,omitempty"`
 	// The bucket policy as a JSON document.
 	Policy *string `json:"policy,omitempty"`
@@ -108,9 +110,7 @@ type BucketStatus struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
-	// Specifies the Region where the bucket will be created. If you are creating
-	// a bucket on the US East (N. Virginia) Region (us-east-1), you do not need
-	// to specify the location.
+	// A forward slash followed by the name of the bucket.
 	// +kubebuilder:validation:Optional
 	Location *string `json:"location,omitempty"`
 }
