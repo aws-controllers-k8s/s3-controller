@@ -19,7 +19,7 @@ import time
 import logging
 import re
 import boto3
-from typing import Generator
+from typing import  Generator
 from dataclasses import dataclass
 
 from acktest.resources import random_suffix_name
@@ -29,7 +29,6 @@ from acktest import adoption as adoption
 from acktest import tags as tags
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_s3_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
-from e2e.bootstrap_resources import BootstrapResources, get_bootstrap_resources
 
 RESOURCE_KIND = "Bucket"
 RESOURCE_PLURAL = "buckets"
@@ -61,8 +60,8 @@ def bucket_exists(s3_client, bucket: Bucket) -> bool:
 
     return False
 
-def load_bucket_resource(resource_file_name: str, resource_name: str):
-    replacements = REPLACEMENT_VALUES.copy()
+def load_bucket_resource(resource_file_name: str, resource_name: str, additional_replacements: dict = {}):
+    replacements = {**REPLACEMENT_VALUES.copy(), **additional_replacements}
     replacements["BUCKET_NAME"] = resource_name
 
     resource_data = load_s3_resource(
@@ -72,15 +71,15 @@ def load_bucket_resource(resource_file_name: str, resource_name: str):
     logging.debug(resource_data)
     return resource_data
 
-def create_bucket(resource_file_name: str) -> Bucket:
+def create_bucket(resource_file_name: str, namespace: str = "default", additional_replacements: dict = {}) -> Bucket:
     resource_name = random_suffix_name("s3-bucket", 24)
-    resource_data = load_bucket_resource(resource_file_name, resource_name)
+    resource_data = load_bucket_resource(resource_file_name, resource_name, additional_replacements)
 
     logging.info(f"Creating bucket {resource_name}")
     # Create k8s resource
     ref = k8s.CustomResourceReference(
         CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-        resource_name, namespace="default",
+        resource_name, namespace=namespace,
     )
     resource_data = k8s.create_custom_resource(ref, resource_data)
     k8s.wait_resource_consumed_by_controller(ref)
@@ -100,6 +99,9 @@ def replace_bucket_spec(bucket: Bucket, resource_file_name: str):
     time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
 def delete_bucket(bucket: Bucket):
+    if not k8s.get_resource_exists(bucket.ref):
+        return
+        
     # Delete k8s resource
     _, deleted = k8s.delete_custom_resource(bucket.ref)
     assert deleted is True
