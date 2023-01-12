@@ -12,15 +12,18 @@ metadata:
   namespace: ack-system
   labels:
     control-plane: controller
+    name: ack-s3-controller
 spec:
   selector:
     matchLabels:
       control-plane: controller
+      name: ack-s3-controller
   replicas: 1
   template:
     metadata:
       labels:
         control-plane: controller
+        name: ack-s3-controller
     spec:
       containers:
       - command:
