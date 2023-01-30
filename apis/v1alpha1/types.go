@@ -100,8 +100,10 @@ type AnalyticsFilter struct {
 type AnalyticsS3BucketDestination struct {
 	Bucket          *string `json:"bucket,omitempty"`
 	BucketAccountID *string `json:"bucketAccountID,omitempty"`
-	Format          *string `json:"format,omitempty"`
-	Prefix          *string `json:"prefix,omitempty"`
+	// Reference field for Bucket
+	BucketRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"bucketRef,omitempty"`
+	Format    *string                                  `json:"format,omitempty"`
+	Prefix    *string                                  `json:"prefix,omitempty"`
 }
 
 // Specifies the lifecycle configuration for objects in an Amazon S3 bucket.
@@ -182,10 +184,10 @@ type CreateBucketConfiguration struct {
 // The container element for specifying the default Object Lock retention settings
 // for new objects placed in the specified bucket.
 //
-//    * The DefaultRetention settings require both a mode and a period.
+//   - The DefaultRetention settings require both a mode and a period.
 //
-//    * The DefaultRetention period can be either Days or Years but you must
-//    select one. You cannot specify Days and Years at the same time.
+//   - The DefaultRetention period can be either Days or Years but you must
+//     select one. You cannot specify Days and Years at the same time.
 type DefaultRetention struct {
 	Days *int64 `json:"days,omitempty"`
 }
@@ -226,6 +228,8 @@ type Destination struct {
 	AccessControlTranslation *AccessControlTranslation `json:"accessControlTranslation,omitempty"`
 	Account                  *string                   `json:"account,omitempty"`
 	Bucket                   *string                   `json:"bucket,omitempty"`
+	// Reference field for Bucket
+	BucketRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"bucketRef,omitempty"`
 	// Specifies encryption-related information for an Amazon S3 bucket that is
 	// a destination for replicated objects.
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
@@ -250,6 +254,8 @@ type Encryption struct {
 // a destination for replicated objects.
 type EncryptionConfiguration struct {
 	ReplicaKMSKeyID *string `json:"replicaKMSKeyID,omitempty"`
+	// Reference field for ReplicaKMSKeyID
+	ReplicaKMSKeyRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"replicaKMSKeyRef,omitempty"`
 }
 
 // Container for all error elements.
@@ -376,6 +382,8 @@ type InventoryFilter struct {
 type InventoryS3BucketDestination struct {
 	AccountID *string `json:"accountID,omitempty"`
 	Bucket    *string `json:"bucket,omitempty"`
+	// Reference field for Bucket
+	BucketRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"bucketRef,omitempty"`
 	// Contains the type of server-side encryption used to encrypt the inventory
 	// results.
 	Encryption *InventoryEncryption `json:"encryption,omitempty"`
@@ -479,9 +487,11 @@ type Location struct {
 // (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTlogging.html)
 // in the Amazon S3 API Reference.
 type LoggingEnabled struct {
-	TargetBucket *string        `json:"targetBucket,omitempty"`
-	TargetGrants []*TargetGrant `json:"targetGrants,omitempty"`
-	TargetPrefix *string        `json:"targetPrefix,omitempty"`
+	TargetBucket *string `json:"targetBucket,omitempty"`
+	// Reference field for TargetBucket
+	TargetBucketRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"targetBucketRef,omitempty"`
+	TargetGrants    []*TargetGrant                           `json:"targetGrants,omitempty"`
+	TargetPrefix    *string                                  `json:"targetPrefix,omitempty"`
 }
 
 // A container specifying replication metrics-related settings enabling replication
@@ -762,11 +772,11 @@ type ReplicationRule struct {
 //
 // For example:
 //
-//    * If you specify both a Prefix and a Tag filter, wrap these filters in
-//    an And tag.
+//   - If you specify both a Prefix and a Tag filter, wrap these filters in
+//     an And tag.
 //
-//    * If you specify a filter based on multiple tags, wrap the Tag elements
-//    in an And tag.
+//   - If you specify a filter based on multiple tags, wrap the Tag elements
+//     in an And tag.
 type ReplicationRuleAndOperator struct {
 	Prefix *string `json:"prefix,omitempty"`
 	Tags   []*Tag  `json:"tags,omitempty"`
@@ -893,7 +903,9 @@ type SSEKMSEncryptedObjects struct {
 // in the Amazon S3 API Reference.
 type ServerSideEncryptionByDefault struct {
 	KMSMasterKeyID *string `json:"kmsMasterKeyID,omitempty"`
-	SSEAlgorithm   *string `json:"sseAlgorithm,omitempty"`
+	// Reference field for KMSMasterKeyID
+	KMSMasterKeyRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"kmsMasterKeyRef,omitempty"`
+	SSEAlgorithm    *string                                  `json:"sseAlgorithm,omitempty"`
 }
 
 // Specifies the default server-side-encryption configuration.

@@ -229,6 +229,11 @@ func (in *AnalyticsS3BucketDestination) DeepCopyInto(out *AnalyticsS3BucketDesti
 		*out = new(string)
 		**out = **in
 	}
+	if in.BucketRef != nil {
+		in, out := &in.BucketRef, &out.BucketRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Format != nil {
 		in, out := &in.Format, &out.Format
 		*out = new(string)
@@ -894,6 +899,11 @@ func (in *Destination) DeepCopyInto(out *Destination) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.BucketRef != nil {
+		in, out := &in.BucketRef, &out.BucketRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.EncryptionConfiguration != nil {
 		in, out := &in.EncryptionConfiguration, &out.EncryptionConfiguration
 		*out = new(EncryptionConfiguration)
@@ -958,6 +968,11 @@ func (in *EncryptionConfiguration) DeepCopyInto(out *EncryptionConfiguration) {
 		in, out := &in.ReplicaKMSKeyID, &out.ReplicaKMSKeyID
 		*out = new(string)
 		**out = **in
+	}
+	if in.ReplicaKMSKeyRef != nil {
+		in, out := &in.ReplicaKMSKeyRef, &out.ReplicaKMSKeyRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 }
 
@@ -1392,6 +1407,11 @@ func (in *InventoryS3BucketDestination) DeepCopyInto(out *InventoryS3BucketDesti
 		*out = new(string)
 		**out = **in
 	}
+	if in.BucketRef != nil {
+		in, out := &in.BucketRef, &out.BucketRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Encryption != nil {
 		in, out := &in.Encryption, &out.Encryption
 		*out = new(InventoryEncryption)
@@ -1725,6 +1745,11 @@ func (in *LoggingEnabled) DeepCopyInto(out *LoggingEnabled) {
 		in, out := &in.TargetBucket, &out.TargetBucket
 		*out = new(string)
 		**out = **in
+	}
+	if in.TargetBucketRef != nil {
+		in, out := &in.TargetBucketRef, &out.TargetBucketRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.TargetGrants != nil {
 		in, out := &in.TargetGrants, &out.TargetGrants
@@ -2774,6 +2799,11 @@ func (in *ServerSideEncryptionByDefault) DeepCopyInto(out *ServerSideEncryptionB
 		in, out := &in.KMSMasterKeyID, &out.KMSMasterKeyID
 		*out = new(string)
 		**out = **in
+	}
+	if in.KMSMasterKeyRef != nil {
+		in, out := &in.KMSMasterKeyRef, &out.KMSMasterKeyRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.SSEAlgorithm != nil {
 		in, out := &in.SSEAlgorithm, &out.SSEAlgorithm

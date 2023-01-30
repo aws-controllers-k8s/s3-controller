@@ -111,6 +111,18 @@ spec:
                                       type: string
                                     bucketAccountID:
                                       type: string
+                                    bucketRef:
+                                      description: Reference field for Bucket
+                                      properties:
+                                        from:
+                                          description: AWSResourceReference provides
+                                            all the values necessary to reference
+                                            another k8s resource for finding the identifier(Id/ARN/Name)
+                                          properties:
+                                            name:
+                                              type: string
+                                          type: object
+                                      type: object
                                     format:
                                       type: string
                                     prefix:
@@ -186,6 +198,18 @@ spec:
                           properties:
                             kmsMasterKeyID:
                               type: string
+                            kmsMasterKeyRef:
+                              description: Reference field for KMSMasterKeyID
+                              properties:
+                                from:
+                                  description: AWSResourceReference provides all the
+                                    values necessary to reference another k8s resource
+                                    for finding the identifier(Id/ARN/Name)
+                                  properties:
+                                    name:
+                                      type: string
+                                  type: object
+                              type: object
                             sseAlgorithm:
                               type: string
                           type: object
@@ -291,6 +315,18 @@ spec:
                               type: string
                             bucket:
                               type: string
+                            bucketRef:
+                              description: Reference field for Bucket
+                              properties:
+                                from:
+                                  description: AWSResourceReference provides all the
+                                    values necessary to reference another k8s resource
+                                    for finding the identifier(Id/ARN/Name)
+                                  properties:
+                                    name:
+                                      type: string
+                                  type: object
+                              type: object
                             encryption:
                               description: Contains the type of server-side encryption
                                 used to encrypt the inventory results.
@@ -491,6 +527,18 @@ spec:
                     properties:
                       targetBucket:
                         type: string
+                      targetBucketRef:
+                        description: Reference field for TargetBucket
+                        properties:
+                          from:
+                            description: AWSResourceReference provides all the values
+                              necessary to reference another k8s resource for finding
+                              the identifier(Id/ARN/Name)
+                            properties:
+                              name:
+                                type: string
+                            type: object
+                        type: object
                       targetGrants:
                         items:
                           description: "Container for granting information. \n Buckets
@@ -824,6 +872,18 @@ spec:
                               type: string
                             bucket:
                               type: string
+                            bucketRef:
+                              description: Reference field for Bucket
+                              properties:
+                                from:
+                                  description: AWSResourceReference provides all the
+                                    values necessary to reference another k8s resource
+                                    for finding the identifier(Id/ARN/Name)
+                                  properties:
+                                    name:
+                                      type: string
+                                  type: object
+                              type: object
                             encryptionConfiguration:
                               description: Specifies encryption-related information
                                 for an Amazon S3 bucket that is a destination for
@@ -831,6 +891,18 @@ spec:
                               properties:
                                 replicaKMSKeyID:
                                   type: string
+                                replicaKMSKeyRef:
+                                  description: Reference field for ReplicaKMSKeyID
+                                  properties:
+                                    from:
+                                      description: AWSResourceReference provides all
+                                        the values necessary to reference another
+                                        k8s resource for finding the identifier(Id/ARN/Name)
+                                      properties:
+                                        name:
+                                          type: string
+                                      type: object
+                                  type: object
                               type: object
                             metrics:
                               description: A container specifying replication metrics-related

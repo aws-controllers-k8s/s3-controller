@@ -26,6 +26,10 @@ resources:
       Analytics:
         custom_field:
           list_of: AnalyticsConfiguration
+      Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket:
+        references:
+          resource: Bucket
+          path: Spec.Name
       CORS:
         from:
           operation: PutBucketCors
@@ -34,12 +38,21 @@ resources:
         from:
           operation: PutBucketEncryption
           path: ServerSideEncryptionConfiguration
+      Encryption.Rules.ApplyServerSideEncryptionByDefault.KmsMasterKeyID:
+        references:
+          resource: Key
+          service_name: kms
+          path: Status.ACKResourceMetadata.ARN
       IntelligentTiering:
         custom_field:
           list_of: IntelligentTieringConfiguration
       Inventory:
         custom_field:
           list_of: InventoryConfiguration
+      Inventory.Destination.S3BucketDestination.Bucket:
+        references:
+          resource: Bucket
+          path: Spec.Name
       Lifecycle:
         from:
           operation: PutBucketLifecycleConfiguration
@@ -48,6 +61,10 @@ resources:
         from:
           operation: PutBucketLogging
           path: BucketLoggingStatus
+      Logging.LoggingEnabled.TargetBucket:
+        references:
+          resource: Bucket
+          path: Spec.Name
       Metrics:
         custom_field:
           list_of: MetricsConfiguration
@@ -71,6 +88,15 @@ resources:
         from:
           operation: PutBucketReplication
           path: ReplicationConfiguration
+      Replication.Rules.Destination.EncryptionConfiguration.ReplicaKMSKeyID:
+        references:
+          resource: Key
+          service_name: kms
+          path: Status.ACKResourceMetadata.ARN
+      Replication.Rules.Destination.Bucket:
+        references:
+          resource: Bucket
+          path: Spec.Name
       RequestPayment:
         from:
           operation: PutBucketRequestPayment

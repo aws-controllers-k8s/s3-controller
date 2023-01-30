@@ -17,12 +17,26 @@ package bucket
 
 import (
 	"context"
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	kmsapitypes "github.com/aws-controllers-k8s/kms-controller/apis/v1alpha1"
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/s3-controller/apis/v1alpha1"
 )
+
+// +kubebuilder:rbac:groups=kms.services.k8s.aws,resources=keys,verbs=get;list
+// +kubebuilder:rbac:groups=kms.services.k8s.aws,resources=keys/status,verbs=get;list
+
+// +kubebuilder:rbac:groups=kms.services.k8s.aws,resources=keys,verbs=get;list
+// +kubebuilder:rbac:groups=kms.services.k8s.aws,resources=keys/status,verbs=get;list
 
 // ResolveReferences finds if there are any Reference field(s) present
 // inside AWSResource passed in the parameter and attempts to resolve
@@ -36,17 +50,465 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, error) {
-	return res, nil
+	namespace := res.MetaObject().GetNamespace()
+	ko := rm.concreteResource(res).ko.DeepCopy()
+	err := validateReferenceFields(ko)
+	if err == nil {
+		err = resolveReferenceForAnalytics_StorageClassAnalysis_DataExport_Destination_S3BucketDestination_Bucket(ctx, apiReader, namespace, ko)
+	}
+	if err == nil {
+		err = resolveReferenceForEncryption_Rules_ApplyServerSideEncryptionByDefault_KMSMasterKeyID(ctx, apiReader, namespace, ko)
+	}
+	if err == nil {
+		err = resolveReferenceForInventory_Destination_S3BucketDestination_Bucket(ctx, apiReader, namespace, ko)
+	}
+	if err == nil {
+		err = resolveReferenceForLogging_LoggingEnabled_TargetBucket(ctx, apiReader, namespace, ko)
+	}
+	if err == nil {
+		err = resolveReferenceForReplication_Rules_Destination_Bucket(ctx, apiReader, namespace, ko)
+	}
+	if err == nil {
+		err = resolveReferenceForReplication_Rules_Destination_EncryptionConfiguration_ReplicaKMSKeyID(ctx, apiReader, namespace, ko)
+	}
+
+	// If there was an error while resolving any reference, reset all the
+	// resolved values so that they do not get persisted inside etcd
+	if err != nil {
+		ko = rm.concreteResource(res).ko.DeepCopy()
+	}
+	if hasNonNilReferences(ko) {
+		return ackcondition.WithReferencesResolvedCondition(&resource{ko}, err)
+	}
+	return &resource{ko}, err
 }
 
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.Bucket) error {
+	for _, iter0 := range ko.Spec.Analytics {
+		if iter0.StorageClassAnalysis != nil {
+			if iter0.StorageClassAnalysis.DataExport != nil {
+				if iter0.StorageClassAnalysis.DataExport.Destination != nil {
+					if iter0.StorageClassAnalysis.DataExport.Destination.S3BucketDestination != nil {
+						if iter0.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef != nil && iter0.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket != nil {
+							return ackerr.ResourceReferenceAndIDNotSupportedFor("Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket", "Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef")
+						}
+					}
+				}
+			}
+		}
+	}
+	if ko.Spec.Encryption != nil {
+		for _, iter1 := range ko.Spec.Encryption.Rules {
+			if iter1.ApplyServerSideEncryptionByDefault != nil {
+				if iter1.ApplyServerSideEncryptionByDefault.KMSMasterKeyRef != nil && iter1.ApplyServerSideEncryptionByDefault.KMSMasterKeyID != nil {
+					return ackerr.ResourceReferenceAndIDNotSupportedFor("Encryption.Rules.ApplyServerSideEncryptionByDefault.KMSMasterKeyID", "Encryption.Rules.ApplyServerSideEncryptionByDefault.KMSMasterKeyRef")
+				}
+			}
+		}
+	}
+	for _, iter0 := range ko.Spec.Inventory {
+		if iter0.Destination != nil {
+			if iter0.Destination.S3BucketDestination != nil {
+				if iter0.Destination.S3BucketDestination.BucketRef != nil && iter0.Destination.S3BucketDestination.Bucket != nil {
+					return ackerr.ResourceReferenceAndIDNotSupportedFor("Inventory.Destination.S3BucketDestination.Bucket", "Inventory.Destination.S3BucketDestination.BucketRef")
+				}
+			}
+		}
+	}
+	if ko.Spec.Logging != nil {
+		if ko.Spec.Logging.LoggingEnabled != nil {
+			if ko.Spec.Logging.LoggingEnabled.TargetBucketRef != nil && ko.Spec.Logging.LoggingEnabled.TargetBucket != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("Logging.LoggingEnabled.TargetBucket", "Logging.LoggingEnabled.TargetBucketRef")
+			}
+		}
+	}
+	if ko.Spec.Replication != nil {
+		for _, iter1 := range ko.Spec.Replication.Rules {
+			if iter1.Destination != nil {
+				if iter1.Destination.BucketRef != nil && iter1.Destination.Bucket != nil {
+					return ackerr.ResourceReferenceAndIDNotSupportedFor("Replication.Rules.Destination.Bucket", "Replication.Rules.Destination.BucketRef")
+				}
+			}
+		}
+	}
+	if ko.Spec.Replication != nil {
+		for _, iter1 := range ko.Spec.Replication.Rules {
+			if iter1.Destination != nil {
+				if iter1.Destination.EncryptionConfiguration != nil {
+					if iter1.Destination.EncryptionConfiguration.ReplicaKMSKeyRef != nil && iter1.Destination.EncryptionConfiguration.ReplicaKMSKeyID != nil {
+						return ackerr.ResourceReferenceAndIDNotSupportedFor("Replication.Rules.Destination.EncryptionConfiguration.ReplicaKMSKeyID", "Replication.Rules.Destination.EncryptionConfiguration.ReplicaKMSKeyRef")
+					}
+				}
+			}
+		}
+	}
 	return nil
 }
 
 // hasNonNilReferences returns true if resource contains a reference to another
 // resource
 func hasNonNilReferences(ko *svcapitypes.Bucket) bool {
-	return false
+	return false || (ko.Spec.Analytics != nil && ko.Spec.Analytics.StorageClassAnalysis != nil && ko.Spec.Analytics.StorageClassAnalysis.DataExport != nil && ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination != nil && ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination != nil && ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef != nil) || (ko.Spec.Encryption != nil && ko.Spec.Encryption.Rules != nil && ko.Spec.Encryption.Rules.ApplyServerSideEncryptionByDefault != nil && ko.Spec.Encryption.Rules.ApplyServerSideEncryptionByDefault.KMSMasterKeyRef != nil) || (ko.Spec.Inventory != nil && ko.Spec.Inventory.Destination != nil && ko.Spec.Inventory.Destination.S3BucketDestination != nil && ko.Spec.Inventory.Destination.S3BucketDestination.BucketRef != nil) || (ko.Spec.Logging != nil && ko.Spec.Logging.LoggingEnabled != nil && ko.Spec.Logging.LoggingEnabled.TargetBucketRef != nil) || (ko.Spec.Replication != nil && ko.Spec.Replication.Rules != nil && ko.Spec.Replication.Rules.Destination != nil && ko.Spec.Replication.Rules.Destination.BucketRef != nil) || (ko.Spec.Replication != nil && ko.Spec.Replication.Rules != nil && ko.Spec.Replication.Rules.Destination != nil && ko.Spec.Replication.Rules.Destination.EncryptionConfiguration != nil && ko.Spec.Replication.Rules.Destination.EncryptionConfiguration.ReplicaKMSKeyRef != nil)
+}
+
+// resolveReferenceForAnalytics_StorageClassAnalysis_DataExport_Destination_S3BucketDestination_Bucket reads the resource referenced
+// from Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef field and sets the Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket
+// from referenced resource
+func resolveReferenceForAnalytics_StorageClassAnalysis_DataExport_Destination_S3BucketDestination_Bucket(
+	ctx context.Context,
+	apiReader client.Reader,
+	namespace string,
+	ko *svcapitypes.Bucket,
+) error {
+	if ko.Spec.Analytics == nil || ko.Spec.Analytics.StorageClassAnalysis == nil || ko.Spec.Analytics.StorageClassAnalysis.DataExport == nil || ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination == nil || ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination == nil {
+		return nil
+	}
+	if ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef != nil &&
+		ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef.From != nil {
+		arr := ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
+		}
+		namespacedName := types.NamespacedName{
+			Namespace: namespace,
+			Name:      *arr.Name,
+		}
+		obj := svcapitypes.Bucket{}
+		err := apiReader.Get(ctx, namespacedName, &obj)
+		if err != nil {
+			return err
+		}
+		var refResourceSynced, refResourceTerminal bool
+		for _, cond := range obj.Status.Conditions {
+			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceSynced = true
+			}
+			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceTerminal = true
+			}
+		}
+		if refResourceTerminal {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Bucket",
+				namespace, *arr.Name)
+		}
+		if !refResourceSynced {
+			return ackerr.ResourceReferenceNotSyncedFor(
+				"Bucket",
+				namespace, *arr.Name)
+		}
+		if obj.Spec.Name == nil {
+			return ackerr.ResourceReferenceMissingTargetFieldFor(
+				"Bucket",
+				namespace, *arr.Name,
+				"Spec.Name")
+		}
+		referencedValue := string(*obj.Spec.Name)
+		ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket = &referencedValue
+	}
+	return nil
+}
+
+// resolveReferenceForEncryption_Rules_ApplyServerSideEncryptionByDefault_KMSMasterKeyID reads the resource referenced
+// from Encryption.Rules.ApplyServerSideEncryptionByDefault.KMSMasterKeyRef field and sets the Encryption.Rules.ApplyServerSideEncryptionByDefault.KMSMasterKeyID
+// from referenced resource
+func resolveReferenceForEncryption_Rules_ApplyServerSideEncryptionByDefault_KMSMasterKeyID(
+	ctx context.Context,
+	apiReader client.Reader,
+	namespace string,
+	ko *svcapitypes.Bucket,
+) error {
+	if ko.Spec.Encryption == nil || ko.Spec.Encryption.Rules == nil || ko.Spec.Encryption.Rules.ApplyServerSideEncryptionByDefault == nil {
+		return nil
+	}
+	if ko.Spec.Encryption.Rules.ApplyServerSideEncryptionByDefault.KMSMasterKeyRef != nil &&
+		ko.Spec.Encryption.Rules.ApplyServerSideEncryptionByDefault.KMSMasterKeyRef.From != nil {
+		arr := ko.Spec.Encryption.Rules.ApplyServerSideEncryptionByDefault.KMSMasterKeyRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
+		}
+		namespacedName := types.NamespacedName{
+			Namespace: namespace,
+			Name:      *arr.Name,
+		}
+		obj := kmsapitypes.Key{}
+		err := apiReader.Get(ctx, namespacedName, &obj)
+		if err != nil {
+			return err
+		}
+		var refResourceSynced, refResourceTerminal bool
+		for _, cond := range obj.Status.Conditions {
+			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceSynced = true
+			}
+			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceTerminal = true
+			}
+		}
+		if refResourceTerminal {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Key",
+				namespace, *arr.Name)
+		}
+		if !refResourceSynced {
+			return ackerr.ResourceReferenceNotSyncedFor(
+				"Key",
+				namespace, *arr.Name)
+		}
+		if obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil {
+			return ackerr.ResourceReferenceMissingTargetFieldFor(
+				"Key",
+				namespace, *arr.Name,
+				"Status.ACKResourceMetadata.ARN")
+		}
+		referencedValue := string(*obj.Status.ACKResourceMetadata.ARN)
+		ko.Spec.Encryption.Rules.ApplyServerSideEncryptionByDefault.KMSMasterKeyID = &referencedValue
+	}
+	return nil
+}
+
+// resolveReferenceForInventory_Destination_S3BucketDestination_Bucket reads the resource referenced
+// from Inventory.Destination.S3BucketDestination.BucketRef field and sets the Inventory.Destination.S3BucketDestination.Bucket
+// from referenced resource
+func resolveReferenceForInventory_Destination_S3BucketDestination_Bucket(
+	ctx context.Context,
+	apiReader client.Reader,
+	namespace string,
+	ko *svcapitypes.Bucket,
+) error {
+	if ko.Spec.Inventory == nil || ko.Spec.Inventory.Destination == nil || ko.Spec.Inventory.Destination.S3BucketDestination == nil {
+		return nil
+	}
+	if ko.Spec.Inventory.Destination.S3BucketDestination.BucketRef != nil &&
+		ko.Spec.Inventory.Destination.S3BucketDestination.BucketRef.From != nil {
+		arr := ko.Spec.Inventory.Destination.S3BucketDestination.BucketRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
+		}
+		namespacedName := types.NamespacedName{
+			Namespace: namespace,
+			Name:      *arr.Name,
+		}
+		obj := svcapitypes.Bucket{}
+		err := apiReader.Get(ctx, namespacedName, &obj)
+		if err != nil {
+			return err
+		}
+		var refResourceSynced, refResourceTerminal bool
+		for _, cond := range obj.Status.Conditions {
+			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceSynced = true
+			}
+			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceTerminal = true
+			}
+		}
+		if refResourceTerminal {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Bucket",
+				namespace, *arr.Name)
+		}
+		if !refResourceSynced {
+			return ackerr.ResourceReferenceNotSyncedFor(
+				"Bucket",
+				namespace, *arr.Name)
+		}
+		if obj.Spec.Name == nil {
+			return ackerr.ResourceReferenceMissingTargetFieldFor(
+				"Bucket",
+				namespace, *arr.Name,
+				"Spec.Name")
+		}
+		referencedValue := string(*obj.Spec.Name)
+		ko.Spec.Inventory.Destination.S3BucketDestination.Bucket = &referencedValue
+	}
+	return nil
+}
+
+// resolveReferenceForLogging_LoggingEnabled_TargetBucket reads the resource referenced
+// from Logging.LoggingEnabled.TargetBucketRef field and sets the Logging.LoggingEnabled.TargetBucket
+// from referenced resource
+func resolveReferenceForLogging_LoggingEnabled_TargetBucket(
+	ctx context.Context,
+	apiReader client.Reader,
+	namespace string,
+	ko *svcapitypes.Bucket,
+) error {
+	if ko.Spec.Logging == nil || ko.Spec.Logging.LoggingEnabled == nil {
+		return nil
+	}
+	if ko.Spec.Logging.LoggingEnabled.TargetBucketRef != nil &&
+		ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From != nil {
+		arr := ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
+		}
+		namespacedName := types.NamespacedName{
+			Namespace: namespace,
+			Name:      *arr.Name,
+		}
+		obj := svcapitypes.Bucket{}
+		err := apiReader.Get(ctx, namespacedName, &obj)
+		if err != nil {
+			return err
+		}
+		var refResourceSynced, refResourceTerminal bool
+		for _, cond := range obj.Status.Conditions {
+			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceSynced = true
+			}
+			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceTerminal = true
+			}
+		}
+		if refResourceTerminal {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Bucket",
+				namespace, *arr.Name)
+		}
+		if !refResourceSynced {
+			return ackerr.ResourceReferenceNotSyncedFor(
+				"Bucket",
+				namespace, *arr.Name)
+		}
+		if obj.Spec.Name == nil {
+			return ackerr.ResourceReferenceMissingTargetFieldFor(
+				"Bucket",
+				namespace, *arr.Name,
+				"Spec.Name")
+		}
+		referencedValue := string(*obj.Spec.Name)
+		ko.Spec.Logging.LoggingEnabled.TargetBucket = &referencedValue
+	}
+	return nil
+}
+
+// resolveReferenceForReplication_Rules_Destination_Bucket reads the resource referenced
+// from Replication.Rules.Destination.BucketRef field and sets the Replication.Rules.Destination.Bucket
+// from referenced resource
+func resolveReferenceForReplication_Rules_Destination_Bucket(
+	ctx context.Context,
+	apiReader client.Reader,
+	namespace string,
+	ko *svcapitypes.Bucket,
+) error {
+	if ko.Spec.Replication == nil || ko.Spec.Replication.Rules == nil || ko.Spec.Replication.Rules.Destination == nil {
+		return nil
+	}
+	if ko.Spec.Replication.Rules.Destination.BucketRef != nil &&
+		ko.Spec.Replication.Rules.Destination.BucketRef.From != nil {
+		arr := ko.Spec.Replication.Rules.Destination.BucketRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
+		}
+		namespacedName := types.NamespacedName{
+			Namespace: namespace,
+			Name:      *arr.Name,
+		}
+		obj := svcapitypes.Bucket{}
+		err := apiReader.Get(ctx, namespacedName, &obj)
+		if err != nil {
+			return err
+		}
+		var refResourceSynced, refResourceTerminal bool
+		for _, cond := range obj.Status.Conditions {
+			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceSynced = true
+			}
+			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceTerminal = true
+			}
+		}
+		if refResourceTerminal {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Bucket",
+				namespace, *arr.Name)
+		}
+		if !refResourceSynced {
+			return ackerr.ResourceReferenceNotSyncedFor(
+				"Bucket",
+				namespace, *arr.Name)
+		}
+		if obj.Spec.Name == nil {
+			return ackerr.ResourceReferenceMissingTargetFieldFor(
+				"Bucket",
+				namespace, *arr.Name,
+				"Spec.Name")
+		}
+		referencedValue := string(*obj.Spec.Name)
+		ko.Spec.Replication.Rules.Destination.Bucket = &referencedValue
+	}
+	return nil
+}
+
+// resolveReferenceForReplication_Rules_Destination_EncryptionConfiguration_ReplicaKMSKeyID reads the resource referenced
+// from Replication.Rules.Destination.EncryptionConfiguration.ReplicaKMSKeyRef field and sets the Replication.Rules.Destination.EncryptionConfiguration.ReplicaKMSKeyID
+// from referenced resource
+func resolveReferenceForReplication_Rules_Destination_EncryptionConfiguration_ReplicaKMSKeyID(
+	ctx context.Context,
+	apiReader client.Reader,
+	namespace string,
+	ko *svcapitypes.Bucket,
+) error {
+	if ko.Spec.Replication == nil || ko.Spec.Replication.Rules == nil || ko.Spec.Replication.Rules.Destination == nil || ko.Spec.Replication.Rules.Destination.EncryptionConfiguration == nil {
+		return nil
+	}
+	if ko.Spec.Replication.Rules.Destination.EncryptionConfiguration.ReplicaKMSKeyRef != nil &&
+		ko.Spec.Replication.Rules.Destination.EncryptionConfiguration.ReplicaKMSKeyRef.From != nil {
+		arr := ko.Spec.Replication.Rules.Destination.EncryptionConfiguration.ReplicaKMSKeyRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
+		}
+		namespacedName := types.NamespacedName{
+			Namespace: namespace,
+			Name:      *arr.Name,
+		}
+		obj := kmsapitypes.Key{}
+		err := apiReader.Get(ctx, namespacedName, &obj)
+		if err != nil {
+			return err
+		}
+		var refResourceSynced, refResourceTerminal bool
+		for _, cond := range obj.Status.Conditions {
+			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceSynced = true
+			}
+			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceTerminal = true
+			}
+		}
+		if refResourceTerminal {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Key",
+				namespace, *arr.Name)
+		}
+		if !refResourceSynced {
+			return ackerr.ResourceReferenceNotSyncedFor(
+				"Key",
+				namespace, *arr.Name)
+		}
+		if obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil {
+			return ackerr.ResourceReferenceMissingTargetFieldFor(
+				"Key",
+				namespace, *arr.Name,
+				"Status.ACKResourceMetadata.ARN")
+		}
+		referencedValue := string(*obj.Status.ACKResourceMetadata.ARN)
+		ko.Spec.Replication.Rules.Destination.EncryptionConfiguration.ReplicaKMSKeyID = &referencedValue
+	}
+	return nil
 }
