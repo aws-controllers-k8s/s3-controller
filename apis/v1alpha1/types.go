@@ -182,10 +182,10 @@ type CreateBucketConfiguration struct {
 // The container element for specifying the default Object Lock retention settings
 // for new objects placed in the specified bucket.
 //
-//    * The DefaultRetention settings require both a mode and a period.
+//   - The DefaultRetention settings require both a mode and a period.
 //
-//    * The DefaultRetention period can be either Days or Years but you must
-//    select one. You cannot specify Days and Years at the same time.
+//   - The DefaultRetention period can be either Days or Years but you must
+//     select one. You cannot specify Days and Years at the same time.
 type DefaultRetention struct {
 	Days *int64 `json:"days,omitempty"`
 }
@@ -762,11 +762,11 @@ type ReplicationRule struct {
 //
 // For example:
 //
-//    * If you specify both a Prefix and a Tag filter, wrap these filters in
-//    an And tag.
+//   - If you specify both a Prefix and a Tag filter, wrap these filters in
+//     an And tag.
 //
-//    * If you specify a filter based on multiple tags, wrap the Tag elements
-//    in an And tag.
+//   - If you specify a filter based on multiple tags, wrap the Tag elements
+//     in an And tag.
 type ReplicationRuleAndOperator struct {
 	Prefix *string `json:"prefix,omitempty"`
 	Tags   []*Tag  `json:"tags,omitempty"`
