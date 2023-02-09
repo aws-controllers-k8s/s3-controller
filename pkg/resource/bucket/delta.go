@@ -20,12 +20,14 @@ import (
 	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
 	_ = &reflect.Method{}
+	_ = &acktags.Tags{}
 )
 
 // newResourceDelta returns a new `ackcompare.Delta` used to compare two
@@ -272,8 +274,8 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.Tagging, b.ko.Spec.Tagging) {
 		delta.Add("Spec.Tagging", a.ko.Spec.Tagging, b.ko.Spec.Tagging)
 	} else if a.ko.Spec.Tagging != nil && b.ko.Spec.Tagging != nil {
-		if !reflect.DeepEqual(a.ko.Spec.Tagging.TagSet, b.ko.Spec.Tagging.TagSet) {
-			delta.Add("Spec.Tagging.TagSet", a.ko.Spec.Tagging.TagSet, b.ko.Spec.Tagging.TagSet)
+		if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tagging.TagSet), ToACKTags(b.ko.Spec.Tagging.TagSet)) {
+			delta.Add("Spec.Tagging", a.ko.Spec.Tagging.TagSet, b.ko.Spec.Tagging.TagSet)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Versioning, b.ko.Spec.Versioning) {
