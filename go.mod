@@ -3,7 +3,7 @@ module github.com/aws-controllers-k8s/s3-controller
 go 1.19
 
 require (
-	github.com/aws-controllers-k8s/runtime v0.24.1
+	github.com/aws-controllers-k8s/runtime v0.25.0
 	github.com/aws/aws-sdk-go v1.44.93
 	github.com/go-logr/logr v1.2.3
 	github.com/pkg/errors v0.9.1
