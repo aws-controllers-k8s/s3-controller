@@ -6,4 +6,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: public.ecr.aws/aws-controllers-k8s/s3-controller
-  newTag: v1.0.3
+  newTag: 1.0.4
