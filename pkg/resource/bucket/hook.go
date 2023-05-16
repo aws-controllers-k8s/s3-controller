@@ -121,14 +121,16 @@ func (rm *resourceManager) createPutFields(
 			return errors.Wrapf(err, ErrSyncingPutProperty, "OwnershipControls")
 		}
 	}
-	if r.ko.Spec.Policy != nil {
-		if err := rm.syncPolicy(ctx, r); err != nil {
-			return errors.Wrapf(err, ErrSyncingPutProperty, "Policy")
-		}
-	}
+	// PublicAccessBlock may need to be set in order to use Policy, so sync it
+	// first
 	if r.ko.Spec.PublicAccessBlock != nil {
 		if err := rm.syncPublicAccessBlock(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "PublicAccessBlock")
+		}
+	}
+	if r.ko.Spec.Policy != nil {
+		if err := rm.syncPolicy(ctx, r); err != nil {
+			return errors.Wrapf(err, ErrSyncingPutProperty, "Policy")
 		}
 	}
 	if r.ko.Spec.Replication != nil {
@@ -237,14 +239,16 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "OwnershipControls")
 		}
 	}
-	if delta.DifferentAt("Spec.Policy") {
-		if err := rm.syncPolicy(ctx, desired); err != nil {
-			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Policy")
-		}
-	}
+	// PublicAccessBlock may need to be set in order to use Policy, so sync it
+	// first
 	if delta.DifferentAt("Spec.PublicAccessBlock") {
 		if err := rm.syncPublicAccessBlock(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "PublicAccessBlock")
+		}
+	}
+	if delta.DifferentAt("Spec.Policy") {
+		if err := rm.syncPolicy(ctx, desired); err != nil {
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Policy")
 		}
 	}
 	if delta.DifferentAt("Spec.RequestPayment") {
