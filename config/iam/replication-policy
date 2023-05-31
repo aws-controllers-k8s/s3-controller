@@ -1,0 +1,13 @@
+// see detail: https://docs.aws.amazon.com/AmazonS3/latest/userguide/setting-repl-config-perm-overview.html
+{
+   "Version":"2012-10-17",
+   "Statement":[
+      {
+         "Effect":"Allow",
+         "Principal":{
+            "Service":"s3.amazonaws.com"
+         },
+         "Action":"sts:AssumeRole"
+      }
+   ]
+}
