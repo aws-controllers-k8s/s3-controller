@@ -1,0 +1,25 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "S3AllPermission",
+      "Effect": "Allow",
+      "Action": [
+        "s3:*",
+        "s3-object-lambda:*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "S3ReplicationPassRole",
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": "s3.amazonaws.com"
+        }
+      },
+      "Action": "iam:PassRole",
+      "Resource": "*",
+      "Effect": "Allow"
+    }
+  ]
+}
