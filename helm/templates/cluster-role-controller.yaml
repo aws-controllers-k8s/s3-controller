@@ -47,6 +47,15 @@ rules:
   - patch
   - watch
 - apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - get
+  - list
+  - update
+- apiGroups:
   - s3.services.k8s.aws
   resources:
   - buckets
