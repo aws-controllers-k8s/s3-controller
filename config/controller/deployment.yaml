@@ -85,5 +85,6 @@ spec:
       terminationGracePeriodSeconds: 10
       serviceAccountName: ack-s3-controller
       hostIPC: false
-      hostNetwork: false
       hostPID: false
+      hostNetwork: false
+      dnsPolicy: ClusterFirst
