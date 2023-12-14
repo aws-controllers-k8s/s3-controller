@@ -62,14 +62,22 @@ func newResourceDelta(
 			}
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.Analytics, b.ko.Spec.Analytics) {
+	if len(a.ko.Spec.Analytics) != len(b.ko.Spec.Analytics) {
 		delta.Add("Spec.Analytics", a.ko.Spec.Analytics, b.ko.Spec.Analytics)
+	} else if len(a.ko.Spec.Analytics) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.Analytics, b.ko.Spec.Analytics) {
+			delta.Add("Spec.Analytics", a.ko.Spec.Analytics, b.ko.Spec.Analytics)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CORS, b.ko.Spec.CORS) {
 		delta.Add("Spec.CORS", a.ko.Spec.CORS, b.ko.Spec.CORS)
 	} else if a.ko.Spec.CORS != nil && b.ko.Spec.CORS != nil {
-		if !reflect.DeepEqual(a.ko.Spec.CORS.CORSRules, b.ko.Spec.CORS.CORSRules) {
+		if len(a.ko.Spec.CORS.CORSRules) != len(b.ko.Spec.CORS.CORSRules) {
 			delta.Add("Spec.CORS.CORSRules", a.ko.Spec.CORS.CORSRules, b.ko.Spec.CORS.CORSRules)
+		} else if len(a.ko.Spec.CORS.CORSRules) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.CORS.CORSRules, b.ko.Spec.CORS.CORSRules) {
+				delta.Add("Spec.CORS.CORSRules", a.ko.Spec.CORS.CORSRules, b.ko.Spec.CORS.CORSRules)
+			}
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration) {
@@ -86,8 +94,12 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.Encryption, b.ko.Spec.Encryption) {
 		delta.Add("Spec.Encryption", a.ko.Spec.Encryption, b.ko.Spec.Encryption)
 	} else if a.ko.Spec.Encryption != nil && b.ko.Spec.Encryption != nil {
-		if !reflect.DeepEqual(a.ko.Spec.Encryption.Rules, b.ko.Spec.Encryption.Rules) {
+		if len(a.ko.Spec.Encryption.Rules) != len(b.ko.Spec.Encryption.Rules) {
 			delta.Add("Spec.Encryption.Rules", a.ko.Spec.Encryption.Rules, b.ko.Spec.Encryption.Rules)
+		} else if len(a.ko.Spec.Encryption.Rules) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.Encryption.Rules, b.ko.Spec.Encryption.Rules) {
+				delta.Add("Spec.Encryption.Rules", a.ko.Spec.Encryption.Rules, b.ko.Spec.Encryption.Rules)
+			}
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl) {
@@ -125,17 +137,29 @@ func newResourceDelta(
 			delta.Add("Spec.GrantWriteACP", a.ko.Spec.GrantWriteACP, b.ko.Spec.GrantWriteACP)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.IntelligentTiering, b.ko.Spec.IntelligentTiering) {
+	if len(a.ko.Spec.IntelligentTiering) != len(b.ko.Spec.IntelligentTiering) {
 		delta.Add("Spec.IntelligentTiering", a.ko.Spec.IntelligentTiering, b.ko.Spec.IntelligentTiering)
+	} else if len(a.ko.Spec.IntelligentTiering) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.IntelligentTiering, b.ko.Spec.IntelligentTiering) {
+			delta.Add("Spec.IntelligentTiering", a.ko.Spec.IntelligentTiering, b.ko.Spec.IntelligentTiering)
+		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.Inventory, b.ko.Spec.Inventory) {
+	if len(a.ko.Spec.Inventory) != len(b.ko.Spec.Inventory) {
 		delta.Add("Spec.Inventory", a.ko.Spec.Inventory, b.ko.Spec.Inventory)
+	} else if len(a.ko.Spec.Inventory) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.Inventory, b.ko.Spec.Inventory) {
+			delta.Add("Spec.Inventory", a.ko.Spec.Inventory, b.ko.Spec.Inventory)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Lifecycle, b.ko.Spec.Lifecycle) {
 		delta.Add("Spec.Lifecycle", a.ko.Spec.Lifecycle, b.ko.Spec.Lifecycle)
 	} else if a.ko.Spec.Lifecycle != nil && b.ko.Spec.Lifecycle != nil {
-		if !reflect.DeepEqual(a.ko.Spec.Lifecycle.Rules, b.ko.Spec.Lifecycle.Rules) {
+		if len(a.ko.Spec.Lifecycle.Rules) != len(b.ko.Spec.Lifecycle.Rules) {
 			delta.Add("Spec.Lifecycle.Rules", a.ko.Spec.Lifecycle.Rules, b.ko.Spec.Lifecycle.Rules)
+		} else if len(a.ko.Spec.Lifecycle.Rules) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.Lifecycle.Rules, b.ko.Spec.Lifecycle.Rules) {
+				delta.Add("Spec.Lifecycle.Rules", a.ko.Spec.Lifecycle.Rules, b.ko.Spec.Lifecycle.Rules)
+			}
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Logging, b.ko.Spec.Logging) {
@@ -151,8 +175,12 @@ func newResourceDelta(
 					delta.Add("Spec.Logging.LoggingEnabled.TargetBucket", a.ko.Spec.Logging.LoggingEnabled.TargetBucket, b.ko.Spec.Logging.LoggingEnabled.TargetBucket)
 				}
 			}
-			if !reflect.DeepEqual(a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
+			if len(a.ko.Spec.Logging.LoggingEnabled.TargetGrants) != len(b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
 				delta.Add("Spec.Logging.LoggingEnabled.TargetGrants", a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants)
+			} else if len(a.ko.Spec.Logging.LoggingEnabled.TargetGrants) > 0 {
+				if !reflect.DeepEqual(a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
+					delta.Add("Spec.Logging.LoggingEnabled.TargetGrants", a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants)
+				}
 			}
 			if ackcompare.HasNilDifference(a.ko.Spec.Logging.LoggingEnabled.TargetPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetPrefix) {
 				delta.Add("Spec.Logging.LoggingEnabled.TargetPrefix", a.ko.Spec.Logging.LoggingEnabled.TargetPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetPrefix)
@@ -163,8 +191,12 @@ func newResourceDelta(
 			}
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.Metrics, b.ko.Spec.Metrics) {
+	if len(a.ko.Spec.Metrics) != len(b.ko.Spec.Metrics) {
 		delta.Add("Spec.Metrics", a.ko.Spec.Metrics, b.ko.Spec.Metrics)
+	} else if len(a.ko.Spec.Metrics) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.Metrics, b.ko.Spec.Metrics) {
+			delta.Add("Spec.Metrics", a.ko.Spec.Metrics, b.ko.Spec.Metrics)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
@@ -176,14 +208,26 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.Notification, b.ko.Spec.Notification) {
 		delta.Add("Spec.Notification", a.ko.Spec.Notification, b.ko.Spec.Notification)
 	} else if a.ko.Spec.Notification != nil && b.ko.Spec.Notification != nil {
-		if !reflect.DeepEqual(a.ko.Spec.Notification.LambdaFunctionConfigurations, b.ko.Spec.Notification.LambdaFunctionConfigurations) {
+		if len(a.ko.Spec.Notification.LambdaFunctionConfigurations) != len(b.ko.Spec.Notification.LambdaFunctionConfigurations) {
 			delta.Add("Spec.Notification.LambdaFunctionConfigurations", a.ko.Spec.Notification.LambdaFunctionConfigurations, b.ko.Spec.Notification.LambdaFunctionConfigurations)
+		} else if len(a.ko.Spec.Notification.LambdaFunctionConfigurations) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.Notification.LambdaFunctionConfigurations, b.ko.Spec.Notification.LambdaFunctionConfigurations) {
+				delta.Add("Spec.Notification.LambdaFunctionConfigurations", a.ko.Spec.Notification.LambdaFunctionConfigurations, b.ko.Spec.Notification.LambdaFunctionConfigurations)
+			}
 		}
-		if !reflect.DeepEqual(a.ko.Spec.Notification.QueueConfigurations, b.ko.Spec.Notification.QueueConfigurations) {
+		if len(a.ko.Spec.Notification.QueueConfigurations) != len(b.ko.Spec.Notification.QueueConfigurations) {
 			delta.Add("Spec.Notification.QueueConfigurations", a.ko.Spec.Notification.QueueConfigurations, b.ko.Spec.Notification.QueueConfigurations)
+		} else if len(a.ko.Spec.Notification.QueueConfigurations) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.Notification.QueueConfigurations, b.ko.Spec.Notification.QueueConfigurations) {
+				delta.Add("Spec.Notification.QueueConfigurations", a.ko.Spec.Notification.QueueConfigurations, b.ko.Spec.Notification.QueueConfigurations)
+			}
 		}
-		if !reflect.DeepEqual(a.ko.Spec.Notification.TopicConfigurations, b.ko.Spec.Notification.TopicConfigurations) {
+		if len(a.ko.Spec.Notification.TopicConfigurations) != len(b.ko.Spec.Notification.TopicConfigurations) {
 			delta.Add("Spec.Notification.TopicConfigurations", a.ko.Spec.Notification.TopicConfigurations, b.ko.Spec.Notification.TopicConfigurations)
+		} else if len(a.ko.Spec.Notification.TopicConfigurations) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.Notification.TopicConfigurations, b.ko.Spec.Notification.TopicConfigurations) {
+				delta.Add("Spec.Notification.TopicConfigurations", a.ko.Spec.Notification.TopicConfigurations, b.ko.Spec.Notification.TopicConfigurations)
+			}
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ObjectLockEnabledForBucket, b.ko.Spec.ObjectLockEnabledForBucket) {
@@ -203,8 +247,12 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.OwnershipControls, b.ko.Spec.OwnershipControls) {
 		delta.Add("Spec.OwnershipControls", a.ko.Spec.OwnershipControls, b.ko.Spec.OwnershipControls)
 	} else if a.ko.Spec.OwnershipControls != nil && b.ko.Spec.OwnershipControls != nil {
-		if !reflect.DeepEqual(a.ko.Spec.OwnershipControls.Rules, b.ko.Spec.OwnershipControls.Rules) {
+		if len(a.ko.Spec.OwnershipControls.Rules) != len(b.ko.Spec.OwnershipControls.Rules) {
 			delta.Add("Spec.OwnershipControls.Rules", a.ko.Spec.OwnershipControls.Rules, b.ko.Spec.OwnershipControls.Rules)
+		} else if len(a.ko.Spec.OwnershipControls.Rules) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.OwnershipControls.Rules, b.ko.Spec.OwnershipControls.Rules) {
+				delta.Add("Spec.OwnershipControls.Rules", a.ko.Spec.OwnershipControls.Rules, b.ko.Spec.OwnershipControls.Rules)
+			}
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Policy, b.ko.Spec.Policy) {
@@ -256,8 +304,12 @@ func newResourceDelta(
 				delta.Add("Spec.Replication.Role", a.ko.Spec.Replication.Role, b.ko.Spec.Replication.Role)
 			}
 		}
-		if !reflect.DeepEqual(a.ko.Spec.Replication.Rules, b.ko.Spec.Replication.Rules) {
+		if len(a.ko.Spec.Replication.Rules) != len(b.ko.Spec.Replication.Rules) {
 			delta.Add("Spec.Replication.Rules", a.ko.Spec.Replication.Rules, b.ko.Spec.Replication.Rules)
+		} else if len(a.ko.Spec.Replication.Rules) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.Replication.Rules, b.ko.Spec.Replication.Rules) {
+				delta.Add("Spec.Replication.Rules", a.ko.Spec.Replication.Rules, b.ko.Spec.Replication.Rules)
+			}
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.RequestPayment, b.ko.Spec.RequestPayment) {
@@ -332,8 +384,12 @@ func newResourceDelta(
 				}
 			}
 		}
-		if !reflect.DeepEqual(a.ko.Spec.Website.RoutingRules, b.ko.Spec.Website.RoutingRules) {
+		if len(a.ko.Spec.Website.RoutingRules) != len(b.ko.Spec.Website.RoutingRules) {
 			delta.Add("Spec.Website.RoutingRules", a.ko.Spec.Website.RoutingRules, b.ko.Spec.Website.RoutingRules)
+		} else if len(a.ko.Spec.Website.RoutingRules) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.Website.RoutingRules, b.ko.Spec.Website.RoutingRules) {
+				delta.Add("Spec.Website.RoutingRules", a.ko.Spec.Website.RoutingRules, b.ko.Spec.Website.RoutingRules)
+			}
 		}
 	}
 
