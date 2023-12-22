@@ -581,8 +581,12 @@ func compareAnalyticsConfiguration(
 					delta.Add("AnalyticsConfiguration.Filter.And.Prefix", a.Filter.And.Prefix, b.Filter.And.Prefix)
 				}
 			}
-			if !reflect.DeepEqual(a.Filter.And.Tags, b.Filter.And.Tags) {
+			if len(a.Filter.And.Tags) != len(b.Filter.And.Tags) {
 				delta.Add("AnalyticsConfiguration.Filter.And.Tags", a.Filter.And.Tags, b.Filter.And.Tags)
+			} else if len(a.Filter.And.Tags) > 0 {
+				if !reflect.DeepEqual(a.Filter.And.Tags, b.Filter.And.Tags) {
+					delta.Add("AnalyticsConfiguration.Filter.And.Tags", a.Filter.And.Tags, b.Filter.And.Tags)
+				}
 			}
 		}
 		if ackcompare.HasNilDifference(a.Filter.Prefix, b.Filter.Prefix) {
@@ -1151,8 +1155,12 @@ func compareIntelligentTieringConfiguration(
 					delta.Add("IntelligentTieringConfiguration.Filter.And.Prefix", a.Filter.And.Prefix, b.Filter.And.Prefix)
 				}
 			}
-			if !reflect.DeepEqual(a.Filter.And.Tags, b.Filter.And.Tags) {
+			if len(a.Filter.And.Tags) != len(b.Filter.And.Tags) {
 				delta.Add("IntelligentTieringConfiguration.Filter.And.Tags", a.Filter.And.Tags, b.Filter.And.Tags)
+			} else if len(a.Filter.And.Tags) > 0 {
+				if !reflect.DeepEqual(a.Filter.And.Tags, b.Filter.And.Tags) {
+					delta.Add("IntelligentTieringConfiguration.Filter.And.Tags", a.Filter.And.Tags, b.Filter.And.Tags)
+				}
 			}
 		}
 		if ackcompare.HasNilDifference(a.Filter.Prefix, b.Filter.Prefix) {
@@ -1195,8 +1203,12 @@ func compareIntelligentTieringConfiguration(
 			delta.Add("IntelligentTieringConfiguration.Status", a.Status, b.Status)
 		}
 	}
-	if !reflect.DeepEqual(a.Tierings, b.Tierings) {
+	if len(a.Tierings) != len(b.Tierings) {
 		delta.Add("IntelligentTieringConfiguration.Tierings", a.Tierings, b.Tierings)
+	} else if len(a.Tierings) > 0 {
+		if !reflect.DeepEqual(a.Tierings, b.Tierings) {
+			delta.Add("IntelligentTieringConfiguration.Tierings", a.Tierings, b.Tierings)
+		}
 	}
 
 	return delta
@@ -1572,8 +1584,12 @@ func compareInventoryConfiguration(
 			delta.Add("InventoryConfiguration.IsEnabled", a.IsEnabled, b.IsEnabled)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.OptionalFields, b.OptionalFields) {
+	if len(a.OptionalFields) != len(b.OptionalFields) {
 		delta.Add("InventoryConfiguration.OptionalFields", a.OptionalFields, b.OptionalFields)
+	} else if len(a.OptionalFields) > 0 {
+		if !ackcompare.SliceStringPEqual(a.OptionalFields, b.OptionalFields) {
+			delta.Add("InventoryConfiguration.OptionalFields", a.OptionalFields, b.OptionalFields)
+		}
 	}
 	if ackcompare.HasNilDifference(a.Schedule, b.Schedule) {
 		delta.Add("InventoryConfiguration.Schedule", a.Schedule, b.Schedule)
@@ -2260,8 +2276,12 @@ func compareMetricsConfiguration(
 					delta.Add("MetricsConfiguration.Filter.And.Prefix", a.Filter.And.Prefix, b.Filter.And.Prefix)
 				}
 			}
-			if !reflect.DeepEqual(a.Filter.And.Tags, b.Filter.And.Tags) {
+			if len(a.Filter.And.Tags) != len(b.Filter.And.Tags) {
 				delta.Add("MetricsConfiguration.Filter.And.Tags", a.Filter.And.Tags, b.Filter.And.Tags)
+			} else if len(a.Filter.And.Tags) > 0 {
+				if !reflect.DeepEqual(a.Filter.And.Tags, b.Filter.And.Tags) {
+					delta.Add("MetricsConfiguration.Filter.And.Tags", a.Filter.And.Tags, b.Filter.And.Tags)
+				}
 			}
 		}
 		if ackcompare.HasNilDifference(a.Filter.Prefix, b.Filter.Prefix) {
