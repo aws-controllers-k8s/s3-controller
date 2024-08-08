@@ -114,6 +114,10 @@ def basic_bucket(s3_client) -> Generator[Bucket, None, None]:
     try:
         bucket = create_bucket("bucket")
         assert k8s.get_resource_exists(bucket.ref)
+        
+        # assert bucket ARN is present in status
+        bucket_k8s = bucket.resource_data = k8s.get_resource(bucket.ref)
+        assert "arn:aws:s3:::" + bucket.resource_name == bucket_k8s["status"]["ackResourceMetadata"]["arn"]
 
         exists = bucket_exists(s3_client, bucket)
         assert exists
