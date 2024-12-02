@@ -64,6 +64,7 @@ def service_bootstrap() -> Resources:
 
     resources = BootstrapResources(
         ReplicationBucket=Bucket("ack-s3-replication", enable_versioning=True),
+        AdoptionBucket=Bucket("ack-s3-annotation-adoption", enable_versioning=True),
         ReplicationRole=Role("ack-s3-replication-role", "s3.amazonaws.com",
             user_policies=UserPolicies("ack-s3-replication-policy", [replication_policy])
         ),
