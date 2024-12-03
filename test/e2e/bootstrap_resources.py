@@ -25,6 +25,7 @@ from e2e import bootstrap_directory
 @dataclass
 class BootstrapResources(Resources):
     ReplicationBucket: Bucket
+    AdoptionBucket: Bucket
     ReplicationRole: Role
     NotificationTopic: Topic
 
