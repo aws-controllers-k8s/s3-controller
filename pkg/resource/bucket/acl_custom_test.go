@@ -18,7 +18,8 @@ import (
 	"testing"
 
 	bucket "github.com/aws-controllers-k8s/s3-controller/pkg/resource/bucket"
-	svcsdk "github.com/aws/aws-sdk-go/service/s3"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/s3"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,31 +31,31 @@ var (
 
 func s(s string) *string { return &s }
 
-func provideOwner() *svcsdk.Owner {
-	return &svcsdk.Owner{
+func provideOwner() *svcsdktypes.Owner {
+	return &svcsdktypes.Owner{
 		DisplayName: &OwnerDisplayName,
 		ID:          &OwnerID,
 	}
 }
 
-func provideOwnerGrantee() *svcsdk.Grantee {
-	return &svcsdk.Grantee{
+func provideOwnerGrantee() *svcsdktypes.Grantee {
+	return &svcsdktypes.Grantee{
 		DisplayName: &OwnerDisplayName,
 		ID:          &OwnerID,
-		Type:        s(svcsdk.TypeCanonicalUser),
+		Type:        svcsdktypes.TypeCanonicalUser,
 	}
 }
 
-func provideMockUserFullControl() []*svcsdk.Grant {
-	return []*svcsdk.Grant{
+func provideMockUserFullControl() []svcsdktypes.Grant {
+	return []svcsdktypes.Grant{
 		{
 			Grantee:    provideOwnerGrantee(),
-			Permission: s(svcsdk.PermissionFullControl),
+			Permission: svcsdktypes.PermissionFullControl,
 		},
 	}
 }
 
-func wrapGrants(grants []*svcsdk.Grant) *svcsdk.GetBucketAclOutput {
+func wrapGrants(grants []svcsdktypes.Grant) *svcsdk.GetBucketAclOutput {
 	return &svcsdk.GetBucketAclOutput{
 		Grants: grants,
 		Owner:  provideOwner(),
@@ -67,17 +68,17 @@ func cannedPrivateOutput() *svcsdk.GetBucketAclOutput {
 
 func cannedLogDeliveryOutput() *svcsdk.GetBucketAclOutput {
 	grants := provideMockUserFullControl()
-	logDeliveryGrantee := &svcsdk.Grantee{
-		Type: s(svcsdk.TypeGroup),
+	logDeliveryGrantee := &svcsdktypes.Grantee{
+		Type: svcsdktypes.TypeGroup,
 		URI:  &bucket.GranteeLogDeliveryURI,
 	}
-	writeGrant := &svcsdk.Grant{
+	writeGrant := svcsdktypes.Grant{
 		Grantee:    logDeliveryGrantee,
-		Permission: s(svcsdk.PermissionWrite),
+		Permission: svcsdktypes.PermissionWrite,
 	}
-	readACPGrant := &svcsdk.Grant{
+	readACPGrant := svcsdktypes.Grant{
 		Grantee:    logDeliveryGrantee,
-		Permission: s(svcsdk.PermissionReadAcp),
+		Permission: svcsdktypes.PermissionReadAcp,
 	}
 	grants = append(grants, writeGrant)
 	grants = append(grants, readACPGrant)
@@ -87,17 +88,17 @@ func cannedLogDeliveryOutput() *svcsdk.GetBucketAclOutput {
 
 func cannedPublicReadWriteOutput() *svcsdk.GetBucketAclOutput {
 	grants := provideMockUserFullControl()
-	allUsersGrantee := &svcsdk.Grantee{
-		Type: s(svcsdk.TypeGroup),
+	allUsersGrantee := &svcsdktypes.Grantee{
+		Type: svcsdktypes.TypeGroup,
 		URI:  &bucket.GranteeAllUsersURI,
 	}
-	writeGrant := &svcsdk.Grant{
+	writeGrant := svcsdktypes.Grant{
 		Grantee:    allUsersGrantee,
-		Permission: s(svcsdk.PermissionWrite),
+		Permission: svcsdktypes.PermissionWrite,
 	}
-	readGrant := &svcsdk.Grant{
+	readGrant := svcsdktypes.Grant{
 		Grantee:    allUsersGrantee,
-		Permission: s(svcsdk.PermissionRead),
+		Permission: svcsdktypes.PermissionRead,
 	}
 	grants = append(grants, writeGrant)
 	grants = append(grants, readGrant)
@@ -107,25 +108,25 @@ func cannedPublicReadWriteOutput() *svcsdk.GetBucketAclOutput {
 
 func allGrantsOutput() *svcsdk.GetBucketAclOutput {
 	grants := provideMockUserFullControl()
-	randomGrantee := &svcsdk.Grantee{
-		Type: s(svcsdk.TypeGroup),
+	randomGrantee := &svcsdktypes.Grantee{
+		Type: svcsdktypes.TypeGroup,
 		URI:  &RandomGranteeURI,
 	}
-	writeGrant := &svcsdk.Grant{
+	writeGrant := svcsdktypes.Grant{
 		Grantee:    randomGrantee,
-		Permission: s(svcsdk.PermissionWrite),
+		Permission: svcsdktypes.PermissionWrite,
 	}
-	writeACPGrant := &svcsdk.Grant{
+	writeACPGrant := svcsdktypes.Grant{
 		Grantee:    randomGrantee,
-		Permission: s(svcsdk.PermissionWriteAcp),
+		Permission: svcsdktypes.PermissionWriteAcp,
 	}
-	readGrant := &svcsdk.Grant{
+	readGrant := svcsdktypes.Grant{
 		Grantee:    randomGrantee,
-		Permission: s(svcsdk.PermissionRead),
+		Permission: svcsdktypes.PermissionRead,
 	}
-	readACPGrant := &svcsdk.Grant{
+	readACPGrant := svcsdktypes.Grant{
 		Grantee:    randomGrantee,
-		Permission: s(svcsdk.PermissionReadAcp),
+		Permission: svcsdktypes.PermissionReadAcp,
 	}
 	grants = append(grants, writeGrant)
 	grants = append(grants, writeACPGrant)
@@ -137,12 +138,12 @@ func allGrantsOutput() *svcsdk.GetBucketAclOutput {
 
 func multiplePermissionGrantsOutput() *svcsdk.GetBucketAclOutput {
 	grants := provideMockUserFullControl()
-	anotherFulLControl := &svcsdk.Grant{
-		Grantee: &svcsdk.Grantee{
-			Type: s(svcsdk.TypeGroup),
-			URI:  &RandomGranteeURI,
+	anotherFulLControl := svcsdktypes.Grant{
+		Grantee: &svcsdktypes.Grantee{
+			Type: svcsdktypes.TypeGroup,
+			URI:  s(RandomGranteeURI),
 		},
-		Permission: s(svcsdk.PermissionFullControl),
+		Permission: svcsdktypes.PermissionFullControl,
 	}
 
 	grants = append(grants, anotherFulLControl)

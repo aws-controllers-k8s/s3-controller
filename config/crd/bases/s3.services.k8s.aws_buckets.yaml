@@ -40,9 +40,7 @@ spec:
             description: |-
               BucketSpec defines the desired state of Bucket.
 
-              In terms of implementation, a Bucket is a resource. An Amazon S3 bucket name
-              is globally unique, and the namespace is shared by all Amazon Web Services
-              accounts.
+              In terms of implementation, a Bucket is a resource.
             properties:
               accelerate:
                 description: Container for setting the transfer acceleration state.
@@ -51,7 +49,10 @@ spec:
                     type: string
                 type: object
               acl:
-                description: The canned ACL to apply to the bucket.
+                description: |-
+                  The canned ACL to apply to the bucket.
+
+                  This functionality is not supported for directory buckets.
                 type: string
               analytics:
                 items:
@@ -178,19 +179,40 @@ spec:
                 properties:
                   rules:
                     items:
-                      description: Specifies the default server-side encryption configuration.
+                      description: |-
+                        Specifies the default server-side encryption configuration.
+
+                           * General purpose buckets - If you're specifying a customer managed KMS
+                           key, we recommend using a fully qualified KMS key ARN. If you use a KMS
+                           key alias instead, then KMS resolves the key within the requester’s
+                           account. This behavior can result in data that's encrypted with a KMS
+                           key that belongs to the requester, and not the bucket owner.
+
+                           * Directory buckets - When you specify an KMS customer managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk)
+                           for encryption in your directory bucket, only use the key ID or key ARN.
+                           The key alias format of the KMS key isn't supported.
                       properties:
                         applyServerSideEncryptionByDefault:
                           description: |-
                             Describes the default server-side encryption to apply to new objects in the
                             bucket. If a PUT Object request doesn't specify any server-side encryption,
-                            this default encryption will be applied. If you don't specify a customer
-                            managed key at configuration, Amazon S3 automatically creates an Amazon Web
-                            Services KMS key in your Amazon Web Services account the first time that
-                            you add an object encrypted with SSE-KMS to a bucket. By default, Amazon
-                            S3 uses this KMS key for SSE-KMS. For more information, see PUT Bucket encryption
-                            (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTencryption.html)
-                            in the Amazon S3 API Reference.
+                            this default encryption will be applied. For more information, see PutBucketEncryption
+                            (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTencryption.html).
+
+                               * General purpose buckets - If you don't specify a customer managed key
+                               at configuration, Amazon S3 automatically creates an Amazon Web Services
+                               KMS key (aws/s3) in your Amazon Web Services account the first time that
+                               you add an object encrypted with SSE-KMS to a bucket. By default, Amazon
+                               S3 uses this KMS key for SSE-KMS.
+
+                               * Directory buckets - Your SSE-KMS configuration can only support 1 customer
+                               managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk)
+                               per directory bucket for the lifetime of the bucket. The Amazon Web Services
+                               managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk)
+                               (aws/s3) isn't supported.
+
+                               * Directory buckets - For directory buckets, there are only two supported
+                               options for server-side encryption: SSE-S3 and SSE-KMS.
                           properties:
                             kmsMasterKeyID:
                               type: string
@@ -206,12 +228,20 @@ spec:
                 description: |-
                   Allows grantee the read, write, read ACP, and write ACP permissions on the
                   bucket.
+
+                  This functionality is not supported for directory buckets.
                 type: string
               grantRead:
-                description: Allows grantee to list the objects in the bucket.
+                description: |-
+                  Allows grantee to list the objects in the bucket.
+
+                  This functionality is not supported for directory buckets.
                 type: string
               grantReadACP:
-                description: Allows grantee to read the bucket ACL.
+                description: |-
+                  Allows grantee to read the bucket ACL.
+
+                  This functionality is not supported for directory buckets.
                 type: string
               grantWrite:
                 description: |-
@@ -219,9 +249,14 @@ spec:
 
                   For the bucket and object owners of existing objects, also allows deletions
                   and overwrites of those objects.
+
+                  This functionality is not supported for directory buckets.
                 type: string
               grantWriteACP:
-                description: Allows grantee to write the ACL for the applicable bucket.
+                description: |-
+                  Allows grantee to write the ACL for the applicable bucket.
+
+                  This functionality is not supported for directory buckets.
                 type: string
               intelligentTiering:
                 items:
@@ -358,15 +393,18 @@ spec:
                 properties:
                   rules:
                     items:
-                      description: A lifecycle rule for individual objects in an Amazon
-                        S3 bucket.
+                      description: |-
+                        A lifecycle rule for individual objects in an Amazon S3 bucket.
+
+                        For more information see, Managing your storage lifecycle (https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html)
+                        in the Amazon S3 User Guide.
                       properties:
                         abortIncompleteMultipartUpload:
                           description: |-
                             Specifies the days since the initiation of an incomplete multipart upload
                             that Amazon S3 will wait before permanently removing all parts of the upload.
                             For more information, see Aborting Incomplete Multipart Uploads Using a Bucket
-                            Lifecycle Policy (https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config)
+                            Lifecycle Configuration (https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config)
                             in the Amazon S3 User Guide.
                           properties:
                             daysAfterInitiation:
@@ -374,8 +412,11 @@ spec:
                               type: integer
                           type: object
                         expiration:
-                          description: Container for the expiration for the lifecycle
-                            of the object.
+                          description: |-
+                            Container for the expiration for the lifecycle of the object.
+
+                            For more information see, Managing your storage lifecycle (https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html)
+                            in the Amazon S3 User Guide.
                           properties:
                             date:
                               format: date-time
@@ -389,7 +430,9 @@ spec:
                         filter:
                           description: |-
                             The Filter is used to identify objects that a Lifecycle Rule applies to.
-                            A Filter must have exactly one of Prefix, Tag, or And specified.
+                            A Filter can have exactly one of Prefix, Tag, ObjectSizeGreaterThan, ObjectSizeLessThan,
+                            or And specified. If the Filter element is left empty, the Lifecycle Rule
+                            applies to all objects in the bucket.
                           properties:
                             and:
                               description: |-
@@ -442,6 +485,9 @@ spec:
                             configuration action on a bucket that has versioning enabled (or suspended)
                             to request that Amazon S3 delete noncurrent object versions at a specific
                             period in the object's lifetime.
+
+                            This parameter applies to general purpose buckets only. It is not supported
+                            for directory bucket lifecycle configurations.
                           properties:
                             newerNoncurrentVersions:
                               format: int64
@@ -597,7 +643,21 @@ spec:
                   type: object
                 type: array
               name:
-                description: The name of the bucket to create.
+                description: |-
+                  The name of the bucket to create.
+
+                  General purpose buckets - For information about bucket naming restrictions,
+                  see Bucket naming rules (https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)
+                  in the Amazon S3 User Guide.
+
+                  Directory buckets - When you use this operation with a directory bucket,
+                  you must use path-style requests in the format https://s3express-control.region-code.amazonaws.com/bucket-name
+                  . Virtual-hosted-style requests aren't supported. Directory bucket names
+                  must be unique in the chosen Zone (Availability Zone or Local Zone). Bucket
+                  names must also follow the format bucket-base-name--zone-id--x-s3 (for example,
+                  DOC-EXAMPLE-BUCKET--usw2-az1--x-s3). For information about bucket naming
+                  restrictions, see Directory bucket naming rules (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html)
+                  in the Amazon S3 User Guide
                 type: string
               notification:
                 description: |-
@@ -616,7 +676,8 @@ spec:
                         filter:
                           description: |-
                             Specifies object key name filtering rules. For information about key name
-                            filtering, see Configuring Event Notifications (https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html)
+                            filtering, see Configuring event notifications using object key name filtering
+                            (https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html)
                             in the Amazon S3 User Guide.
                           properties:
                             key:
@@ -629,8 +690,15 @@ spec:
                                     the filter rule.
                                   items:
                                     description: |-
-                                      Specifies the Amazon S3 object key name to filter on and whether to filter
-                                      on the suffix or prefix of the key name.
+                                      Specifies the Amazon S3 object key name to filter on. An object key name
+                                      is the name assigned to an object in your Amazon S3 bucket. You specify whether
+                                      to filter on the suffix or prefix of the object key name. A prefix is a specific
+                                      string of characters at the beginning of an object key name, which you can
+                                      use to organize objects. For example, you can start the key names of related
+                                      objects with a prefix, such as 2023- or engineering/. Then, you can use FilterRule
+                                      to find objects in a bucket with key names that have the same prefix. A suffix
+                                      is similar to a prefix, but it is at the end of the object key name instead
+                                      of at the beginning.
                                     properties:
                                       name:
                                         type: string
@@ -662,7 +730,8 @@ spec:
                         filter:
                           description: |-
                             Specifies object key name filtering rules. For information about key name
-                            filtering, see Configuring Event Notifications (https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html)
+                            filtering, see Configuring event notifications using object key name filtering
+                            (https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html)
                             in the Amazon S3 User Guide.
                           properties:
                             key:
@@ -675,8 +744,15 @@ spec:
                                     the filter rule.
                                   items:
                                     description: |-
-                                      Specifies the Amazon S3 object key name to filter on and whether to filter
-                                      on the suffix or prefix of the key name.
+                                      Specifies the Amazon S3 object key name to filter on. An object key name
+                                      is the name assigned to an object in your Amazon S3 bucket. You specify whether
+                                      to filter on the suffix or prefix of the object key name. A prefix is a specific
+                                      string of characters at the beginning of an object key name, which you can
+                                      use to organize objects. For example, you can start the key names of related
+                                      objects with a prefix, such as 2023- or engineering/. Then, you can use FilterRule
+                                      to find objects in a bucket with key names that have the same prefix. A suffix
+                                      is similar to a prefix, but it is at the end of the object key name instead
+                                      of at the beginning.
                                     properties:
                                       name:
                                         type: string
@@ -709,7 +785,8 @@ spec:
                         filter:
                           description: |-
                             Specifies object key name filtering rules. For information about key name
-                            filtering, see Configuring Event Notifications (https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html)
+                            filtering, see Configuring event notifications using object key name filtering
+                            (https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html)
                             in the Amazon S3 User Guide.
                           properties:
                             key:
@@ -722,8 +799,15 @@ spec:
                                     the filter rule.
                                   items:
                                     description: |-
-                                      Specifies the Amazon S3 object key name to filter on and whether to filter
-                                      on the suffix or prefix of the key name.
+                                      Specifies the Amazon S3 object key name to filter on. An object key name
+                                      is the name assigned to an object in your Amazon S3 bucket. You specify whether
+                                      to filter on the suffix or prefix of the object key name. A prefix is a specific
+                                      string of characters at the beginning of an object key name, which you can
+                                      use to organize objects. For example, you can start the key names of related
+                                      objects with a prefix, such as 2023- or engineering/. Then, you can use FilterRule
+                                      to find objects in a bucket with key names that have the same prefix. A suffix
+                                      is similar to a prefix, but it is at the end of the object key name instead
+                                      of at the beginning.
                                     properties:
                                       name:
                                         type: string
@@ -744,8 +828,10 @@ spec:
                     type: array
                 type: object
               objectLockEnabledForBucket:
-                description: Specifies whether you want S3 Object Lock to be enabled
-                  for the new bucket.
+                description: |-
+                  Specifies whether you want S3 Object Lock to be enabled for the new bucket.
+
+                  This functionality is not supported for directory buckets.
                 type: boolean
               objectOwnership:
                 type: string
@@ -773,14 +859,29 @@ spec:
                             BucketOwnerEnforced - Access control lists (ACLs) are disabled and no longer
                             affect permissions. The bucket owner automatically owns and has full control
                             over every object in the bucket. The bucket only accepts PUT requests that
-                            don't specify an ACL or bucket owner full control ACLs, such as the bucket-owner-full-control
-                            canned ACL or an equivalent form of this ACL expressed in the XML format.
+                            don't specify an ACL or specify bucket owner full control ACLs (such as the
+                            predefined bucket-owner-full-control canned ACL or a custom ACL in XML format
+                            that grants the same permissions).
+
+                            By default, ObjectOwnership is set to BucketOwnerEnforced and ACLs are disabled.
+                            We recommend keeping ACLs disabled, except in uncommon use cases where you
+                            must control access for each object individually. For more information about
+                            S3 Object Ownership, see Controlling ownership of objects and disabling ACLs
+                            for your bucket (https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html)
+                            in the Amazon S3 User Guide.
+
+                            This functionality is not supported for directory buckets. Directory buckets
+                            use the bucket owner enforced setting for S3 Object Ownership.
                           type: string
                       type: object
                     type: array
                 type: object
               policy:
-                description: The bucket policy as a JSON document.
+                description: |-
+                  The bucket policy as a JSON document.
+
+                  For directory buckets, the only IAM action supported in the bucket policy
+                  is s3express:CreateSession.
                 type: string
               publicAccessBlock:
                 description: |-
@@ -850,6 +951,12 @@ spec:
                               description: |-
                                 Specifies encryption-related information for an Amazon S3 bucket that is
                                 a destination for replicated objects.
+
+                                If you're specifying a customer managed KMS key, we recommend using a fully
+                                qualified KMS key ARN. If you use a KMS key alias instead, then KMS resolves
+                                the key within the requester’s account. This behavior can result in data
+                                that's encrypted with a KMS key that belongs to the requester, and not the
+                                bucket owner.
                               properties:
                                 replicaKMSKeyID:
                                   type: string
@@ -895,8 +1002,10 @@ spec:
                           type: object
                         existingObjectReplication:
                           description: |-
-                            Optional configuration to replicate existing source bucket objects. For more
-                            information, see Replicating Existing Objects (https://docs.aws.amazon.com/AmazonS3/latest/dev/replication-what-is-isnot-replicated.html#existing-object-replication)
+                            Optional configuration to replicate existing source bucket objects.
+
+                            This parameter is no longer supported. To replicate existing objects, see
+                            Replicating existing objects with S3 Batch Replication (https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-batch-replication-batch.html)
                             in the Amazon S3 User Guide.
                           properties:
                             status:

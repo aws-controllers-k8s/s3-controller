@@ -21,10 +21,12 @@ import (
 	"github.com/pkg/errors"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
-	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcapitypes "github.com/aws-controllers-k8s/s3-controller/apis/v1alpha1"
-	svcsdk "github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/s3"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go"
 )
 
 // bucketARN returns the ARN of the S3 bucket with the given name.
@@ -41,10 +43,10 @@ func bucketARN(bucketName string) string {
 }
 
 var (
-	DefaultAccelerationStatus     = svcsdk.BucketAccelerateStatusSuspended
-	DefaultRequestPayer           = svcsdk.PayerBucketOwner
-	DefaultVersioningStatus       = svcsdk.BucketVersioningStatusSuspended
-	DefaultACL                    = svcsdk.BucketCannedACLPrivate
+	DefaultAccelerationStatus     = svcsdktypes.BucketAccelerateStatusSuspended
+	DefaultRequestPayer           = svcsdktypes.PayerBucketOwner
+	DefaultVersioningStatus       = svcsdktypes.BucketVersioningStatusSuspended
+	DefaultACL                    = svcsdktypes.BucketCannedACLPrivate
 	DefaultPublicBlockAccessValue = false
 	DefaultPublicBlockAccess      = svcapitypes.PublicAccessBlockConfiguration{
 		BlockPublicACLs:       &DefaultPublicBlockAccessValue,
@@ -312,12 +314,13 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	r *resource,
 	ko *svcapitypes.Bucket,
 ) (err error) {
-	getAccelerateResponse, err := rm.sdkapi.GetBucketAccelerateConfigurationWithContext(ctx, rm.newGetBucketAcceleratePayload(r))
+	getAccelerateResponse, err := rm.sdkapi.GetBucketAccelerateConfiguration(ctx, rm.newGetBucketAcceleratePayload(r))
 	if err != nil {
 		// This method is not supported in every region, ignore any errors if
 		// we attempt to describe this property in a region in which it's not
 		// supported.
-		if awsErr, ok := ackerr.AWSError(err); ok && (awsErr.Code() == "MethodNotAllowed" || awsErr.Code() == "UnsupportedArgument") {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && (awsErr.ErrorCode() == "MethodNotAllowed" || awsErr.ErrorCode() == "UnsupportedArgument") {
 			getAccelerateResponse = &svcsdk.GetBucketAccelerateConfigurationOutput{}
 		} else {
 			return err
@@ -325,7 +328,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
 
-	listAnalyticsResponse, err := rm.sdkapi.ListBucketAnalyticsConfigurationsWithContext(ctx, rm.newListBucketAnalyticsPayload(r))
+	listAnalyticsResponse, err := rm.sdkapi.ListBucketAnalyticsConfigurations(ctx, rm.newListBucketAnalyticsPayload(r))
 	if err != nil {
 		return err
 	}
@@ -334,15 +337,16 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		ko.Spec.Analytics[i] = rm.setResourceAnalyticsConfiguration(r, analyticsConfiguration)
 	}
 
-	getACLResponse, err := rm.sdkapi.GetBucketAclWithContext(ctx, rm.newGetBucketACLPayload(r))
+	getACLResponse, err := rm.sdkapi.GetBucketAcl(ctx, rm.newGetBucketACLPayload(r))
 	if err != nil {
 		return err
 	}
 	rm.setResourceACL(ko, getACLResponse)
 
-	getCORSResponse, err := rm.sdkapi.GetBucketCorsWithContext(ctx, rm.newGetBucketCORSPayload(r))
+	getCORSResponse, err := rm.sdkapi.GetBucketCors(ctx, rm.newGetBucketCORSPayload(r))
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchCORSConfiguration" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchCORSConfiguration" {
 			getCORSResponse = &svcsdk.GetBucketCorsOutput{}
 		} else {
 			return err
@@ -350,11 +354,12 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.CORS = rm.setResourceCORS(r, getCORSResponse)
 
-	getEncryptionResponse, err := rm.sdkapi.GetBucketEncryptionWithContext(ctx, rm.newGetBucketEncryptionPayload(r))
+	getEncryptionResponse, err := rm.sdkapi.GetBucketEncryption(ctx, rm.newGetBucketEncryptionPayload(r))
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "ServerSideEncryptionConfigurationNotFoundError" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "ServerSideEncryptionConfigurationNotFoundError" {
 			getEncryptionResponse = &svcsdk.GetBucketEncryptionOutput{
-				ServerSideEncryptionConfiguration: &svcsdk.ServerSideEncryptionConfiguration{},
+				ServerSideEncryptionConfiguration: &svcsdktypes.ServerSideEncryptionConfiguration{},
 			}
 		} else {
 			return err
@@ -362,7 +367,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.Encryption = rm.setResourceEncryption(r, getEncryptionResponse)
 
-	listIntelligentTieringResponse, err := rm.sdkapi.ListBucketIntelligentTieringConfigurationsWithContext(ctx, rm.newListBucketIntelligentTieringPayload(r))
+	listIntelligentTieringResponse, err := rm.sdkapi.ListBucketIntelligentTieringConfigurations(ctx, rm.newListBucketIntelligentTieringPayload(r))
 	if err != nil {
 		return err
 	}
@@ -371,7 +376,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		ko.Spec.IntelligentTiering[i] = rm.setResourceIntelligentTieringConfiguration(r, intelligentTieringConfiguration)
 	}
 
-	listInventoryResponse, err := rm.sdkapi.ListBucketInventoryConfigurationsWithContext(ctx, rm.newListBucketInventoryPayload(r))
+	listInventoryResponse, err := rm.sdkapi.ListBucketInventoryConfigurations(ctx, rm.newListBucketInventoryPayload(r))
 	if err != nil {
 		return err
 	}
@@ -380,9 +385,10 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		ko.Spec.Inventory[i] = rm.setResourceInventoryConfiguration(r, inventoryConfiguration)
 	}
 
-	getLifecycleResponse, err := rm.sdkapi.GetBucketLifecycleConfigurationWithContext(ctx, rm.newGetBucketLifecyclePayload(r))
+	getLifecycleResponse, err := rm.sdkapi.GetBucketLifecycleConfiguration(ctx, rm.newGetBucketLifecyclePayload(r))
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchLifecycleConfiguration" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchLifecycleConfiguration" {
 			getLifecycleResponse = &svcsdk.GetBucketLifecycleConfigurationOutput{}
 		} else {
 			return err
@@ -390,32 +396,33 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.Lifecycle = rm.setResourceLifecycle(r, getLifecycleResponse)
 
-	getLoggingResponse, err := rm.sdkapi.GetBucketLoggingWithContext(ctx, rm.newGetBucketLoggingPayload(r))
+	getLoggingResponse, err := rm.sdkapi.GetBucketLogging(ctx, rm.newGetBucketLoggingPayload(r))
 	if err != nil {
 		return err
 	}
 	ko.Spec.Logging = rm.setResourceLogging(r, getLoggingResponse)
 
-	listMetricsResponse, err := rm.sdkapi.ListBucketMetricsConfigurationsWithContext(ctx, rm.newListBucketMetricsPayload(r))
+	listMetricsResponse, err := rm.sdkapi.ListBucketMetricsConfigurations(ctx, rm.newListBucketMetricsPayload(r))
 	if err != nil {
 		return err
 	}
 	ko.Spec.Metrics = make([]*svcapitypes.MetricsConfiguration, len(listMetricsResponse.MetricsConfigurationList))
 	for i, metricsConfiguration := range listMetricsResponse.MetricsConfigurationList {
-		ko.Spec.Metrics[i] = rm.setResourceMetricsConfiguration(r, metricsConfiguration)
+		ko.Spec.Metrics[i] = rm.setResourceMetricsConfiguration(r, &metricsConfiguration)
 	}
 
-	getNotificationResponse, err := rm.sdkapi.GetBucketNotificationConfigurationWithContext(ctx, rm.newGetBucketNotificationPayload(r))
+	getNotificationResponse, err := rm.sdkapi.GetBucketNotificationConfiguration(ctx, rm.newGetBucketNotificationPayload(r))
 	if err != nil {
 		return err
 	}
 	ko.Spec.Notification = rm.setResourceNotification(r, getNotificationResponse)
 
-	getOwnershipControlsResponse, err := rm.sdkapi.GetBucketOwnershipControlsWithContext(ctx, rm.newGetBucketOwnershipControlsPayload(r))
+	getOwnershipControlsResponse, err := rm.sdkapi.GetBucketOwnershipControls(ctx, rm.newGetBucketOwnershipControlsPayload(r))
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "OwnershipControlsNotFoundError" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "OwnershipControlsNotFoundError" {
 			getOwnershipControlsResponse = &svcsdk.GetBucketOwnershipControlsOutput{
-				OwnershipControls: &svcsdk.OwnershipControls{},
+				OwnershipControls: &svcsdktypes.OwnershipControls{},
 			}
 		} else {
 			return err
@@ -427,9 +434,10 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		ko.Spec.OwnershipControls = nil
 	}
 
-	getPolicyResponse, err := rm.sdkapi.GetBucketPolicyWithContext(ctx, rm.newGetBucketPolicyPayload(r))
+	getPolicyResponse, err := rm.sdkapi.GetBucketPolicy(ctx, rm.newGetBucketPolicyPayload(r))
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchBucketPolicy" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchBucketPolicy" {
 			getPolicyResponse = &svcsdk.GetBucketPolicyOutput{}
 		} else {
 			return err
@@ -437,9 +445,10 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.Policy = getPolicyResponse.Policy
 
-	getPublicAccessBlockResponse, err := rm.sdkapi.GetPublicAccessBlockWithContext(ctx, rm.newGetPublicAccessBlockPayload(r))
+	getPublicAccessBlockResponse, err := rm.sdkapi.GetPublicAccessBlock(ctx, rm.newGetPublicAccessBlockPayload(r))
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchPublicAccessBlockConfiguration" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchPublicAccessBlockConfiguration" {
 			getPublicAccessBlockResponse = &svcsdk.GetPublicAccessBlockOutput{}
 		} else {
 			return err
@@ -451,9 +460,10 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		ko.Spec.PublicAccessBlock = nil
 	}
 
-	getReplicationResponse, err := rm.sdkapi.GetBucketReplicationWithContext(ctx, rm.newGetBucketReplicationPayload(r))
+	getReplicationResponse, err := rm.sdkapi.GetBucketReplication(ctx, rm.newGetBucketReplicationPayload(r))
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "ReplicationConfigurationNotFoundError" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "ReplicationConfigurationNotFoundError" {
 			getReplicationResponse = &svcsdk.GetBucketReplicationOutput{}
 		} else {
 			return err
@@ -465,15 +475,16 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		ko.Spec.Replication = nil
 	}
 
-	getRequestPaymentResponse, err := rm.sdkapi.GetBucketRequestPaymentWithContext(ctx, rm.newGetBucketRequestPaymentPayload(r))
+	getRequestPaymentResponse, err := rm.sdkapi.GetBucketRequestPayment(ctx, rm.newGetBucketRequestPaymentPayload(r))
 	if err != nil {
 		return nil
 	}
 	ko.Spec.RequestPayment = rm.setResourceRequestPayment(r, getRequestPaymentResponse)
 
-	getTaggingResponse, err := rm.sdkapi.GetBucketTaggingWithContext(ctx, rm.newGetBucketTaggingPayload(r))
+	getTaggingResponse, err := rm.sdkapi.GetBucketTagging(ctx, rm.newGetBucketTaggingPayload(r))
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchTagSet" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchTagSet" {
 			getTaggingResponse = &svcsdk.GetBucketTaggingOutput{}
 		} else {
 			return err
@@ -481,15 +492,16 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 	ko.Spec.Tagging = rm.setResourceTagging(r, getTaggingResponse)
 
-	getVersioningResponse, err := rm.sdkapi.GetBucketVersioningWithContext(ctx, rm.newGetBucketVersioningPayload(r))
+	getVersioningResponse, err := rm.sdkapi.GetBucketVersioning(ctx, rm.newGetBucketVersioningPayload(r))
 	if err != nil {
 		return err
 	}
 	ko.Spec.Versioning = rm.setResourceVersioning(r, getVersioningResponse)
 
-	getWebsiteResponse, err := rm.sdkapi.GetBucketWebsiteWithContext(ctx, rm.newGetBucketWebsitePayload(r))
+	getWebsiteResponse, err := rm.sdkapi.GetBucketWebsite(ctx, rm.newGetBucketWebsitePayload(r))
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NoSuchWebsiteConfiguration" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchWebsiteConfiguration" {
 			getWebsiteResponse = &svcsdk.GetBucketWebsiteOutput{}
 		} else {
 			return err
@@ -510,8 +522,8 @@ func customPreCompare(
 		a.ko.Spec.Accelerate = &svcapitypes.AccelerateConfiguration{}
 
 		if b.ko.Spec.Accelerate.Status != nil &&
-			*b.ko.Spec.Accelerate.Status == DefaultAccelerationStatus {
-			a.ko.Spec.Accelerate.Status = &DefaultAccelerationStatus
+			*b.ko.Spec.Accelerate.Status == string(DefaultAccelerationStatus) {
+			a.ko.Spec.Accelerate.Status = aws.String(string(DefaultAccelerationStatus))
 		}
 	}
 	if a.ko.Spec.Analytics == nil && b.ko.Spec.Analytics != nil {
@@ -612,7 +624,7 @@ func customPreCompare(
 	}
 	if a.ko.Spec.RequestPayment == nil && b.ko.Spec.RequestPayment != nil {
 		a.ko.Spec.RequestPayment = &svcapitypes.RequestPaymentConfiguration{
-			Payer: &DefaultRequestPayer,
+			Payer: aws.String(string(DefaultRequestPayer)),
 		}
 	}
 	if a.ko.Spec.Tagging == nil && b.ko.Spec.Tagging != nil {
@@ -622,8 +634,8 @@ func customPreCompare(
 		a.ko.Spec.Versioning = &svcapitypes.VersioningConfiguration{}
 
 		if b.ko.Spec.Versioning.Status != nil &&
-			*b.ko.Spec.Versioning.Status == DefaultVersioningStatus {
-			a.ko.Spec.Versioning.Status = &DefaultVersioningStatus
+			*b.ko.Spec.Versioning.Status == string(DefaultVersioningStatus) {
+			a.ko.Spec.Versioning.Status = aws.String(string(DefaultVersioningStatus))
 		}
 	}
 	if a.ko.Spec.Website == nil && b.ko.Spec.Website != nil {
@@ -637,7 +649,7 @@ func (rm *resourceManager) newGetBucketAcceleratePayload(
 	r *resource,
 ) *svcsdk.GetBucketAccelerateConfigurationInput {
 	res := &svcsdk.GetBucketAccelerateConfigurationInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -645,15 +657,15 @@ func (rm *resourceManager) newPutBucketAcceleratePayload(
 	r *resource,
 ) *svcsdk.PutBucketAccelerateConfigurationInput {
 	res := &svcsdk.PutBucketAccelerateConfigurationInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	if r.ko.Spec.Accelerate != nil {
-		res.SetAccelerateConfiguration(rm.newAccelerateConfiguration(r))
+		res.AccelerateConfiguration = rm.newAccelerateConfiguration(r)
 	} else {
-		res.SetAccelerateConfiguration(&svcsdk.AccelerateConfiguration{})
+		res.AccelerateConfiguration = &svcsdktypes.AccelerateConfiguration{}
 	}
 
-	if res.AccelerateConfiguration.Status == nil {
-		res.AccelerateConfiguration.SetStatus(DefaultAccelerationStatus)
+	if res.AccelerateConfiguration.Status == "" {
+		res.AccelerateConfiguration.Status = DefaultAccelerationStatus
 	}
 
 	return res
@@ -668,7 +680,7 @@ func (rm *resourceManager) syncAccelerate(
 	defer exit(err)
 	input := rm.newPutBucketAcceleratePayload(r)
 
-	_, err = rm.sdkapi.PutBucketAccelerateConfigurationWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketAccelerateConfiguration(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketAccelerate", err)
 	if err != nil {
 		return err
@@ -704,7 +716,7 @@ func (rm *resourceManager) newGetBucketACLPayload(
 	r *resource,
 ) *svcsdk.GetBucketAclInput {
 	res := &svcsdk.GetBucketAclInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -712,37 +724,37 @@ func (rm *resourceManager) newPutBucketACLPayload(
 	r *resource,
 ) *svcsdk.PutBucketAclInput {
 	res := &svcsdk.PutBucketAclInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	if r.ko.Spec.ACL != nil {
-		res.SetACL(*r.ko.Spec.ACL)
+		res.ACL = svcsdktypes.BucketCannedACL(*r.ko.Spec.ACL)
 	} else {
 		// Only put grants on bucket if there is no canned ACL to match
 
 		if r.ko.Spec.GrantFullControl != nil {
-			res.SetGrantFullControl(*r.ko.Spec.GrantFullControl)
+			res.GrantFullControl = r.ko.Spec.GrantFullControl
 		}
 		if r.ko.Spec.GrantRead != nil {
-			res.SetGrantRead(*r.ko.Spec.GrantRead)
+			res.GrantRead = r.ko.Spec.GrantRead
 		}
 		if r.ko.Spec.GrantReadACP != nil {
-			res.SetGrantReadACP(*r.ko.Spec.GrantReadACP)
+			res.GrantReadACP = r.ko.Spec.GrantReadACP
 		}
 		if r.ko.Spec.GrantWrite != nil {
-			res.SetGrantWrite(*r.ko.Spec.GrantWrite)
+			res.GrantWrite = r.ko.Spec.GrantWrite
 		}
 		if r.ko.Spec.GrantWriteACP != nil {
-			res.SetGrantWriteACP(*r.ko.Spec.GrantWriteACP)
+			res.GrantWriteACP = r.ko.Spec.GrantWriteACP
 		}
 	}
 
 	// Check that there is at least some ACL on the bucket
-	if res.ACL == nil &&
+	if res.ACL == "" &&
 		res.GrantFullControl == nil &&
 		res.GrantRead == nil &&
 		res.GrantReadACP == nil &&
 		res.GrantWrite == nil &&
 		res.GrantWriteACP == nil {
-		res.SetACL(DefaultACL)
+		res.ACL = DefaultACL
 	}
 
 	return res
@@ -757,7 +769,7 @@ func (rm *resourceManager) syncACL(
 	defer exit(err)
 	input := rm.newPutBucketACLPayload(r)
 
-	_, err = rm.sdkapi.PutBucketAclWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketAcl(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketAcl", err)
 	if err != nil {
 		return err
@@ -774,7 +786,7 @@ func (rm *resourceManager) newGetBucketCORSPayload(
 	r *resource,
 ) *svcsdk.GetBucketCorsInput {
 	res := &svcsdk.GetBucketCorsInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -782,11 +794,11 @@ func (rm *resourceManager) newPutBucketCORSPayload(
 	r *resource,
 ) *svcsdk.PutBucketCorsInput {
 	res := &svcsdk.PutBucketCorsInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	res.SetCORSConfiguration(rm.newCORSConfiguration(r))
+	res.Bucket = r.ko.Spec.Name
+	res.CORSConfiguration = rm.newCORSConfiguration(r)
 
 	if res.CORSConfiguration.CORSRules == nil {
-		res.CORSConfiguration.SetCORSRules([]*svcsdk.CORSRule{})
+		res.CORSConfiguration.CORSRules = []svcsdktypes.CORSRule{}
 	}
 
 	return res
@@ -796,7 +808,7 @@ func (rm *resourceManager) newDeleteBucketCORSPayload(
 	r *resource,
 ) *svcsdk.DeleteBucketCorsInput {
 	res := &svcsdk.DeleteBucketCorsInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 
 	return res
 }
@@ -810,7 +822,7 @@ func (rm *resourceManager) putCORS(
 	defer exit(err)
 	input := rm.newPutBucketCORSPayload(r)
 
-	_, err = rm.sdkapi.PutBucketCorsWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketCors(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketCors", err)
 	if err != nil {
 		return err
@@ -828,7 +840,7 @@ func (rm *resourceManager) deleteCORS(
 	defer exit(err)
 	input := rm.newDeleteBucketCORSPayload(r)
 
-	_, err = rm.sdkapi.DeleteBucketCorsWithContext(ctx, input)
+	_, err = rm.sdkapi.DeleteBucketCors(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteBucketCors", err)
 	if err != nil {
 		return err
@@ -855,7 +867,7 @@ func (rm *resourceManager) newGetBucketEncryptionPayload(
 	r *resource,
 ) *svcsdk.GetBucketEncryptionInput {
 	res := &svcsdk.GetBucketEncryptionInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -863,8 +875,8 @@ func (rm *resourceManager) newPutBucketEncryptionPayload(
 	r *resource,
 ) *svcsdk.PutBucketEncryptionInput {
 	res := &svcsdk.PutBucketEncryptionInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	res.SetServerSideEncryptionConfiguration(rm.newServerSideEncryptionConfiguration(r))
+	res.Bucket = r.ko.Spec.Name
+	res.ServerSideEncryptionConfiguration = rm.newServerSideEncryptionConfiguration(r)
 
 	return res
 }
@@ -873,7 +885,7 @@ func (rm *resourceManager) newDeleteBucketEncryptionPayload(
 	r *resource,
 ) *svcsdk.DeleteBucketEncryptionInput {
 	res := &svcsdk.DeleteBucketEncryptionInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 
 	return res
 }
@@ -887,7 +899,7 @@ func (rm *resourceManager) putEncryption(
 	defer exit(err)
 	input := rm.newPutBucketEncryptionPayload(r)
 
-	_, err = rm.sdkapi.PutBucketEncryptionWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketEncryption(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketEncryption", err)
 	if err != nil {
 		return err
@@ -905,7 +917,7 @@ func (rm *resourceManager) deleteEncryption(
 	defer exit(err)
 	input := rm.newDeleteBucketEncryptionPayload(r)
 
-	_, err = rm.sdkapi.DeleteBucketEncryptionWithContext(ctx, input)
+	_, err = rm.sdkapi.DeleteBucketEncryption(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteBucketEncryption", err)
 	if err != nil {
 		return err
@@ -932,7 +944,7 @@ func (rm *resourceManager) newGetBucketLifecyclePayload(
 	r *resource,
 ) *svcsdk.GetBucketLifecycleConfigurationInput {
 	res := &svcsdk.GetBucketLifecycleConfigurationInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -940,8 +952,8 @@ func (rm *resourceManager) newPutBucketLifecyclePayload(
 	r *resource,
 ) *svcsdk.PutBucketLifecycleConfigurationInput {
 	res := &svcsdk.PutBucketLifecycleConfigurationInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	res.SetLifecycleConfiguration(rm.newLifecycleConfiguration(r))
+	res.Bucket = r.ko.Spec.Name
+	res.LifecycleConfiguration = rm.newLifecycleConfiguration(r)
 	return res
 }
 
@@ -949,7 +961,7 @@ func (rm *resourceManager) newDeleteBucketLifecyclePayload(
 	r *resource,
 ) *svcsdk.DeleteBucketLifecycleInput {
 	res := &svcsdk.DeleteBucketLifecycleInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -962,7 +974,7 @@ func (rm *resourceManager) putLifecycle(
 	defer exit(err)
 	input := rm.newPutBucketLifecyclePayload(r)
 
-	_, err = rm.sdkapi.PutBucketLifecycleConfigurationWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketLifecycleConfiguration(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketLifecycle", err)
 	if err != nil {
 		return err
@@ -980,7 +992,7 @@ func (rm *resourceManager) deleteLifecycle(
 	defer exit(err)
 	input := rm.newDeleteBucketLifecyclePayload(r)
 
-	_, err = rm.sdkapi.DeleteBucketLifecycleWithContext(ctx, input)
+	_, err = rm.sdkapi.DeleteBucketLifecycle(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteBucketLifecycle", err)
 	if err != nil {
 		return err
@@ -1007,7 +1019,7 @@ func (rm *resourceManager) newGetBucketLoggingPayload(
 	r *resource,
 ) *svcsdk.GetBucketLoggingInput {
 	res := &svcsdk.GetBucketLoggingInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1015,11 +1027,11 @@ func (rm *resourceManager) newPutBucketLoggingPayload(
 	r *resource,
 ) *svcsdk.PutBucketLoggingInput {
 	res := &svcsdk.PutBucketLoggingInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	if r.ko.Spec.Logging != nil {
-		res.SetBucketLoggingStatus(rm.newBucketLoggingStatus(r))
+		res.BucketLoggingStatus = rm.newBucketLoggingStatus(r)
 	} else {
-		res.SetBucketLoggingStatus(&svcsdk.BucketLoggingStatus{})
+		res.BucketLoggingStatus = &svcsdktypes.BucketLoggingStatus{}
 	}
 	return res
 }
@@ -1033,7 +1045,7 @@ func (rm *resourceManager) syncLogging(
 	defer exit(err)
 	input := rm.newPutBucketLoggingPayload(r)
 
-	_, err = rm.sdkapi.PutBucketLoggingWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketLogging(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketLogging", err)
 	if err != nil {
 		return err
@@ -1048,9 +1060,9 @@ func (rm *resourceManager) syncLogging(
 
 func (rm *resourceManager) newGetBucketNotificationPayload(
 	r *resource,
-) *svcsdk.GetBucketNotificationConfigurationRequest {
-	res := &svcsdk.GetBucketNotificationConfigurationRequest{}
-	res.SetBucket(*r.ko.Spec.Name)
+) *svcsdk.GetBucketNotificationConfigurationInput {
+	res := &svcsdk.GetBucketNotificationConfigurationInput{}
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1058,11 +1070,11 @@ func (rm *resourceManager) newPutBucketNotificationPayload(
 	r *resource,
 ) *svcsdk.PutBucketNotificationConfigurationInput {
 	res := &svcsdk.PutBucketNotificationConfigurationInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	if r.ko.Spec.Notification != nil {
-		res.SetNotificationConfiguration(rm.newNotificationConfiguration(r))
+		res.NotificationConfiguration = rm.newNotificationConfiguration(r)
 	} else {
-		res.SetNotificationConfiguration(&svcsdk.NotificationConfiguration{})
+		res.NotificationConfiguration = &svcsdktypes.NotificationConfiguration{}
 	}
 	return res
 }
@@ -1076,7 +1088,7 @@ func (rm *resourceManager) syncNotification(
 	defer exit(err)
 	input := rm.newPutBucketNotificationPayload(r)
 
-	_, err = rm.sdkapi.PutBucketNotificationConfigurationWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketNotificationConfiguration(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketNotification", err)
 	if err != nil {
 		return err
@@ -1093,7 +1105,7 @@ func (rm *resourceManager) newGetBucketOwnershipControlsPayload(
 	r *resource,
 ) *svcsdk.GetBucketOwnershipControlsInput {
 	res := &svcsdk.GetBucketOwnershipControlsInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1101,8 +1113,8 @@ func (rm *resourceManager) newPutBucketOwnershipControlsPayload(
 	r *resource,
 ) *svcsdk.PutBucketOwnershipControlsInput {
 	res := &svcsdk.PutBucketOwnershipControlsInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	res.SetOwnershipControls(rm.newOwnershipControls(r))
+	res.Bucket = r.ko.Spec.Name
+	res.OwnershipControls = rm.newOwnershipControls(r)
 
 	return res
 }
@@ -1111,7 +1123,7 @@ func (rm *resourceManager) newDeleteBucketOwnershipControlsPayload(
 	r *resource,
 ) *svcsdk.DeleteBucketOwnershipControlsInput {
 	res := &svcsdk.DeleteBucketOwnershipControlsInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 
 	return res
 }
@@ -1125,7 +1137,7 @@ func (rm *resourceManager) putOwnershipControls(
 	defer exit(err)
 	input := rm.newPutBucketOwnershipControlsPayload(r)
 
-	_, err = rm.sdkapi.PutBucketOwnershipControlsWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketOwnershipControls(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketOwnershipControls", err)
 	if err != nil {
 		return err
@@ -1143,7 +1155,7 @@ func (rm *resourceManager) deleteOwnershipControls(
 	defer exit(err)
 	input := rm.newDeleteBucketOwnershipControlsPayload(r)
 
-	_, err = rm.sdkapi.DeleteBucketOwnershipControlsWithContext(ctx, input)
+	_, err = rm.sdkapi.DeleteBucketOwnershipControls(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteBucketOwnershipControls", err)
 	if err != nil {
 		return err
@@ -1170,7 +1182,7 @@ func (rm *resourceManager) newGetBucketPolicyPayload(
 	r *resource,
 ) *svcsdk.GetBucketPolicyInput {
 	res := &svcsdk.GetBucketPolicyInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1178,9 +1190,9 @@ func (rm *resourceManager) newPutBucketPolicyPayload(
 	r *resource,
 ) *svcsdk.PutBucketPolicyInput {
 	res := &svcsdk.PutBucketPolicyInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	res.SetConfirmRemoveSelfBucketAccess(false)
-	res.SetPolicy(*r.ko.Spec.Policy)
+	res.Bucket = r.ko.Spec.Name
+	res.ConfirmRemoveSelfBucketAccess = aws.Bool(false)
+	res.Policy = r.ko.Spec.Policy
 
 	return res
 }
@@ -1189,7 +1201,7 @@ func (rm *resourceManager) newDeleteBucketPolicyPayload(
 	r *resource,
 ) *svcsdk.DeleteBucketPolicyInput {
 	res := &svcsdk.DeleteBucketPolicyInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1202,7 +1214,7 @@ func (rm *resourceManager) putPolicy(
 	defer exit(err)
 	input := rm.newPutBucketPolicyPayload(r)
 
-	_, err = rm.sdkapi.PutBucketPolicyWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketPolicy(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketPolicy", err)
 	if err != nil {
 		return err
@@ -1220,7 +1232,7 @@ func (rm *resourceManager) deletePolicy(
 	defer exit(err)
 	input := rm.newDeleteBucketPolicyPayload(r)
 
-	_, err = rm.sdkapi.DeleteBucketPolicyWithContext(ctx, input)
+	_, err = rm.sdkapi.DeleteBucketPolicy(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteBucketPolicy", err)
 	if err != nil {
 		return err
@@ -1247,7 +1259,7 @@ func (rm *resourceManager) newGetPublicAccessBlockPayload(
 	r *resource,
 ) *svcsdk.GetPublicAccessBlockInput {
 	res := &svcsdk.GetPublicAccessBlockInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1255,8 +1267,8 @@ func (rm *resourceManager) newPutPublicAccessBlockPayload(
 	r *resource,
 ) *svcsdk.PutPublicAccessBlockInput {
 	res := &svcsdk.PutPublicAccessBlockInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	res.SetPublicAccessBlockConfiguration(rm.newPublicAccessBlockConfiguration(r))
+	res.Bucket = r.ko.Spec.Name
+	res.PublicAccessBlockConfiguration = rm.newPublicAccessBlockConfiguration(r)
 
 	return res
 }
@@ -1265,7 +1277,7 @@ func (rm *resourceManager) newDeletePublicAccessBlockPayload(
 	r *resource,
 ) *svcsdk.DeletePublicAccessBlockInput {
 	res := &svcsdk.DeletePublicAccessBlockInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1278,7 +1290,7 @@ func (rm *resourceManager) putPublicAccessBlock(
 	defer exit(err)
 	input := rm.newPutPublicAccessBlockPayload(r)
 
-	_, err = rm.sdkapi.PutPublicAccessBlockWithContext(ctx, input)
+	_, err = rm.sdkapi.PutPublicAccessBlock(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutPublicAccessBlock", err)
 	if err != nil {
 		return err
@@ -1296,7 +1308,7 @@ func (rm *resourceManager) deletePublicAccessBlock(
 	defer exit(err)
 	input := rm.newDeletePublicAccessBlockPayload(r)
 
-	_, err = rm.sdkapi.DeletePublicAccessBlockWithContext(ctx, input)
+	_, err = rm.sdkapi.DeletePublicAccessBlock(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeletePublicAccessBlock", err)
 	if err != nil {
 		return err
@@ -1323,7 +1335,7 @@ func (rm *resourceManager) newGetBucketReplicationPayload(
 	r *resource,
 ) *svcsdk.GetBucketReplicationInput {
 	res := &svcsdk.GetBucketReplicationInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1331,8 +1343,8 @@ func (rm *resourceManager) newPutBucketReplicationPayload(
 	r *resource,
 ) *svcsdk.PutBucketReplicationInput {
 	res := &svcsdk.PutBucketReplicationInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	res.SetReplicationConfiguration(rm.newReplicationConfiguration(r))
+	res.Bucket = r.ko.Spec.Name
+	res.ReplicationConfiguration = rm.newReplicationConfiguration(r)
 	return res
 }
 
@@ -1340,7 +1352,7 @@ func (rm *resourceManager) newDeleteBucketReplicationPayload(
 	r *resource,
 ) *svcsdk.DeleteBucketReplicationInput {
 	res := &svcsdk.DeleteBucketReplicationInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1353,7 +1365,7 @@ func (rm *resourceManager) putReplication(
 	defer exit(err)
 	input := rm.newPutBucketReplicationPayload(r)
 
-	_, err = rm.sdkapi.PutBucketReplicationWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketReplication(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketReplication", err)
 	if err != nil {
 		return err
@@ -1371,7 +1383,7 @@ func (rm *resourceManager) deleteReplication(
 	defer exit(err)
 	input := rm.newDeleteBucketReplicationPayload(r)
 
-	_, err = rm.sdkapi.DeleteBucketReplicationWithContext(ctx, input)
+	_, err = rm.sdkapi.DeleteBucketReplication(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteBucketReplication", err)
 	if err != nil {
 		return err
@@ -1398,7 +1410,7 @@ func (rm *resourceManager) newGetBucketRequestPaymentPayload(
 	r *resource,
 ) *svcsdk.GetBucketRequestPaymentInput {
 	res := &svcsdk.GetBucketRequestPaymentInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1406,15 +1418,15 @@ func (rm *resourceManager) newPutBucketRequestPaymentPayload(
 	r *resource,
 ) *svcsdk.PutBucketRequestPaymentInput {
 	res := &svcsdk.PutBucketRequestPaymentInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	if r.ko.Spec.RequestPayment != nil && r.ko.Spec.RequestPayment.Payer != nil {
-		res.SetRequestPaymentConfiguration(rm.newRequestPaymentConfiguration(r))
+		res.RequestPaymentConfiguration = rm.newRequestPaymentConfiguration(r)
 	} else {
-		res.SetRequestPaymentConfiguration(&svcsdk.RequestPaymentConfiguration{})
+		res.RequestPaymentConfiguration = &svcsdktypes.RequestPaymentConfiguration{}
 	}
 
-	if res.RequestPaymentConfiguration.Payer == nil {
-		res.RequestPaymentConfiguration.SetPayer(DefaultRequestPayer)
+	if res.RequestPaymentConfiguration.Payer == "" {
+		res.RequestPaymentConfiguration.Payer = DefaultRequestPayer
 	}
 
 	return res
@@ -1429,7 +1441,7 @@ func (rm *resourceManager) syncRequestPayment(
 	defer exit(err)
 	input := rm.newPutBucketRequestPaymentPayload(r)
 
-	_, err = rm.sdkapi.PutBucketRequestPaymentWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketRequestPayment(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketRequestPayment", err)
 	if err != nil {
 		return err
@@ -1446,7 +1458,7 @@ func (rm *resourceManager) newGetBucketTaggingPayload(
 	r *resource,
 ) *svcsdk.GetBucketTaggingInput {
 	res := &svcsdk.GetBucketTaggingInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1454,8 +1466,8 @@ func (rm *resourceManager) newPutBucketTaggingPayload(
 	r *resource,
 ) *svcsdk.PutBucketTaggingInput {
 	res := &svcsdk.PutBucketTaggingInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	res.SetTagging(rm.newTagging(r))
+	res.Bucket = r.ko.Spec.Name
+	res.Tagging = rm.newTagging(r)
 
 	return res
 }
@@ -1464,7 +1476,7 @@ func (rm *resourceManager) newDeleteBucketTaggingPayload(
 	r *resource,
 ) *svcsdk.DeleteBucketTaggingInput {
 	res := &svcsdk.DeleteBucketTaggingInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 
 	return res
 }
@@ -1478,7 +1490,7 @@ func (rm *resourceManager) putTagging(
 	defer exit(err)
 	input := rm.newPutBucketTaggingPayload(r)
 
-	_, err = rm.sdkapi.PutBucketTaggingWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketTagging(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketTagging", err)
 	if err != nil {
 		return err
@@ -1496,7 +1508,7 @@ func (rm *resourceManager) deleteTagging(
 	defer exit(err)
 	input := rm.newDeleteBucketTaggingPayload(r)
 
-	_, err = rm.sdkapi.DeleteBucketTaggingWithContext(ctx, input)
+	_, err = rm.sdkapi.DeleteBucketTagging(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteBucketTagging", err)
 	if err != nil {
 		return err
@@ -1523,7 +1535,7 @@ func (rm *resourceManager) newGetBucketVersioningPayload(
 	r *resource,
 ) *svcsdk.GetBucketVersioningInput {
 	res := &svcsdk.GetBucketVersioningInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1531,15 +1543,15 @@ func (rm *resourceManager) newPutBucketVersioningPayload(
 	r *resource,
 ) *svcsdk.PutBucketVersioningInput {
 	res := &svcsdk.PutBucketVersioningInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	if r.ko.Spec.Versioning != nil {
-		res.SetVersioningConfiguration(rm.newVersioningConfiguration(r))
+		res.VersioningConfiguration = rm.newVersioningConfiguration(r)
 	} else {
-		res.SetVersioningConfiguration(&svcsdk.VersioningConfiguration{})
+		res.VersioningConfiguration = &svcsdktypes.VersioningConfiguration{}
 	}
 
-	if res.VersioningConfiguration.Status == nil {
-		res.VersioningConfiguration.SetStatus(DefaultVersioningStatus)
+	if res.VersioningConfiguration.Status == "" {
+		res.VersioningConfiguration.Status = DefaultVersioningStatus
 	}
 
 	return res
@@ -1554,7 +1566,7 @@ func (rm *resourceManager) syncVersioning(
 	defer exit(err)
 	input := rm.newPutBucketVersioningPayload(r)
 
-	_, err = rm.sdkapi.PutBucketVersioningWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketVersioning(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketVersioning", err)
 	if err != nil {
 		return err
@@ -1571,7 +1583,7 @@ func (rm *resourceManager) newGetBucketWebsitePayload(
 	r *resource,
 ) *svcsdk.GetBucketWebsiteInput {
 	res := &svcsdk.GetBucketWebsiteInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 	return res
 }
 
@@ -1579,8 +1591,8 @@ func (rm *resourceManager) newPutBucketWebsitePayload(
 	r *resource,
 ) *svcsdk.PutBucketWebsiteInput {
 	res := &svcsdk.PutBucketWebsiteInput{}
-	res.SetBucket(*r.ko.Spec.Name)
-	res.SetWebsiteConfiguration(rm.newWebsiteConfiguration(r))
+	res.Bucket = r.ko.Spec.Name
+	res.WebsiteConfiguration = rm.newWebsiteConfiguration(r)
 
 	return res
 }
@@ -1589,7 +1601,7 @@ func (rm *resourceManager) newDeleteBucketWebsitePayload(
 	r *resource,
 ) *svcsdk.DeleteBucketWebsiteInput {
 	res := &svcsdk.DeleteBucketWebsiteInput{}
-	res.SetBucket(*r.ko.Spec.Name)
+	res.Bucket = r.ko.Spec.Name
 
 	return res
 }
@@ -1603,7 +1615,7 @@ func (rm *resourceManager) putWebsite(
 	defer exit(err)
 	input := rm.newPutBucketWebsitePayload(r)
 
-	_, err = rm.sdkapi.PutBucketWebsiteWithContext(ctx, input)
+	_, err = rm.sdkapi.PutBucketWebsite(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketWebsite", err)
 	if err != nil {
 		return err
@@ -1621,7 +1633,7 @@ func (rm *resourceManager) deleteWebsite(
 	defer exit(err)
 	input := rm.newDeleteBucketWebsitePayload(r)
 
-	_, err = rm.sdkapi.DeleteBucketWebsiteWithContext(ctx, input)
+	_, err = rm.sdkapi.DeleteBucketWebsite(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteBucketWebsite", err)
 	if err != nil {
 		return err

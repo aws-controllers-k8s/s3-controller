@@ -22,12 +22,12 @@ import (
 
 // BucketSpec defines the desired state of Bucket.
 //
-// In terms of implementation, a Bucket is a resource. An Amazon S3 bucket name
-// is globally unique, and the namespace is shared by all Amazon Web Services
-// accounts.
+// In terms of implementation, a Bucket is a resource.
 type BucketSpec struct {
 
 	// The canned ACL to apply to the bucket.
+	//
+	// This functionality is not supported for directory buckets.
 	ACL *string `json:"acl,omitempty"`
 	// Container for setting the transfer acceleration state.
 	Accelerate *AccelerateConfiguration  `json:"accelerate,omitempty"`
@@ -42,17 +42,27 @@ type BucketSpec struct {
 	Encryption                *ServerSideEncryptionConfiguration `json:"encryption,omitempty"`
 	// Allows grantee the read, write, read ACP, and write ACP permissions on the
 	// bucket.
+	//
+	// This functionality is not supported for directory buckets.
 	GrantFullControl *string `json:"grantFullControl,omitempty"`
 	// Allows grantee to list the objects in the bucket.
+	//
+	// This functionality is not supported for directory buckets.
 	GrantRead *string `json:"grantRead,omitempty"`
 	// Allows grantee to read the bucket ACL.
+	//
+	// This functionality is not supported for directory buckets.
 	GrantReadACP *string `json:"grantReadACP,omitempty"`
 	// Allows grantee to create new objects in the bucket.
 	//
 	// For the bucket and object owners of existing objects, also allows deletions
 	// and overwrites of those objects.
+	//
+	// This functionality is not supported for directory buckets.
 	GrantWrite *string `json:"grantWrite,omitempty"`
 	// Allows grantee to write the ACL for the applicable bucket.
+	//
+	// This functionality is not supported for directory buckets.
 	GrantWriteACP      *string                            `json:"grantWriteACP,omitempty"`
 	IntelligentTiering []*IntelligentTieringConfiguration `json:"intelligentTiering,omitempty"`
 	Inventory          []*InventoryConfiguration          `json:"inventory,omitempty"`
@@ -62,16 +72,34 @@ type BucketSpec struct {
 	Logging *BucketLoggingStatus    `json:"logging,omitempty"`
 	Metrics []*MetricsConfiguration `json:"metrics,omitempty"`
 	// The name of the bucket to create.
+	//
+	// General purpose buckets - For information about bucket naming restrictions,
+	// see Bucket naming rules (https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)
+	// in the Amazon S3 User Guide.
+	//
+	// Directory buckets - When you use this operation with a directory bucket,
+	// you must use path-style requests in the format https://s3express-control.region-code.amazonaws.com/bucket-name
+	// . Virtual-hosted-style requests aren't supported. Directory bucket names
+	// must be unique in the chosen Zone (Availability Zone or Local Zone). Bucket
+	// names must also follow the format bucket-base-name--zone-id--x-s3 (for example,
+	// DOC-EXAMPLE-BUCKET--usw2-az1--x-s3). For information about bucket naming
+	// restrictions, see Directory bucket naming rules (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html)
+	// in the Amazon S3 User Guide
 	// +kubebuilder:validation:Required
 	Name         *string                    `json:"name"`
 	Notification *NotificationConfiguration `json:"notification,omitempty"`
 	// Specifies whether you want S3 Object Lock to be enabled for the new bucket.
+	//
+	// This functionality is not supported for directory buckets.
 	ObjectLockEnabledForBucket *bool   `json:"objectLockEnabledForBucket,omitempty"`
 	ObjectOwnership            *string `json:"objectOwnership,omitempty"`
 	// The OwnershipControls (BucketOwnerEnforced, BucketOwnerPreferred, or ObjectWriter)
 	// that you want to apply to this Amazon S3 bucket.
 	OwnershipControls *OwnershipControls `json:"ownershipControls,omitempty"`
 	// The bucket policy as a JSON document.
+	//
+	// For directory buckets, the only IAM action supported in the bucket policy
+	// is s3express:CreateSession.
 	Policy *string `json:"policy,omitempty"`
 	// The PublicAccessBlock configuration that you want to apply to this Amazon
 	// S3 bucket. You can enable the configuration options in any combination. For
