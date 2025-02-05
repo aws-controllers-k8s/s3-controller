@@ -31,7 +31,7 @@ var (
 // Specifies the days since the initiation of an incomplete multipart upload
 // that Amazon S3 will wait before permanently removing all parts of the upload.
 // For more information, see Aborting Incomplete Multipart Uploads Using a Bucket
-// Lifecycle Policy (https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config)
+// Lifecycle Configuration (https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config)
 // in the Amazon S3 User Guide.
 type AbortIncompleteMultipartUpload struct {
 	DaysAfterInitiation *int64 `json:"daysAfterInitiation,omitempty"`
@@ -120,10 +120,9 @@ type BucketLoggingStatus struct {
 	LoggingEnabled *LoggingEnabled `json:"loggingEnabled,omitempty"`
 }
 
-// In terms of implementation, a Bucket is a resource. An Amazon S3 bucket name
-// is globally unique, and the namespace is shared by all Amazon Web Services
-// accounts.
+// In terms of implementation, a Bucket is a resource.
 type Bucket_SDK struct {
+	BucketRegion *string      `json:"bucketRegion,omitempty"`
 	CreationDate *metav1.Time `json:"creationDate,omitempty"`
 	Name         *string      `json:"name,omitempty"`
 }
@@ -144,16 +143,6 @@ type CORSRule struct {
 	ExposeHeaders  []*string `json:"exposeHeaders,omitempty"`
 	ID             *string   `json:"id,omitempty"`
 	MaxAgeSeconds  *int64    `json:"maxAgeSeconds,omitempty"`
-}
-
-// Container for specifying the Lambda notification configuration.
-type CloudFunctionConfiguration struct {
-	// The bucket event for which to send notifications.
-	Event  *string   `json:"event,omitempty"`
-	Events []*string `json:"events,omitempty"`
-	// An optional unique identifier for configurations in a notification configuration.
-	// If you don't provide one, Amazon S3 will assign an ID.
-	ID *string `json:"id,omitempty"`
 }
 
 // Container for all (if there are any) keys between Prefix and the next occurrence
@@ -179,8 +168,8 @@ type CreateBucketConfiguration struct {
 	LocationConstraint *string `json:"locationConstraint,omitempty"`
 }
 
-// The container element for specifying the default Object Lock retention settings
-// for new objects placed in the specified bucket.
+// The container element for optionally specifying the default Object Lock retention
+// settings for new objects placed in the specified bucket.
 //
 //   - The DefaultRetention settings require both a mode and a period.
 //
@@ -228,6 +217,12 @@ type Destination struct {
 	Bucket                   *string                   `json:"bucket,omitempty"`
 	// Specifies encryption-related information for an Amazon S3 bucket that is
 	// a destination for replicated objects.
+	//
+	// If you're specifying a customer managed KMS key, we recommend using a fully
+	// qualified KMS key ARN. If you use a KMS key alias instead, then KMS resolves
+	// the key within the requester’s account. This behavior can result in data
+	// that's encrypted with a KMS key that belongs to the requester, and not the
+	// bucket owner.
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
 	// A container specifying replication metrics-related settings enabling replication
 	// metrics and events.
@@ -248,6 +243,12 @@ type Encryption struct {
 
 // Specifies encryption-related information for an Amazon S3 bucket that is
 // a destination for replicated objects.
+//
+// If you're specifying a customer managed KMS key, we recommend using a fully
+// qualified KMS key ARN. If you use a KMS key alias instead, then KMS resolves
+// the key within the requester’s account. This behavior can result in data
+// that's encrypted with a KMS key that belongs to the requester, and not the
+// bucket owner.
 type EncryptionConfiguration struct {
 	ReplicaKMSKeyID *string `json:"replicaKMSKeyID,omitempty"`
 }
@@ -262,15 +263,24 @@ type ErrorDocument struct {
 	Key *string `json:"key,omitempty"`
 }
 
-// Optional configuration to replicate existing source bucket objects. For more
-// information, see Replicating Existing Objects (https://docs.aws.amazon.com/AmazonS3/latest/dev/replication-what-is-isnot-replicated.html#existing-object-replication)
+// Optional configuration to replicate existing source bucket objects.
+//
+// This parameter is no longer supported. To replicate existing objects, see
+// Replicating existing objects with S3 Batch Replication (https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-batch-replication-batch.html)
 // in the Amazon S3 User Guide.
 type ExistingObjectReplication struct {
 	Status *string `json:"status,omitempty"`
 }
 
-// Specifies the Amazon S3 object key name to filter on and whether to filter
-// on the suffix or prefix of the key name.
+// Specifies the Amazon S3 object key name to filter on. An object key name
+// is the name assigned to an object in your Amazon S3 bucket. You specify whether
+// to filter on the suffix or prefix of the object key name. A prefix is a specific
+// string of characters at the beginning of an object key name, which you can
+// use to organize objects. For example, you can start the key names of related
+// objects with a prefix, such as 2023- or engineering/. Then, you can use FilterRule
+// to find objects in a bucket with key names that have the same prefix. A suffix
+// is similar to a prefix, but it is at the end of the object key name instead
+// of at the beginning.
 type FilterRule struct {
 	Name  *string `json:"name,omitempty"`
 	Value *string `json:"value,omitempty"`
@@ -399,7 +409,8 @@ type KeyFilter struct {
 type LambdaFunctionConfiguration struct {
 	Events []*string `json:"events,omitempty"`
 	// Specifies object key name filtering rules. For information about key name
-	// filtering, see Configuring Event Notifications (https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html)
+	// filtering, see Configuring event notifications using object key name filtering
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html)
 	// in the Amazon S3 User Guide.
 	Filter *NotificationConfigurationFilter `json:"filter,omitempty"`
 	// An optional unique identifier for configurations in a notification configuration.
@@ -409,6 +420,9 @@ type LambdaFunctionConfiguration struct {
 }
 
 // Container for the expiration for the lifecycle of the object.
+//
+// For more information see, Managing your storage lifecycle (https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html)
+// in the Amazon S3 User Guide.
 type LifecycleExpiration struct {
 	Date                      *metav1.Time `json:"date,omitempty"`
 	Days                      *int64       `json:"days,omitempty"`
@@ -416,17 +430,25 @@ type LifecycleExpiration struct {
 }
 
 // A lifecycle rule for individual objects in an Amazon S3 bucket.
+//
+// For more information see, Managing your storage lifecycle (https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html)
+// in the Amazon S3 User Guide.
 type LifecycleRule struct {
 	// Specifies the days since the initiation of an incomplete multipart upload
 	// that Amazon S3 will wait before permanently removing all parts of the upload.
 	// For more information, see Aborting Incomplete Multipart Uploads Using a Bucket
-	// Lifecycle Policy (https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config)
+	// Lifecycle Configuration (https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config)
 	// in the Amazon S3 User Guide.
 	AbortIncompleteMultipartUpload *AbortIncompleteMultipartUpload `json:"abortIncompleteMultipartUpload,omitempty"`
 	// Container for the expiration for the lifecycle of the object.
+	//
+	// For more information see, Managing your storage lifecycle (https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html)
+	// in the Amazon S3 User Guide.
 	Expiration *LifecycleExpiration `json:"expiration,omitempty"`
 	// The Filter is used to identify objects that a Lifecycle Rule applies to.
-	// A Filter must have exactly one of Prefix, Tag, or And specified.
+	// A Filter can have exactly one of Prefix, Tag, ObjectSizeGreaterThan, ObjectSizeLessThan,
+	// or And specified. If the Filter element is left empty, the Lifecycle Rule
+	// applies to all objects in the bucket.
 	Filter *LifecycleRuleFilter `json:"filter,omitempty"`
 	ID     *string              `json:"id,omitempty"`
 	// Specifies when noncurrent object versions expire. Upon expiration, Amazon
@@ -434,6 +456,9 @@ type LifecycleRule struct {
 	// configuration action on a bucket that has versioning enabled (or suspended)
 	// to request that Amazon S3 delete noncurrent object versions at a specific
 	// period in the object's lifetime.
+	//
+	// This parameter applies to general purpose buckets only. It is not supported
+	// for directory bucket lifecycle configurations.
 	NoncurrentVersionExpiration  *NoncurrentVersionExpiration   `json:"noncurrentVersionExpiration,omitempty"`
 	NoncurrentVersionTransitions []*NoncurrentVersionTransition `json:"noncurrentVersionTransitions,omitempty"`
 	Prefix                       *string                        `json:"prefix,omitempty"`
@@ -452,7 +477,9 @@ type LifecycleRuleAndOperator struct {
 }
 
 // The Filter is used to identify objects that a Lifecycle Rule applies to.
-// A Filter must have exactly one of Prefix, Tag, or And specified.
+// A Filter can have exactly one of Prefix, Tag, ObjectSizeGreaterThan, ObjectSizeLessThan,
+// or And specified. If the Filter element is left empty, the Lifecycle Rule
+// applies to all objects in the bucket.
 type LifecycleRuleFilter struct {
 	// This is used in a Lifecycle Rule Filter to apply a logical AND to two or
 	// more predicates. The Lifecycle Rule will apply to any object matching all
@@ -545,6 +572,9 @@ type MultipartUpload struct {
 // configuration action on a bucket that has versioning enabled (or suspended)
 // to request that Amazon S3 delete noncurrent object versions at a specific
 // period in the object's lifetime.
+//
+// This parameter applies to general purpose buckets only. It is not supported
+// for directory bucket lifecycle configurations.
 type NoncurrentVersionExpiration struct {
 	NewerNoncurrentVersions *int64 `json:"newerNoncurrentVersions,omitempty"`
 	NoncurrentDays          *int64 `json:"noncurrentDays,omitempty"`
@@ -572,7 +602,8 @@ type NotificationConfiguration struct {
 }
 
 // Specifies object key name filtering rules. For information about key name
-// filtering, see Configuring Event Notifications (https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html)
+// filtering, see Configuring event notifications using object key name filtering
+// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html)
 // in the Amazon S3 User Guide.
 type NotificationConfigurationFilter struct {
 	// A container for object key name prefix and suffix filtering rules.
@@ -635,8 +666,19 @@ type OwnershipControlsRule struct {
 	// BucketOwnerEnforced - Access control lists (ACLs) are disabled and no longer
 	// affect permissions. The bucket owner automatically owns and has full control
 	// over every object in the bucket. The bucket only accepts PUT requests that
-	// don't specify an ACL or bucket owner full control ACLs, such as the bucket-owner-full-control
-	// canned ACL or an equivalent form of this ACL expressed in the XML format.
+	// don't specify an ACL or specify bucket owner full control ACLs (such as the
+	// predefined bucket-owner-full-control canned ACL or a custom ACL in XML format
+	// that grants the same permissions).
+	//
+	// By default, ObjectOwnership is set to BucketOwnerEnforced and ACLs are disabled.
+	// We recommend keeping ACLs disabled, except in uncommon use cases where you
+	// must control access for each object individually. For more information about
+	// S3 Object Ownership, see Controlling ownership of objects and disabling ACLs
+	// for your bucket (https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html)
+	// in the Amazon S3 User Guide.
+	//
+	// This functionality is not supported for directory buckets. Directory buckets
+	// use the bucket owner enforced setting for S3 Object Ownership.
 	ObjectOwnership *string `json:"objectOwnership,omitempty"`
 }
 
@@ -657,27 +699,14 @@ type PublicAccessBlockConfiguration struct {
 type QueueConfiguration struct {
 	Events []*string `json:"events,omitempty"`
 	// Specifies object key name filtering rules. For information about key name
-	// filtering, see Configuring Event Notifications (https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html)
+	// filtering, see Configuring event notifications using object key name filtering
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html)
 	// in the Amazon S3 User Guide.
 	Filter *NotificationConfigurationFilter `json:"filter,omitempty"`
 	// An optional unique identifier for configurations in a notification configuration.
 	// If you don't provide one, Amazon S3 will assign an ID.
 	ID       *string `json:"id,omitempty"`
 	QueueARN *string `json:"queueARN,omitempty"`
-}
-
-// This data type is deprecated. Use QueueConfiguration (https://docs.aws.amazon.com/AmazonS3/latest/API/API_QueueConfiguration.html)
-// for the same purposes. This data type specifies the configuration for publishing
-// messages to an Amazon Simple Queue Service (Amazon SQS) queue when Amazon
-// S3 detects specified events.
-type QueueConfigurationDeprecated struct {
-	// The bucket event for which to send notifications.
-	Event  *string   `json:"event,omitempty"`
-	Events []*string `json:"events,omitempty"`
-	// An optional unique identifier for configurations in a notification configuration.
-	// If you don't provide one, Amazon S3 will assign an ID.
-	ID    *string `json:"id,omitempty"`
-	Queue *string `json:"queue,omitempty"`
 }
 
 // Specifies how requests are redirected. In the event of an error, you can
@@ -736,8 +765,10 @@ type ReplicationRule struct {
 	// Specifies information about where to publish analysis or configuration results
 	// for an Amazon S3 bucket and S3 Replication Time Control (S3 RTC).
 	Destination *Destination `json:"destination,omitempty"`
-	// Optional configuration to replicate existing source bucket objects. For more
-	// information, see Replicating Existing Objects (https://docs.aws.amazon.com/AmazonS3/latest/dev/replication-what-is-isnot-replicated.html#existing-object-replication)
+	// Optional configuration to replicate existing source bucket objects.
+	//
+	// This parameter is no longer supported. To replicate existing objects, see
+	// Replicating existing objects with S3 Batch Replication (https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-batch-replication-batch.html)
 	// in the Amazon S3 User Guide.
 	ExistingObjectReplication *ExistingObjectReplication `json:"existingObjectReplication,omitempty"`
 	// A filter that identifies the subset of objects to which the replication rule
@@ -834,43 +865,6 @@ type RoutingRule struct {
 	Redirect *Redirect `json:"redirect,omitempty"`
 }
 
-// Specifies lifecycle rules for an Amazon S3 bucket. For more information,
-// see Put Bucket Lifecycle Configuration (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTlifecycle.html)
-// in the Amazon S3 API Reference. For examples, see Put Bucket Lifecycle Configuration
-// Examples (https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketLifecycleConfiguration.html#API_PutBucketLifecycleConfiguration_Examples).
-type Rule struct {
-	// Specifies the days since the initiation of an incomplete multipart upload
-	// that Amazon S3 will wait before permanently removing all parts of the upload.
-	// For more information, see Aborting Incomplete Multipart Uploads Using a Bucket
-	// Lifecycle Policy (https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config)
-	// in the Amazon S3 User Guide.
-	AbortIncompleteMultipartUpload *AbortIncompleteMultipartUpload `json:"abortIncompleteMultipartUpload,omitempty"`
-	// Container for the expiration for the lifecycle of the object.
-	Expiration *LifecycleExpiration `json:"expiration,omitempty"`
-	ID         *string              `json:"id,omitempty"`
-	// Specifies when noncurrent object versions expire. Upon expiration, Amazon
-	// S3 permanently deletes the noncurrent object versions. You set this lifecycle
-	// configuration action on a bucket that has versioning enabled (or suspended)
-	// to request that Amazon S3 delete noncurrent object versions at a specific
-	// period in the object's lifetime.
-	NoncurrentVersionExpiration *NoncurrentVersionExpiration `json:"noncurrentVersionExpiration,omitempty"`
-	// Container for the transition rule that describes when noncurrent objects
-	// transition to the STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING, GLACIER_IR,
-	// GLACIER, or DEEP_ARCHIVE storage class. If your bucket is versioning-enabled
-	// (or versioning is suspended), you can set this action to request that Amazon
-	// S3 transition noncurrent object versions to the STANDARD_IA, ONEZONE_IA,
-	// INTELLIGENT_TIERING, GLACIER_IR, GLACIER, or DEEP_ARCHIVE storage class at
-	// a specific period in the object's lifetime.
-	NoncurrentVersionTransition *NoncurrentVersionTransition `json:"noncurrentVersionTransition,omitempty"`
-	Prefix                      *string                      `json:"prefix,omitempty"`
-	Status                      *string                      `json:"status,omitempty"`
-	// Specifies when an object transitions to a specified storage class. For more
-	// information about Amazon S3 lifecycle configuration rules, see Transitioning
-	// Objects Using Amazon S3 Lifecycle (https://docs.aws.amazon.com/AmazonS3/latest/dev/lifecycle-transition-general-considerations.html)
-	// in the Amazon S3 User Guide.
-	Transition *Transition `json:"transition,omitempty"`
-}
-
 // Specifies the use of SSE-KMS to encrypt delivered inventory reports.
 type SSEKMS struct {
 	KeyID *string `json:"keyID,omitempty"`
@@ -884,13 +878,23 @@ type SSEKMSEncryptedObjects struct {
 
 // Describes the default server-side encryption to apply to new objects in the
 // bucket. If a PUT Object request doesn't specify any server-side encryption,
-// this default encryption will be applied. If you don't specify a customer
-// managed key at configuration, Amazon S3 automatically creates an Amazon Web
-// Services KMS key in your Amazon Web Services account the first time that
-// you add an object encrypted with SSE-KMS to a bucket. By default, Amazon
-// S3 uses this KMS key for SSE-KMS. For more information, see PUT Bucket encryption
-// (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTencryption.html)
-// in the Amazon S3 API Reference.
+// this default encryption will be applied. For more information, see PutBucketEncryption
+// (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTencryption.html).
+//
+//   - General purpose buckets - If you don't specify a customer managed key
+//     at configuration, Amazon S3 automatically creates an Amazon Web Services
+//     KMS key (aws/s3) in your Amazon Web Services account the first time that
+//     you add an object encrypted with SSE-KMS to a bucket. By default, Amazon
+//     S3 uses this KMS key for SSE-KMS.
+//
+//   - Directory buckets - Your SSE-KMS configuration can only support 1 customer
+//     managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk)
+//     per directory bucket for the lifetime of the bucket. The Amazon Web Services
+//     managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk)
+//     (aws/s3) isn't supported.
+//
+//   - Directory buckets - For directory buckets, there are only two supported
+//     options for server-side encryption: SSE-S3 and SSE-KMS.
 type ServerSideEncryptionByDefault struct {
 	KMSMasterKeyID *string `json:"kmsMasterKeyID,omitempty"`
 	SSEAlgorithm   *string `json:"sseAlgorithm,omitempty"`
@@ -902,16 +906,36 @@ type ServerSideEncryptionConfiguration struct {
 }
 
 // Specifies the default server-side encryption configuration.
+//
+//   - General purpose buckets - If you're specifying a customer managed KMS
+//     key, we recommend using a fully qualified KMS key ARN. If you use a KMS
+//     key alias instead, then KMS resolves the key within the requester’s
+//     account. This behavior can result in data that's encrypted with a KMS
+//     key that belongs to the requester, and not the bucket owner.
+//
+//   - Directory buckets - When you specify an KMS customer managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk)
+//     for encryption in your directory bucket, only use the key ID or key ARN.
+//     The key alias format of the KMS key isn't supported.
 type ServerSideEncryptionRule struct {
 	// Describes the default server-side encryption to apply to new objects in the
 	// bucket. If a PUT Object request doesn't specify any server-side encryption,
-	// this default encryption will be applied. If you don't specify a customer
-	// managed key at configuration, Amazon S3 automatically creates an Amazon Web
-	// Services KMS key in your Amazon Web Services account the first time that
-	// you add an object encrypted with SSE-KMS to a bucket. By default, Amazon
-	// S3 uses this KMS key for SSE-KMS. For more information, see PUT Bucket encryption
-	// (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTencryption.html)
-	// in the Amazon S3 API Reference.
+	// this default encryption will be applied. For more information, see PutBucketEncryption
+	// (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTencryption.html).
+	//
+	//    * General purpose buckets - If you don't specify a customer managed key
+	//    at configuration, Amazon S3 automatically creates an Amazon Web Services
+	//    KMS key (aws/s3) in your Amazon Web Services account the first time that
+	//    you add an object encrypted with SSE-KMS to a bucket. By default, Amazon
+	//    S3 uses this KMS key for SSE-KMS.
+	//
+	//    * Directory buckets - Your SSE-KMS configuration can only support 1 customer
+	//    managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk)
+	//    per directory bucket for the lifetime of the bucket. The Amazon Web Services
+	//    managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk)
+	//    (aws/s3) isn't supported.
+	//
+	//    * Directory buckets - For directory buckets, there are only two supported
+	//    options for server-side encryption: SSE-S3 and SSE-KMS.
 	ApplyServerSideEncryptionByDefault *ServerSideEncryptionByDefault `json:"applyServerSideEncryptionByDefault,omitempty"`
 	BucketKeyEnabled                   *bool                          `json:"bucketKeyEnabled,omitempty"`
 }
@@ -992,28 +1016,14 @@ type Tiering struct {
 type TopicConfiguration struct {
 	Events []*string `json:"events,omitempty"`
 	// Specifies object key name filtering rules. For information about key name
-	// filtering, see Configuring Event Notifications (https://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html)
+	// filtering, see Configuring event notifications using object key name filtering
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html)
 	// in the Amazon S3 User Guide.
 	Filter *NotificationConfigurationFilter `json:"filter,omitempty"`
 	// An optional unique identifier for configurations in a notification configuration.
 	// If you don't provide one, Amazon S3 will assign an ID.
 	ID       *string `json:"id,omitempty"`
 	TopicARN *string `json:"topicARN,omitempty"`
-}
-
-// A container for specifying the configuration for publication of messages
-// to an Amazon Simple Notification Service (Amazon SNS) topic when Amazon S3
-// detects specified events. This data type is deprecated. Use TopicConfiguration
-// (https://docs.aws.amazon.com/AmazonS3/latest/API/API_TopicConfiguration.html)
-// instead.
-type TopicConfigurationDeprecated struct {
-	// The bucket event for which to send notifications.
-	Event  *string   `json:"event,omitempty"`
-	Events []*string `json:"events,omitempty"`
-	// An optional unique identifier for configurations in a notification configuration.
-	// If you don't provide one, Amazon S3 will assign an ID.
-	ID    *string `json:"id,omitempty"`
-	Topic *string `json:"topic,omitempty"`
 }
 
 // Specifies when an object transitions to a specified storage class. For more

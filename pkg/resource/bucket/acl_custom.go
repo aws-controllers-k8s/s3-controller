@@ -17,7 +17,8 @@ import (
 	"fmt"
 	"strings"
 
-	svcsdk "github.com/aws/aws-sdk-go/service/s3"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/s3"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 // Only some of these exist in the SDK, so duplicating them all here
@@ -54,7 +55,7 @@ type aclGrantHeaders struct {
 
 // hasOwnerFullControl returns true if any of the grants matches the owner
 // and has full control permissions.
-func hasOwnerFullControl(owner *svcsdk.Owner, grants []*svcsdk.Grant) bool {
+func hasOwnerFullControl(owner *svcsdktypes.Owner, grants []svcsdktypes.Grant) bool {
 	for _, grant := range grants {
 		if grant.Grantee == nil ||
 			grant.Grantee.ID == nil ||
@@ -62,16 +63,16 @@ func hasOwnerFullControl(owner *svcsdk.Owner, grants []*svcsdk.Grant) bool {
 			continue
 		}
 
-		return *grant.Permission == svcsdk.PermissionFullControl
+		return grant.Permission == svcsdktypes.PermissionFullControl
 	}
 	return false
 }
 
 // grantsContainPermission will return true if any of the grants have the
 // permission matching the one supplied.
-func grantsContainPermission(permission string, grants []*svcsdk.Grant) bool {
+func grantsContainPermission(permission svcsdktypes.Permission, grants []*svcsdktypes.Grant) bool {
 	for _, grant := range grants {
-		if *grant.Permission == permission {
+		if grant.Permission == svcsdktypes.Permission(permission) {
 			return true
 		}
 	}
@@ -80,20 +81,20 @@ func grantsContainPermission(permission string, grants []*svcsdk.Grant) bool {
 
 // getGrantsByGroupURI searches a list of ACL grants for any that have a
 // group type grantee with the given URI.
-func getGrantsByGroupURI(uri string, grants []*svcsdk.Grant) []*svcsdk.Grant {
-	matching := []*svcsdk.Grant{}
+func getGrantsByGroupURI(uri string, grants []svcsdktypes.Grant) []*svcsdktypes.Grant {
+	matching := []*svcsdktypes.Grant{}
 
 	for _, grant := range grants {
 		if grant.Grantee == nil {
 			continue
 		}
 
-		if *grant.Grantee.Type != svcsdk.TypeGroup {
+		if grant.Grantee.Type != svcsdktypes.TypeGroup {
 			continue
 		}
 
 		if *grant.Grantee.URI == uri {
-			matching = append(matching, grant)
+			matching = append(matching, &grant)
 		}
 	}
 	return matching
@@ -101,20 +102,20 @@ func getGrantsByGroupURI(uri string, grants []*svcsdk.Grant) []*svcsdk.Grant {
 
 // getGrantsByCanonicalUserID searches a list of ACL grants for any that have a
 // canonical user type grantee with the given ID.
-func getGrantsByCanonicalUserID(id string, grants []*svcsdk.Grant) []*svcsdk.Grant {
-	matching := []*svcsdk.Grant{}
+func getGrantsByCanonicalUserID(id string, grants []svcsdktypes.Grant) []*svcsdktypes.Grant {
+	matching := []*svcsdktypes.Grant{}
 
 	for _, grant := range grants {
 		if grant.Grantee == nil {
 			continue
 		}
 
-		if *grant.Grantee.Type != svcsdk.TypeCanonicalUser {
+		if grant.Grantee.Type != svcsdktypes.TypeCanonicalUser {
 			continue
 		}
 
 		if *grant.Grantee.ID == id {
-			matching = append(matching, grant)
+			matching = append(matching, &grant)
 		}
 	}
 	return matching
@@ -122,29 +123,29 @@ func getGrantsByCanonicalUserID(id string, grants []*svcsdk.Grant) []*svcsdk.Gra
 
 // getGrantsByPermission searches a list of ACL grants for any that have the
 // given permission.
-func getGrantsByPermission(permission string, grants []*svcsdk.Grant) []*svcsdk.Grant {
-	matching := []*svcsdk.Grant{}
+func getGrantsByPermission(permission string, grants []svcsdktypes.Grant) []*svcsdktypes.Grant {
+	matching := []*svcsdktypes.Grant{}
 
 	for _, grant := range grants {
-		if *grant.Permission == permission {
-			matching = append(matching, grant)
+		if grant.Permission == svcsdktypes.Permission(permission) {
+			matching = append(matching, &grant)
 		}
 	}
 	return matching
 }
 
 // formGrantHeader will form a grant header string from a list of grants
-func formGrantHeader(grants []*svcsdk.Grant) string {
+func formGrantHeader(grants []*svcsdktypes.Grant) string {
 	headers := []string{}
 	for _, grant := range grants {
 		if grant.Grantee == nil {
 			continue
 		}
 
-		if *grant.Grantee.Type == svcsdk.TypeGroup {
+		if grant.Grantee.Type == svcsdktypes.TypeGroup {
 			headers = append(headers, fmt.Sprintf(HeaderURIFormat, *grant.Grantee.URI))
 		}
-		if *grant.Grantee.Type == svcsdk.TypeCanonicalUser {
+		if grant.Grantee.Type == svcsdktypes.TypeCanonicalUser {
 			headers = append(headers, fmt.Sprintf(HeaderUserIDFormat, *grant.Grantee.ID))
 		}
 	}
@@ -175,11 +176,11 @@ func GetHeadersFromGrants(
 	resp *svcsdk.GetBucketAclOutput,
 ) aclGrantHeaders {
 	headers := aclGrantHeaders{
-		FullControl: formGrantHeader(getGrantsByPermission(svcsdk.PermissionFullControl, resp.Grants)),
-		Read:        formGrantHeader(getGrantsByPermission(svcsdk.PermissionRead, resp.Grants)),
-		ReadACP:     formGrantHeader(getGrantsByPermission(svcsdk.PermissionReadAcp, resp.Grants)),
-		Write:       formGrantHeader(getGrantsByPermission(svcsdk.PermissionWrite, resp.Grants)),
-		WriteACP:    formGrantHeader(getGrantsByPermission(svcsdk.PermissionWriteAcp, resp.Grants)),
+		FullControl: formGrantHeader(getGrantsByPermission(string(svcsdktypes.PermissionFullControl), resp.Grants)),
+		Read:        formGrantHeader(getGrantsByPermission(string(svcsdktypes.PermissionRead), resp.Grants)),
+		ReadACP:     formGrantHeader(getGrantsByPermission(string(svcsdktypes.PermissionReadAcp), resp.Grants)),
+		Write:       formGrantHeader(getGrantsByPermission(string(svcsdktypes.PermissionWrite), resp.Grants)),
+		WriteACP:    formGrantHeader(getGrantsByPermission(string(svcsdktypes.PermissionWriteAcp), resp.Grants)),
 	}
 
 	return headers
@@ -204,29 +205,29 @@ func GetPossibleCannedACLsFromGrants(
 		return []string{CannedACLPrivate, CannedBucketOwnerRead, CannedBucketOwnerFullControl}
 	case 2:
 		execTeamGrant := getGrantsByCanonicalUserID(GranteeZATeamID, grants)
-		if grantsContainPermission(svcsdk.PermissionRead, execTeamGrant) {
+		if grantsContainPermission(svcsdktypes.PermissionRead, execTeamGrant) {
 			return []string{CannedAWSExecRead}
 		}
 
 		allUsersGrants := getGrantsByGroupURI(GranteeAllUsersURI, grants)
-		if grantsContainPermission(svcsdk.PermissionRead, allUsersGrants) {
+		if grantsContainPermission(svcsdktypes.PermissionRead, allUsersGrants) {
 			return []string{CannedPublicRead}
 		}
 
 		authenticatedUsersGrants := getGrantsByGroupURI(GranteeAuthenticatedUsersURI, grants)
-		if grantsContainPermission(svcsdk.PermissionRead, authenticatedUsersGrants) {
+		if grantsContainPermission(svcsdktypes.PermissionRead, authenticatedUsersGrants) {
 			return []string{CannedAuthenticatedRead}
 		}
 	case 3:
 		logDeliveryGrants := getGrantsByGroupURI(GranteeLogDeliveryURI, grants)
-		if grantsContainPermission(svcsdk.PermissionWrite, logDeliveryGrants) &&
-			grantsContainPermission(svcsdk.PermissionReadAcp, logDeliveryGrants) {
+		if grantsContainPermission(svcsdktypes.PermissionWrite, logDeliveryGrants) &&
+			grantsContainPermission(svcsdktypes.PermissionReadAcp, logDeliveryGrants) {
 			return []string{CannedLogDeliveryWrite}
 		}
 
 		allUsersGrants := getGrantsByGroupURI(GranteeAllUsersURI, grants)
-		if grantsContainPermission(svcsdk.PermissionRead, allUsersGrants) &&
-			grantsContainPermission(svcsdk.PermissionWrite, allUsersGrants) {
+		if grantsContainPermission(svcsdktypes.PermissionRead, allUsersGrants) &&
+			grantsContainPermission(svcsdktypes.PermissionWrite, allUsersGrants) {
 			return []string{CannedPublicReadWrite}
 		}
 	}
