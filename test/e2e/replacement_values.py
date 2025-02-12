@@ -21,4 +21,5 @@ REPLACEMENT_VALUES = {
     "ADOPTION_BUCKET_NAME": get_bootstrap_resources().AdoptionBucket.name,
     "REPLICATION_BUCKET_NAME": get_bootstrap_resources().ReplicationBucket.name,
     "NOTIFICATION_TOPIC_ARN": get_bootstrap_resources().NotificationTopic.arn,
+    "STACK_BUCKET_NAME": get_bootstrap_resources().StackBucket.template["Resources"]["MyS3Bucket"]["Properties"]["BucketName"],
 }

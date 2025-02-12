@@ -102,6 +102,7 @@ func (rm *resourceManager) ReadOne(
 		panic("resource manager's ReadOne() method received resource with nil CR object")
 	}
 	observed, err := rm.sdkFind(ctx, r)
+	mirrorAWSTags(r, observed)
 	if err != nil {
 		if observed != nil {
 			return rm.onError(observed, err)
@@ -299,6 +300,61 @@ func (rm *resourceManager) EnsureTags(
 	r.ko.Spec.Tagging = &svcapitypes.Tagging{}
 	r.ko.Spec.Tagging.TagSet = FromACKTags(tags)
 	return nil
+}
+
+// FilterAWSTags ignores tags that have keys that start with "aws:"
+// is needed to ensure the controller does not attempt to remove
+// tags set by AWS. This function needs to be called after each Read
+// operation.
+// Eg. resources created with cloudformation have tags that cannot be
+// removed by an ACK controller
+func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource) {
+	r := rm.concreteResource(res)
+	if r == nil || r.ko == nil {
+		return
+	}
+	var existingTags []*svcapitypes.Tag
+	if r.ko.Spec.Tagging == nil {
+		return
+	}
+	existingTags = r.ko.Spec.Tagging.TagSet
+	resourceTags := ToACKTags(existingTags)
+	ignoreAWSTags(resourceTags)
+	r.ko.Spec.Tagging = &svcapitypes.Tagging{}
+	r.ko.Spec.Tagging.TagSet = FromACKTags(resourceTags)
+}
+
+// mirrorAWSTags ensures that AWS tags are included in the desired resource
+// if they are present in the latest resource. This will ensure that the
+// aws tags are not present in a diff. The logic of the controller will
+// ensure these tags aren't patched to the resource in the cluster, and
+// will only be present to make sure we don't try to remove these tags.
+//
+// Although there are a lot of similarities between this function and
+// EnsureTags, they are very much different.
+// While EnsureTags tries to make sure the resource contains the controller
+// tags, mirrowAWSTags tries to make sure tags injected by AWS are mirrored
+// from the latest resoruce to the desired resource.
+func mirrorAWSTags(a *resource, b *resource) {
+	if a == nil || a.ko == nil || b == nil || b.ko == nil {
+		return
+	}
+	var existingLatestTags []*svcapitypes.Tag
+	var existingDesiredTags []*svcapitypes.Tag
+	if b.ko.Spec.Tagging == nil {
+		return
+	}
+	if a.ko.Spec.Tagging == nil {
+		existingDesiredTags = nil
+	} else {
+		existingDesiredTags = a.ko.Spec.Tagging.TagSet
+	}
+	existingLatestTags = b.ko.Spec.Tagging.TagSet
+	desiredTags := ToACKTags(existingDesiredTags)
+	latestTags := ToACKTags(existingLatestTags)
+	syncAWSTags(desiredTags, latestTags)
+	a.ko.Spec.Tagging = &svcapitypes.Tagging{}
+	a.ko.Spec.Tagging.TagSet = FromACKTags(desiredTags)
 }
 
 // newResourceManager returns a new struct implementing

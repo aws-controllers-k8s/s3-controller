@@ -20,6 +20,7 @@ from acktest.bootstrapping import Resources
 from acktest.bootstrapping.iam import Role
 from acktest.bootstrapping.s3 import Bucket
 from acktest.bootstrapping.sns import Topic
+from acktest.bootstrapping.cloudformation import Stack
 from e2e import bootstrap_directory
 
 @dataclass
@@ -28,6 +29,7 @@ class BootstrapResources(Resources):
     AdoptionBucket: Bucket
     ReplicationRole: Role
     NotificationTopic: Topic
+    StackBucket: Stack
 
 _bootstrap_resources = None
 
