@@ -21,12 +21,12 @@ import (
 	"github.com/pkg/errors"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcapitypes "github.com/aws-controllers-k8s/s3-controller/apis/v1alpha1"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/s3"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/aws/smithy-go"
 )
 
 // bucketARN returns the ARN of the S3 bucket with the given name.
@@ -319,22 +319,27 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		// This method is not supported in every region, ignore any errors if
 		// we attempt to describe this property in a region in which it's not
 		// supported.
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && (awsErr.ErrorCode() == "MethodNotAllowed" || awsErr.ErrorCode() == "UnsupportedArgument") {
-			getAccelerateResponse = &svcsdk.GetBucketAccelerateConfigurationOutput{}
-		} else {
+		if awsErr, ok := ackerr.AWSError(err); !ok || (awsErr.ErrorCode() != "MethodNotAllowed" && awsErr.ErrorCode() != "UnsupportedArgument") {
 			return err
 		}
 	}
-	ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
+	if getAccelerateResponse.Status != "" {
+		ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
+	} else {
+		ko.Spec.Accelerate = nil
+	}
 
 	listAnalyticsResponse, err := rm.sdkapi.ListBucketAnalyticsConfigurations(ctx, rm.newListBucketAnalyticsPayload(r))
 	if err != nil {
 		return err
 	}
-	ko.Spec.Analytics = make([]*svcapitypes.AnalyticsConfiguration, len(listAnalyticsResponse.AnalyticsConfigurationList))
-	for i, analyticsConfiguration := range listAnalyticsResponse.AnalyticsConfigurationList {
-		ko.Spec.Analytics[i] = rm.setResourceAnalyticsConfiguration(r, analyticsConfiguration)
+	if listAnalyticsResponse != nil && len(listAnalyticsResponse.AnalyticsConfigurationList) > 0 {
+		ko.Spec.Analytics = make([]*svcapitypes.AnalyticsConfiguration, len(listAnalyticsResponse.AnalyticsConfigurationList))
+		for i, analyticsConfiguration := range listAnalyticsResponse.AnalyticsConfigurationList {
+			ko.Spec.Analytics[i] = rm.setResourceAnalyticsConfiguration(r, analyticsConfiguration)
+		}
+	} else  {
+		ko.Spec.Analytics = nil
 	}
 
 	getACLResponse, err := rm.sdkapi.GetBucketAcl(ctx, rm.newGetBucketACLPayload(r))
@@ -345,41 +350,46 @@ func (rm *resourceManager) addPutFieldsToSpec(
 
 	getCORSResponse, err := rm.sdkapi.GetBucketCors(ctx, rm.newGetBucketCORSPayload(r))
 	if err != nil {
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchCORSConfiguration" {
-			getCORSResponse = &svcsdk.GetBucketCorsOutput{}
-		} else {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchCORSConfiguration" {
 			return err
 		}
 	}
-	ko.Spec.CORS = rm.setResourceCORS(r, getCORSResponse)
+	if getCORSResponse != nil {
+		ko.Spec.CORS = rm.setResourceCORS(r, getCORSResponse)
+	} else {
+		ko.Spec.CORS = nil
+	}
 
 	getEncryptionResponse, err := rm.sdkapi.GetBucketEncryption(ctx, rm.newGetBucketEncryptionPayload(r))
 	if err != nil {
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "ServerSideEncryptionConfigurationNotFoundError" {
-			getEncryptionResponse = &svcsdk.GetBucketEncryptionOutput{
-				ServerSideEncryptionConfiguration: &svcsdktypes.ServerSideEncryptionConfiguration{},
-			}
-		} else {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "ServerSideEncryptionConfigurationNotFoundError" {
 			return err
 		}
 	}
-	ko.Spec.Encryption = rm.setResourceEncryption(r, getEncryptionResponse)
+	if getEncryptionResponse.ServerSideEncryptionConfiguration.Rules != nil {
+		ko.Spec.Encryption = rm.setResourceEncryption(r, getEncryptionResponse)
+	} else {
+		ko.Spec.Encryption = nil
+	}
 
 	listIntelligentTieringResponse, err := rm.sdkapi.ListBucketIntelligentTieringConfigurations(ctx, rm.newListBucketIntelligentTieringPayload(r))
 	if err != nil {
 		return err
 	}
-	ko.Spec.IntelligentTiering = make([]*svcapitypes.IntelligentTieringConfiguration, len(listIntelligentTieringResponse.IntelligentTieringConfigurationList))
-	for i, intelligentTieringConfiguration := range listIntelligentTieringResponse.IntelligentTieringConfigurationList {
-		ko.Spec.IntelligentTiering[i] = rm.setResourceIntelligentTieringConfiguration(r, intelligentTieringConfiguration)
+	if len(listIntelligentTieringResponse.IntelligentTieringConfigurationList) > 0 {
+		ko.Spec.IntelligentTiering = make([]*svcapitypes.IntelligentTieringConfiguration, len(listIntelligentTieringResponse.IntelligentTieringConfigurationList))
+		for i, intelligentTieringConfiguration := range listIntelligentTieringResponse.IntelligentTieringConfigurationList {
+			ko.Spec.IntelligentTiering[i] = rm.setResourceIntelligentTieringConfiguration(r, intelligentTieringConfiguration)
+		}
+	} else {
+		ko.Spec.IntelligentTiering = nil
 	}
 
 	listInventoryResponse, err := rm.sdkapi.ListBucketInventoryConfigurations(ctx, rm.newListBucketInventoryPayload(r))
 	if err != nil {
 		return err
 	}
+
 	ko.Spec.Inventory = make([]*svcapitypes.InventoryConfiguration, len(listInventoryResponse.InventoryConfigurationList))
 	for i, inventoryConfiguration := range listInventoryResponse.InventoryConfigurationList {
 		ko.Spec.Inventory[i] = rm.setResourceInventoryConfiguration(r, inventoryConfiguration)
@@ -387,48 +397,59 @@ func (rm *resourceManager) addPutFieldsToSpec(
 
 	getLifecycleResponse, err := rm.sdkapi.GetBucketLifecycleConfiguration(ctx, rm.newGetBucketLifecyclePayload(r))
 	if err != nil {
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchLifecycleConfiguration" {
-			getLifecycleResponse = &svcsdk.GetBucketLifecycleConfigurationOutput{}
-		} else {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchLifecycleConfiguration" {
 			return err
 		}
 	}
-	ko.Spec.Lifecycle = rm.setResourceLifecycle(r, getLifecycleResponse)
+	if getLifecycleResponse != nil {
+		ko.Spec.Lifecycle = rm.setResourceLifecycle(r, getLifecycleResponse)
+	} else {
+		ko.Spec.Lifecycle = nil
+	}
 
 	getLoggingResponse, err := rm.sdkapi.GetBucketLogging(ctx, rm.newGetBucketLoggingPayload(r))
 	if err != nil {
 		return err
 	}
-	ko.Spec.Logging = rm.setResourceLogging(r, getLoggingResponse)
+	if getLoggingResponse.LoggingEnabled != nil {
+		ko.Spec.Logging = rm.setResourceLogging(r, getLoggingResponse)
+	} else {
+		ko.Spec.Logging = nil
+	}
 
 	listMetricsResponse, err := rm.sdkapi.ListBucketMetricsConfigurations(ctx, rm.newListBucketMetricsPayload(r))
 	if err != nil {
 		return err
 	}
-	ko.Spec.Metrics = make([]*svcapitypes.MetricsConfiguration, len(listMetricsResponse.MetricsConfigurationList))
-	for i, metricsConfiguration := range listMetricsResponse.MetricsConfigurationList {
-		ko.Spec.Metrics[i] = rm.setResourceMetricsConfiguration(r, &metricsConfiguration)
+	if len(listMetricsResponse.MetricsConfigurationList) > 0 {
+		ko.Spec.Metrics = make([]*svcapitypes.MetricsConfiguration, len(listMetricsResponse.MetricsConfigurationList))
+		for i, metricsConfiguration := range listMetricsResponse.MetricsConfigurationList {
+			ko.Spec.Metrics[i] = rm.setResourceMetricsConfiguration(r, &metricsConfiguration)
+		}
+	} else {
+		ko.Spec.Metrics = nil
 	}
 
 	getNotificationResponse, err := rm.sdkapi.GetBucketNotificationConfiguration(ctx, rm.newGetBucketNotificationPayload(r))
 	if err != nil {
 		return err
 	}
-	ko.Spec.Notification = rm.setResourceNotification(r, getNotificationResponse)
+	if getNotificationResponse.LambdaFunctionConfigurations != nil ||
+		getNotificationResponse.QueueConfigurations != nil ||
+		getNotificationResponse.TopicConfigurations != nil {
+
+		ko.Spec.Notification = rm.setResourceNotification(r, getNotificationResponse)
+	} else {
+		ko.Spec.Notification = nil
+	}
 
 	getOwnershipControlsResponse, err := rm.sdkapi.GetBucketOwnershipControls(ctx, rm.newGetBucketOwnershipControlsPayload(r))
 	if err != nil {
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "OwnershipControlsNotFoundError" {
-			getOwnershipControlsResponse = &svcsdk.GetBucketOwnershipControlsOutput{
-				OwnershipControls: &svcsdktypes.OwnershipControls{},
-			}
-		} else {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "OwnershipControlsNotFoundError" {
 			return err
 		}
 	}
-	if getOwnershipControlsResponse.OwnershipControls != nil {
+	if getOwnershipControlsResponse != nil {
 		ko.Spec.OwnershipControls = rm.setResourceOwnershipControls(r, getOwnershipControlsResponse)
 	} else {
 		ko.Spec.OwnershipControls = nil
@@ -436,25 +457,23 @@ func (rm *resourceManager) addPutFieldsToSpec(
 
 	getPolicyResponse, err := rm.sdkapi.GetBucketPolicy(ctx, rm.newGetBucketPolicyPayload(r))
 	if err != nil {
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchBucketPolicy" {
-			getPolicyResponse = &svcsdk.GetBucketPolicyOutput{}
-		} else {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchBucketPolicy" {
 			return err
 		}
 	}
-	ko.Spec.Policy = getPolicyResponse.Policy
+	if getPolicyResponse != nil {
+		ko.Spec.Policy = getPolicyResponse.Policy
+	} else {
+		ko.Spec.Policy = nil
+	}
 
 	getPublicAccessBlockResponse, err := rm.sdkapi.GetPublicAccessBlock(ctx, rm.newGetPublicAccessBlockPayload(r))
 	if err != nil {
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchPublicAccessBlockConfiguration" {
-			getPublicAccessBlockResponse = &svcsdk.GetPublicAccessBlockOutput{}
-		} else {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchPublicAccessBlockConfiguration" {
 			return err
 		}
 	}
-	if getPublicAccessBlockResponse.PublicAccessBlockConfiguration != nil {
+	if getPublicAccessBlockResponse != nil {
 		ko.Spec.PublicAccessBlock = rm.setResourcePublicAccessBlock(r, getPublicAccessBlockResponse)
 	} else {
 		ko.Spec.PublicAccessBlock = nil
@@ -462,14 +481,11 @@ func (rm *resourceManager) addPutFieldsToSpec(
 
 	getReplicationResponse, err := rm.sdkapi.GetBucketReplication(ctx, rm.newGetBucketReplicationPayload(r))
 	if err != nil {
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "ReplicationConfigurationNotFoundError" {
-			getReplicationResponse = &svcsdk.GetBucketReplicationOutput{}
-		} else {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "ReplicationConfigurationNotFoundError" {
 			return err
 		}
 	}
-	if getReplicationResponse.ReplicationConfiguration != nil {
+	if getReplicationResponse != nil {
 		ko.Spec.Replication = rm.setResourceReplication(r, getReplicationResponse)
 	} else {
 		ko.Spec.Replication = nil
@@ -479,35 +495,46 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	if err != nil {
 		return nil
 	}
-	ko.Spec.RequestPayment = rm.setResourceRequestPayment(r, getRequestPaymentResponse)
+	if getRequestPaymentResponse.Payer != "" {
+		ko.Spec.RequestPayment = rm.setResourceRequestPayment(r, getRequestPaymentResponse)
+	} else {
+		ko.Spec.RequestPayment = nil
+	}
 
 	getTaggingResponse, err := rm.sdkapi.GetBucketTagging(ctx, rm.newGetBucketTaggingPayload(r))
 	if err != nil {
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchTagSet" {
-			getTaggingResponse = &svcsdk.GetBucketTaggingOutput{}
-		} else {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchTagSet" {
 			return err
 		}
 	}
-	ko.Spec.Tagging = rm.setResourceTagging(r, getTaggingResponse)
+	if getTaggingResponse != nil && getTaggingResponse.TagSet != nil {
+		ko.Spec.Tagging = rm.setResourceTagging(r, getTaggingResponse)
+	} else {
+		ko.Spec.Tagging = nil
+	}
 
 	getVersioningResponse, err := rm.sdkapi.GetBucketVersioning(ctx, rm.newGetBucketVersioningPayload(r))
 	if err != nil {
 		return err
 	}
-	ko.Spec.Versioning = rm.setResourceVersioning(r, getVersioningResponse)
+	if getVersioningResponse.Status != "" {
+		ko.Spec.Versioning = rm.setResourceVersioning(r, getVersioningResponse)
+	} else {
+		ko.Spec.Versioning = nil
+	}
 
 	getWebsiteResponse, err := rm.sdkapi.GetBucketWebsite(ctx, rm.newGetBucketWebsitePayload(r))
 	if err != nil {
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchWebsiteConfiguration" {
-			getWebsiteResponse = &svcsdk.GetBucketWebsiteOutput{}
-		} else {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchWebsiteConfiguration" {
 			return err
 		}
 	}
-	ko.Spec.Website = rm.setResourceWebsite(r, getWebsiteResponse)
+	if getWebsiteResponse != nil {
+		ko.Spec.Website = rm.setResourceWebsite(r, getWebsiteResponse)
+	} else {
+		ko.Spec.Website = nil
+	}
+
 	return nil
 }
 
@@ -700,16 +727,28 @@ func (rm *resourceManager) setResourceACL(
 	resp *svcsdk.GetBucketAclOutput,
 ) {
 	grants := GetHeadersFromGrants(resp)
-	ko.Spec.GrantFullControl = &grants.FullControl
-	ko.Spec.GrantRead = &grants.Read
-	ko.Spec.GrantReadACP = &grants.ReadACP
-	ko.Spec.GrantWrite = &grants.Write
-	ko.Spec.GrantWriteACP = &grants.WriteACP
+	if grants.FullControl != "" {
+		ko.Spec.GrantFullControl = &grants.FullControl
+	}
+	if grants.Read != "" {
+		ko.Spec.GrantRead = &grants.Read
+	}
+	if grants.ReadACP != "" {
+		ko.Spec.GrantReadACP = &grants.ReadACP
+	}
+	if grants.Write != "" {
+		ko.Spec.GrantWrite = &grants.Write
+	}
+	if grants.WriteACP != "" {
+		ko.Spec.GrantWriteACP = &grants.WriteACP
+	}
 
 	// Join possible ACLs into a single string, delimited by bar
 	cannedACLs := GetPossibleCannedACLsFromGrants(resp)
 	joinedACLs := strings.Join(cannedACLs, CannedACLJoinDelimiter)
-	ko.Spec.ACL = &joinedACLs
+	if joinedACLs != "" {
+		ko.Spec.ACL = &joinedACLs
+	}
 }
 
 func (rm *resourceManager) newGetBucketACLPayload(
