@@ -17,10 +17,12 @@ import logging
 import json
 from pathlib import Path
 
+from acktest.resources import random_suffix_name
 from acktest.bootstrapping import Resources, BootstrapFailureException
 from acktest.bootstrapping.iam import Role, UserPolicies
 from acktest.bootstrapping.s3 import Bucket
 from acktest.bootstrapping.sns import Topic
+from acktest.bootstrapping.cloudformation import Stack
 from e2e import bootstrap_directory
 from e2e.bootstrap_resources import BootstrapResources
 
@@ -62,13 +64,30 @@ def service_bootstrap() -> Resources:
         ]
         })
 
+    stack_bucket_name = random_suffix_name("stack-bucket", 24)
+    template = {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Resources": {
+            "MyS3Bucket": {
+                "Type": "AWS::S3::Bucket",
+                "Properties": {
+                    "BucketName": stack_bucket_name,
+                    "VersioningConfiguration": {
+                        "Status": "Enabled"
+                    }
+                }
+            }
+        }
+    }
+
     resources = BootstrapResources(
         ReplicationBucket=Bucket("ack-s3-replication", enable_versioning=True),
         AdoptionBucket=Bucket("ack-s3-annotation-adoption", enable_versioning=True),
         ReplicationRole=Role("ack-s3-replication-role", "s3.amazonaws.com",
             user_policies=UserPolicies("ack-s3-replication-policy", [replication_policy])
         ),
-        NotificationTopic=Topic("ack-s3-notification", policy=notification_policy)
+        NotificationTopic=Topic("ack-s3-notification", policy=notification_policy),
+        StackBucket=Stack(name_prefix=stack_bucket_name, template=template)
     )
 
     try:
