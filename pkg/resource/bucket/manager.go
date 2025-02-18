@@ -319,7 +319,7 @@ func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource) {
 	}
 	existingTags = r.ko.Spec.Tagging.TagSet
 	resourceTags := ToACKTags(existingTags)
-	ignoreAWSTags(resourceTags)
+	ignoreSystemTags(resourceTags)
 	r.ko.Spec.Tagging = &svcapitypes.Tagging{}
 	r.ko.Spec.Tagging.TagSet = FromACKTags(resourceTags)
 }

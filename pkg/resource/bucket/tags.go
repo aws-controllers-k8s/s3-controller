@@ -66,12 +66,11 @@ func FromACKTags(tags acktags.Tags) []*svcapitypes.Tag {
 	return result
 }
 
-// ignoreAWSTags ignores tags that have keys that start with "aws:"
-// is needed to ensure the controller does not attempt to remove
-// tags set by AWS
+// ignoreSystemTags ignores tags that have keys that start with "aws:"
+// and ACKSystemTags, to avoid patching them to the resourceSpec.
 // Eg. resources created with cloudformation have tags that cannot be
 // removed by an ACK controller
-func ignoreAWSTags(tags acktags.Tags) {
+func ignoreSystemTags(tags acktags.Tags) {
 	for k := range tags {
 		if strings.HasPrefix(k, "aws:") ||
 			slices.Contains(ACKSystemTags, k) {
