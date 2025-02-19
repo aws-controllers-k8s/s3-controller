@@ -43,16 +43,15 @@ spec:
               In terms of implementation, a Bucket is a resource.
             properties:
               accelerate:
-                description: Container for setting the transfer acceleration state.
+                description: |-
+                  Configures the transfer acceleration state for an Amazon S3 bucket. For more
+                  information, see Amazon S3 Transfer Acceleration (https://docs.aws.amazon.com/AmazonS3/latest/dev/transfer-acceleration.html)
+                  in the Amazon S3 User Guide.
                 properties:
                   status:
                     type: string
                 type: object
               acl:
-                description: |-
-                  The canned ACL to apply to the bucket.
-
-                  This functionality is not supported for directory buckets.
                 type: string
               analytics:
                 items:
@@ -225,38 +224,14 @@ spec:
                     type: array
                 type: object
               grantFullControl:
-                description: |-
-                  Allows grantee the read, write, read ACP, and write ACP permissions on the
-                  bucket.
-
-                  This functionality is not supported for directory buckets.
                 type: string
               grantRead:
-                description: |-
-                  Allows grantee to list the objects in the bucket.
-
-                  This functionality is not supported for directory buckets.
                 type: string
               grantReadACP:
-                description: |-
-                  Allows grantee to read the bucket ACL.
-
-                  This functionality is not supported for directory buckets.
                 type: string
               grantWrite:
-                description: |-
-                  Allows grantee to create new objects in the bucket.
-
-                  For the bucket and object owners of existing objects, also allows deletions
-                  and overwrites of those objects.
-
-                  This functionality is not supported for directory buckets.
                 type: string
               grantWriteACP:
-                description: |-
-                  Allows grantee to write the ACL for the applicable bucket.
-
-                  This functionality is not supported for directory buckets.
                 type: string
               intelligentTiering:
                 items:
@@ -388,8 +363,10 @@ spec:
                   type: object
                 type: array
               lifecycle:
-                description: Container for lifecycle rules. You can add as many as
-                  1,000 rules.
+                description: |-
+                  Specifies the lifecycle configuration for objects in an Amazon S3 bucket.
+                  For more information, see Object Lifecycle Management (https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lifecycle-mgmt.html)
+                  in the Amazon S3 User Guide.
                 properties:
                   rules:
                     items:
@@ -643,21 +620,6 @@ spec:
                   type: object
                 type: array
               name:
-                description: |-
-                  The name of the bucket to create.
-
-                  General purpose buckets - For information about bucket naming restrictions,
-                  see Bucket naming rules (https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)
-                  in the Amazon S3 User Guide.
-
-                  Directory buckets - When you use this operation with a directory bucket,
-                  you must use path-style requests in the format https://s3express-control.region-code.amazonaws.com/bucket-name
-                  . Virtual-hosted-style requests aren't supported. Directory bucket names
-                  must be unique in the chosen Zone (Availability Zone or Local Zone). Bucket
-                  names must also follow the format bucket-base-name--zone-id--x-s3 (for example,
-                  DOC-EXAMPLE-BUCKET--usw2-az1--x-s3). For information about bucket naming
-                  restrictions, see Directory bucket naming rules (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html)
-                  in the Amazon S3 User Guide
                 type: string
               notification:
                 description: |-
@@ -828,17 +790,11 @@ spec:
                     type: array
                 type: object
               objectLockEnabledForBucket:
-                description: |-
-                  Specifies whether you want S3 Object Lock to be enabled for the new bucket.
-
-                  This functionality is not supported for directory buckets.
                 type: boolean
               objectOwnership:
                 type: string
               ownershipControls:
-                description: |-
-                  The OwnershipControls (BucketOwnerEnforced, BucketOwnerPreferred, or ObjectWriter)
-                  that you want to apply to this Amazon S3 bucket.
+                description: The container element for a bucket's ownership controls.
                 properties:
                   rules:
                     items:
@@ -877,11 +833,6 @@ spec:
                     type: array
                 type: object
               policy:
-                description: |-
-                  The bucket policy as a JSON document.
-
-                  For directory buckets, the only IAM action supported in the bucket policy
-                  is s3express:CreateSession.
                 type: string
               publicAccessBlock:
                 description: |-
@@ -1106,7 +1057,7 @@ spec:
                     type: string
                 type: object
               tagging:
-                description: Container for the TagSet and Tag elements.
+                description: Container for TagSet elements.
                 properties:
                   tagSet:
                     items:
@@ -1120,13 +1071,17 @@ spec:
                     type: array
                 type: object
               versioning:
-                description: Container for setting the versioning state.
+                description: |-
+                  Describes the versioning state of an Amazon S3 bucket. For more information,
+                  see PUT Bucket versioning (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTVersioningStatus.html)
+                  in the Amazon S3 API Reference.
                 properties:
                   status:
                     type: string
                 type: object
               website:
-                description: Container for the request.
+                description: Specifies website configuration parameters for an Amazon
+                  S3 bucket.
                 properties:
                   errorDocument:
                     description: The error information.
@@ -1226,7 +1181,7 @@ spec:
                 type: object
               conditions:
                 description: |-
-                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  All CRs managed by ACK have a common `Status.Conditions` member that
                   contains a collection of `ackv1alpha1.Condition` objects that describe
                   the various terminal states of the CR and its backend AWS service API
                   resource
