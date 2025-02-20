@@ -28,39 +28,30 @@ type BucketSpec struct {
 	// The canned ACL to apply to the bucket.
 	//
 	// This functionality is not supported for directory buckets.
-
 	ACL *string `json:"acl,omitempty"`
 	// Container for setting the transfer acceleration state.
-
-	Accelerate *AccelerateConfiguration `json:"accelerate,omitempty"`
-
-	Analytics []*AnalyticsConfiguration `json:"analytics,omitempty"`
+	Accelerate *AccelerateConfiguration  `json:"accelerate,omitempty"`
+	Analytics  []*AnalyticsConfiguration `json:"analytics,omitempty"`
 	// Describes the cross-origin access configuration for objects in an Amazon
 	// S3 bucket. For more information, see Enabling Cross-Origin Resource Sharing
 	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html) in the Amazon
 	// S3 User Guide.
-
 	CORS *CORSConfiguration `json:"cors,omitempty"`
 	// The configuration information for the bucket.
-
-	CreateBucketConfiguration *CreateBucketConfiguration `json:"createBucketConfiguration,omitempty"`
-
-	Encryption *ServerSideEncryptionConfiguration `json:"encryption,omitempty"`
+	CreateBucketConfiguration *CreateBucketConfiguration         `json:"createBucketConfiguration,omitempty"`
+	Encryption                *ServerSideEncryptionConfiguration `json:"encryption,omitempty"`
 	// Allows grantee the read, write, read ACP, and write ACP permissions on the
 	// bucket.
 	//
 	// This functionality is not supported for directory buckets.
-
 	GrantFullControl *string `json:"grantFullControl,omitempty"`
 	// Allows grantee to list the objects in the bucket.
 	//
 	// This functionality is not supported for directory buckets.
-
 	GrantRead *string `json:"grantRead,omitempty"`
 	// Allows grantee to read the bucket ACL.
 	//
 	// This functionality is not supported for directory buckets.
-
 	GrantReadACP *string `json:"grantReadACP,omitempty"`
 	// Allows grantee to create new objects in the bucket.
 	//
@@ -68,24 +59,17 @@ type BucketSpec struct {
 	// and overwrites of those objects.
 	//
 	// This functionality is not supported for directory buckets.
-
 	GrantWrite *string `json:"grantWrite,omitempty"`
 	// Allows grantee to write the ACL for the applicable bucket.
 	//
 	// This functionality is not supported for directory buckets.
-
-	GrantWriteACP *string `json:"grantWriteACP,omitempty"`
-
+	GrantWriteACP      *string                            `json:"grantWriteACP,omitempty"`
 	IntelligentTiering []*IntelligentTieringConfiguration `json:"intelligentTiering,omitempty"`
-
-	Inventory []*InventoryConfiguration `json:"inventory,omitempty"`
+	Inventory          []*InventoryConfiguration          `json:"inventory,omitempty"`
 	// Container for lifecycle rules. You can add as many as 1,000 rules.
-
 	Lifecycle *BucketLifecycleConfiguration `json:"lifecycle,omitempty"`
 	// Container for logging status information.
-
-	Logging *BucketLoggingStatus `json:"logging,omitempty"`
-
+	Logging *BucketLoggingStatus    `json:"logging,omitempty"`
 	Metrics []*MetricsConfiguration `json:"metrics,omitempty"`
 	// The name of the bucket to create.
 	//
@@ -101,49 +85,36 @@ type BucketSpec struct {
 	// DOC-EXAMPLE-BUCKET--usw2-az1--x-s3). For information about bucket naming
 	// restrictions, see Directory bucket naming rules (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html)
 	// in the Amazon S3 User Guide
-
 	// +kubebuilder:validation:Required
-
-	Name *string `json:"name"`
-
+	Name         *string                    `json:"name"`
 	Notification *NotificationConfiguration `json:"notification,omitempty"`
 	// Specifies whether you want S3 Object Lock to be enabled for the new bucket.
 	//
 	// This functionality is not supported for directory buckets.
-
-	ObjectLockEnabledForBucket *bool `json:"objectLockEnabledForBucket,omitempty"`
-
-	ObjectOwnership *string `json:"objectOwnership,omitempty"`
+	ObjectLockEnabledForBucket *bool   `json:"objectLockEnabledForBucket,omitempty"`
+	ObjectOwnership            *string `json:"objectOwnership,omitempty"`
 	// The OwnershipControls (BucketOwnerEnforced, BucketOwnerPreferred, or ObjectWriter)
 	// that you want to apply to this Amazon S3 bucket.
-
 	OwnershipControls *OwnershipControls `json:"ownershipControls,omitempty"`
 	// The bucket policy as a JSON document.
 	//
 	// For directory buckets, the only IAM action supported in the bucket policy
 	// is s3express:CreateSession.
-
 	Policy *string `json:"policy,omitempty"`
 	// The PublicAccessBlock configuration that you want to apply to this Amazon
 	// S3 bucket. You can enable the configuration options in any combination. For
 	// more information about when Amazon S3 considers a bucket or object public,
 	// see The Meaning of "Public" (https://docs.aws.amazon.com/AmazonS3/latest/dev/access-control-block-public-access.html#access-control-block-public-access-policy-status)
 	// in the Amazon S3 User Guide.
-
 	PublicAccessBlock *PublicAccessBlockConfiguration `json:"publicAccessBlock,omitempty"`
-
-	Replication *ReplicationConfiguration `json:"replication,omitempty"`
+	Replication       *ReplicationConfiguration       `json:"replication,omitempty"`
 	// Container for Payer.
-
 	RequestPayment *RequestPaymentConfiguration `json:"requestPayment,omitempty"`
 	// Container for the TagSet and Tag elements.
-
 	Tagging *Tagging `json:"tagging,omitempty"`
 	// Container for setting the versioning state.
-
 	Versioning *VersioningConfiguration `json:"versioning,omitempty"`
 	// Container for the request.
-
 	Website *WebsiteConfiguration `json:"website,omitempty"`
 }
 
