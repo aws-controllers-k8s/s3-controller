@@ -85,6 +85,7 @@ type BucketSpec struct {
 	// DOC-EXAMPLE-BUCKET--usw2-az1--x-s3). For information about bucket naming
 	// restrictions, see Directory bucket naming rules (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html)
 	// in the Amazon S3 User Guide
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	Name         *string                    `json:"name"`
 	Notification *NotificationConfiguration `json:"notification,omitempty"`

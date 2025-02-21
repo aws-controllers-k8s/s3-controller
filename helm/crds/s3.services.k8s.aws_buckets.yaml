@@ -659,6 +659,9 @@ spec:
                   restrictions, see Directory bucket naming rules (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html)
                   in the Amazon S3 User Guide
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               notification:
                 description: |-
                   A container for specifying the notification configuration of the bucket.

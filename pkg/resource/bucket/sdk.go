@@ -154,11 +154,15 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
-	if input.CreateBucketConfiguration == nil {
-		input.CreateBucketConfiguration = &svcsdktypes.CreateBucketConfiguration{}
-	}
-	if input.CreateBucketConfiguration.LocationConstraint == "" && rm.awsRegion != "us-east-1" {
-		input.CreateBucketConfiguration.LocationConstraint = svcsdktypes.BucketLocationConstraint(rm.awsRegion)
+
+	if rm.awsRegion != "us-east-1" {
+		// Set default region if not specified
+		if input.CreateBucketConfiguration == nil ||
+			input.CreateBucketConfiguration.LocationConstraint == "" {
+			input.CreateBucketConfiguration = &svcsdktypes.CreateBucketConfiguration{
+				LocationConstraint: svcsdktypes.BucketLocationConstraint(rm.awsRegion),
+			}
+		}
 	}
 
 	var resp *svcsdk.CreateBucketOutput
@@ -376,6 +380,21 @@ func (rm *resourceManager) updateConditions(
 // and if the exception indicates that it is a Terminal exception
 // 'Terminal' exception are specified in generator configuration
 func (rm *resourceManager) terminalAWSError(err error) bool {
-	// No terminal_errors specified for this resource in generator config
-	return false
+	if err == nil {
+		return false
+	}
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
+		return false
+	}
+	switch terminalErr.ErrorCode() {
+	case "PermanentRedirect",
+		"InvalidLocationConstraint",
+		"MalformedXML",
+		"IllegalLocationConstraintException":
+		return true
+	default:
+		return false
+	}
 }
