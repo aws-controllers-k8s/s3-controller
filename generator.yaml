@@ -21,6 +21,7 @@ resources:
       Name:
         is_primary_key: true
         is_required: true
+        is_immutable: true
         from:
           operation: CreateBucket
           path: Bucket
@@ -96,6 +97,11 @@ resources:
       errors:
         404:
           code: NoSuchBucket
+      terminal_codes:
+        - PermanentRedirect
+        - InvalidLocationConstraint
+        - MalformedXML
+        - IllegalLocationConstraintException
     hooks:
       delta_pre_compare:
         code: customPreCompare(a, b)
