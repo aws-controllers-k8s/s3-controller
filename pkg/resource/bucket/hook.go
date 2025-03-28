@@ -338,7 +338,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		for i, analyticsConfiguration := range listAnalyticsResponse.AnalyticsConfigurationList {
 			ko.Spec.Analytics[i] = rm.setResourceAnalyticsConfiguration(r, analyticsConfiguration)
 		}
-	} else  {
+	} else {
 		ko.Spec.Analytics = nil
 	}
 
