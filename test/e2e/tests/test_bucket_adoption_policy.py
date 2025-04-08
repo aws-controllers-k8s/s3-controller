@@ -21,7 +21,6 @@ import logging
 
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
-from acktest import adoption as adoption
 from acktest import tags as tags
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_s3_resource
 from e2e.tests.test_bucket import bucket_exists, get_bucket
@@ -39,29 +38,47 @@ class AdoptionPolicy(str, Enum):
     ADOPT_OR_CREATE = "adopt-or-create"
 
 
-@pytest.fixture(scope="module")
-def adoption_policy_adopt_bucket(s3_client):
+@pytest.fixture
+def bucket_adoption_policy(request, s3_client):
     replacements = REPLACEMENT_VALUES.copy()
     bucket_name = replacements["ADOPTION_BUCKET_NAME"]
+    
     replacements["ADOPTION_POLICY"] = AdoptionPolicy.ADOPT
     replacements["ADOPTION_FIELDS"] = f'{{\\\"name\\\": \\\"{bucket_name}\\\"}}'
+    replacements["BUCKET_NAME"] = bucket_name
+
+    filename = ""
+
+    resource_name = ""
+
+    marker = request.node.get_closest_marker("resource_data")
+    assert marker is not None
+    data = marker.args[0]
+    assert 'adoption-policy' in data
+    replacements["ADOPTION_POLICY"] = data['adoption-policy']
+    assert 'filename' in data
+    filename = data['filename']
+    assert 'resource-name' in data
+    resource_name = random_suffix_name(data['resource-name'], 32)
+    replacements["RANDOM_BUCKET_NAME"] = resource_name
 
     resource_data = load_s3_resource(
-        "bucket_adoption_policy",
+        filename,
         additional_replacements=replacements,
     )
 
     # Create k8s resource
     ref = k8s.CustomResourceReference(
         CRD_GROUP, CRD_VERSION, "buckets",
-        bucket_name, namespace="default")
+        resource_name, namespace="default")
     k8s.create_custom_resource(ref, resource_data)
 
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
     cr = k8s.wait_resource_consumed_by_controller(ref)
 
+    k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+    cr = k8s.get_resource(ref)
     assert cr is not None
-    assert k8s.get_resource_exists(ref)
 
     yield (ref, cr)
 
@@ -101,10 +118,11 @@ def adopt_stack_bucket(s3_client):
 @service_marker
 @pytest.mark.canary
 class TestAdoptionPolicyBucket:
-    def test_adoption_policy(
-        self, s3_client, adoption_policy_adopt_bucket, s3_resource
+    @pytest.mark.resource_data({'adoption-policy': AdoptionPolicy.ADOPT, 'filename': 'bucket_adopt', 'resource-name': 'adopt'})
+    def test_adopt_policy(
+        self, s3_client, bucket_adoption_policy, s3_resource
     ):
-        (ref, cr) = adoption_policy_adopt_bucket
+        (ref, cr) = bucket_adoption_policy
 
         # Spec will be added by controller
         assert 'spec' in cr
@@ -132,6 +150,49 @@ class TestAdoptionPolicyBucket:
         assert latest is not None
         versioning = latest.Versioning()
         assert versioning.status == status
+    
+    @pytest.mark.resource_data({'adoption-policy': AdoptionPolicy.ADOPT_OR_CREATE, 'filename': 'bucket_adopt_or_create', 'resource-name': 'adopt-or-create'})
+    def test_adopt_or_create_policy(
+        self, s3_client, bucket_adoption_policy, s3_resource
+    ):
+        (ref, cr) = bucket_adoption_policy
+
+        # Spec will be added by controller
+        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert 'spec' in cr
+        assert 'name' in cr['spec']
+        bucket_name = cr['spec']['name']
+
+        latest = get_bucket(s3_resource, bucket_name)
+        assert latest is not None
+        tagging = latest.Tagging()
+
+        initial_tags = {
+            "tag_key": "tag_value"
+        }
+        tags.assert_ack_system_tags(
+            tags=tagging.tag_set,
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=initial_tags,
+            actual=tagging.tag_set,
+        )
+
+
+    @pytest.mark.resource_data({'adoption-policy': AdoptionPolicy.ADOPT_OR_CREATE, 'filename': 'bucket_adopt_or_create_not_exist', 'resource-name': 'adopt-or-create-not-exist'})
+    def test_adopt_or_create_policy_non_existent(
+        self, s3_client, bucket_adoption_policy, s3_resource
+    ):
+        (ref, cr) = bucket_adoption_policy
+
+        # Spec will be added by controller
+        assert 'spec' in cr
+        assert 'name' in cr['spec']
+        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        name = cr['spec']['name']
+        latest = get_bucket(s3_resource, name)
+        assert latest is not None
 
     def test_adoption_update_tags(
         self, s3_client, adopt_stack_bucket, s3_resource

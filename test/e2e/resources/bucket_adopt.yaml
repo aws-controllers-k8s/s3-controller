@@ -1,7 +1,7 @@
 apiVersion: s3.services.k8s.aws/v1alpha1
 kind: Bucket
 metadata:
-  name: $ADOPTION_BUCKET_NAME
+  name: $RANDOM_BUCKET_NAME
   annotations:
     services.k8s.aws/adoption-policy: $ADOPTION_POLICY
     services.k8s.aws/adoption-fields: "$ADOPTION_FIELDS"
