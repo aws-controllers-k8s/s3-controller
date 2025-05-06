@@ -217,8 +217,9 @@ class TestAdoptionPolicyBucket:
 
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
-        cr = k8s.wait_resource_consumed_by_controller(ref)
+        cr = k8s.get_resource(ref)
         assert cr is not None
         assert 'spec' in cr
         assert 'tagging' in cr['spec']
