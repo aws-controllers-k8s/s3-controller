@@ -316,6 +316,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 ) (err error) {
 	getAccelerateResponse, err := rm.sdkapi.GetBucketAccelerateConfiguration(ctx, rm.newGetBucketAcceleratePayload(r))
 	if err != nil {
+		rm.log.Error(err, "unable to execute 'GetBucketAccelerateConfiguration'")
 		// This method is not supported in every region, ignore any errors if
 		// we attempt to describe this property in a region in which it's not
 		// supported.
