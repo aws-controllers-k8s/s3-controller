@@ -1,11 +1,20 @@
 {{ $labels := .Values.role.labels }}
+{{ $appVersion := .Chart.AppVersion | quote }}
 {{ $rbacRules := include "ack-s3-controller.rbac-rules" . }}
+{{ $fullname := include "ack-s3-controller.app.fullname" . }}
+{{ $chartVersion := include "ack-s3-controller.chart.name-version" . }}
 {{ if eq .Values.installScope "cluster" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: ack-s3-controller
+  name: {{ include "ack-s3-controller.app.fullname" . }}
   labels:
+    app.kubernetes.io/name: {{ include "ack-s3-controller.app.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    k8s-app: {{ include "ack-s3-controller.app.name" . }}
+    helm.sh/chart: {{ include "ack-s3-controller.chart.name-version" . }}
   {{- range $key, $value := $labels }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
@@ -18,9 +27,15 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: ack-s3-controller
+  name: {{ $fullname }}-{{ . }}
   namespace: {{ . }}
   labels:
+    app.kubernetes.io/name: {{ $fullname }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: {{ $appVersion }}
+    k8s-app: {{ $fullname }}
+    helm.sh/chart: {{ $chartVersion }}
   {{- range $key, $value := $labels }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
