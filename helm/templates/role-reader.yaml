@@ -3,8 +3,15 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   creationTimestamp: null
-  name: ack-s3-reader
+  name: {{ include "ack-s3-controller.app.fullname" . }}-reader
   namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "ack-s3-controller.app.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    k8s-app: {{ include "ack-s3-controller.app.name" . }}
+    helm.sh/chart: {{ include "ack-s3-controller.chart.name-version" . }}
 rules:
 - apiGroups:
   - s3.services.k8s.aws
