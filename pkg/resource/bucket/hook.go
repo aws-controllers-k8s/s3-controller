@@ -323,10 +323,10 @@ func (rm *resourceManager) addPutFieldsToSpec(
 			return err
 		}
 	}
-	if getAccelerateResponse.Status != "" {
-		ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
-	} else {
+	if getAccelerateResponse == nil || getAccelerateResponse.Status == "" {
 		ko.Spec.Accelerate = nil
+	} else {
+		ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
 	}
 
 	listAnalyticsResponse, err := rm.sdkapi.ListBucketAnalyticsConfigurations(ctx, rm.newListBucketAnalyticsPayload(r))
