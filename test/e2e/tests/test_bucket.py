@@ -103,7 +103,7 @@ def delete_bucket(bucket: Bucket):
         return
         
     # Delete k8s resource
-    _, deleted = k8s.delete_custom_resource(bucket.ref)
+    _, deleted = k8s.delete_custom_resource(bucket.ref, 3)
     assert deleted is True
 
     time.sleep(DELETE_WAIT_AFTER_SECONDS)
