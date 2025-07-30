@@ -114,7 +114,7 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	// Set bucket ARN in the output
-	bucketARN := ackv1alpha1.AWSResourceName(bucketARN(*ko.Spec.Name))
+	bucketARN := ackv1alpha1.AWSResourceName(rm.ARNFromName(*ko.Spec.Name))
 	ko.Status.ACKResourceMetadata.ARN = &bucketARN
 	return &resource{ko}, nil
 }
@@ -290,6 +290,9 @@ func (rm *resourceManager) setStatusDefaults(
 	}
 	if ko.Status.ACKResourceMetadata.Region == nil {
 		ko.Status.ACKResourceMetadata.Region = &rm.awsRegion
+	}
+	if ko.Status.ACKResourceMetadata.Partition == nil {
+		ko.Status.ACKResourceMetadata.Partition = &rm.awsPartition
 	}
 	if ko.Status.ACKResourceMetadata.OwnerAccountID == nil {
 		ko.Status.ACKResourceMetadata.OwnerAccountID = &rm.awsAccountID

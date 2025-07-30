@@ -15,7 +15,6 @@ package bucket
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -28,19 +27,6 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/s3"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
-
-// bucketARN returns the ARN of the S3 bucket with the given name.
-func bucketARN(bucketName string) string {
-	// TODO(a-hilaly): I know there could be other partitions, but I'm
-	// not sure how to determine at this level of abstraction. Probably
-	// something the SDK/runtime should handle. For now, we'll just use
-	// the `aws` partition.
-	//
-	// NOTE(a-hilaly): Other parts of ACK also use this default partition
-	// e.g the generated function `ARNFromName` also uses `aws` as the
-	// default partition.
-	return fmt.Sprintf("arn:aws:s3:::%s", bucketName)
-}
 
 var (
 	DefaultAccelerationStatus     = svcsdktypes.BucketAccelerateStatusSuspended
