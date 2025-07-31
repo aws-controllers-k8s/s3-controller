@@ -3,5 +3,5 @@
 	}
 
 	// Set bucket ARN in the output
-	bucketARN := ackv1alpha1.AWSResourceName(bucketARN(*ko.Spec.Name))
+	bucketARN := ackv1alpha1.AWSResourceName(rm.ARNFromName(*ko.Spec.Name))
 	ko.Status.ACKResourceMetadata.ARN = &bucketARN

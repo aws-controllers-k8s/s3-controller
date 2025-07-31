@@ -24,7 +24,7 @@ from dataclasses import dataclass
 
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
-from acktest.aws.identity import get_region
+from acktest.aws.identity import get_region, get_account_id, get_partition
 from acktest import adoption as adoption
 from acktest import tags as tags
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_s3_resource
@@ -116,9 +116,9 @@ def basic_bucket(s3_client) -> Generator[Bucket, None, None]:
         assert k8s.get_resource_exists(bucket.ref)
         
         # assert bucket ARN is present in status
+        # hardcoding partition for now as the test infra is local
         bucket_k8s = bucket.resource_data = k8s.get_resource(bucket.ref)
-        assert "arn:aws:s3:::" + bucket.resource_name == bucket_k8s["status"]["ackResourceMetadata"]["arn"]
-
+        assert "arn:"+ get_partition() +":s3:" + get_region() + ":" + get_account_id() + ":" + bucket.resource_name == bucket_k8s["status"]["ackResourceMetadata"]["arn"]
         exists = bucket_exists(s3_client, bucket)
         assert exists
     except:
