@@ -148,7 +148,7 @@ spec:
         {{- if .Values.deployment.extraEnvVars -}}
           {{ toYaml .Values.deployment.extraEnvVars | nindent 8 }}
         {{- end }}
-        {{- if or .Values.aws.credentials.secretName .Values.deployment.extraVolumeMounts }} 
+        {{- if or .Values.aws.credentials.secretName .Values.deployment.extraVolumeMounts }}
         volumeMounts:
         {{- if .Values.aws.credentials.secretName }}
           - name: {{ .Values.aws.credentials.secretName }}
@@ -205,7 +205,7 @@ spec:
             secretName: {{ .Values.aws.credentials.secretName }}
       {{- end }}
       {{- if .Values.deployment.extraVolumes }}
-        {{ toYaml .Values.deployment.extraVolumes | indent 8 }}
+        {{- toYaml .Values.deployment.extraVolumes | nindent 8 }}
       {{- end }}
       {{- end }}
   {{- with .Values.deployment.strategy }}
