@@ -4,18 +4,12 @@ metadata:
   name: {{ include "ack-s3-controller.app.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: {{ include "ack-s3-controller.app.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-    k8s-app: {{ include "ack-s3-controller.app.name" . }}
-    helm.sh/chart: {{ include "ack-s3-controller.chart.name-version" . }}
+    {{- include "ack-s3-controller.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.deployment.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "ack-s3-controller.app.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "ack-s3-controller.selectorLabels" . | nindent 6 }}
   template:
     metadata:
 {{- if .Values.deployment.annotations }}
@@ -25,10 +19,7 @@ spec:
       {{- end }}
 {{- end }}
       labels:
-        app.kubernetes.io/name: {{ include "ack-s3-controller.app.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/managed-by: Helm
-        k8s-app: {{ include "ack-s3-controller.app.name" . }}
+        {{- include "ack-s3-controller.labels" . | nindent 8 }}
 {{- range $key, $value := .Values.deployment.labels }}
         {{ $key }}: {{ $value | quote }}
 {{- end }}
@@ -148,7 +139,7 @@ spec:
         {{- if .Values.deployment.extraEnvVars -}}
           {{ toYaml .Values.deployment.extraEnvVars | nindent 8 }}
         {{- end }}
-        {{- if or .Values.aws.credentials.secretName .Values.deployment.extraVolumeMounts }} 
+        {{- if or .Values.aws.credentials.secretName .Values.deployment.extraVolumeMounts }}
         volumeMounts:
         {{- if .Values.aws.credentials.secretName }}
           - name: {{ .Values.aws.credentials.secretName }}
