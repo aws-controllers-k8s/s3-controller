@@ -3,12 +3,7 @@ kind: ClusterRole
 metadata:
   name: {{ include "ack-s3-controller.app.fullname" . }}-namespaces-cache
   labels:
-    app.kubernetes.io/name: {{ include "ack-s3-controller.app.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-    k8s-app: {{ include "ack-s3-controller.app.name" . }}
-    helm.sh/chart: {{ include "ack-s3-controller.chart.name-version" . }}
+    {{- include "ack-s3-controller.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - ""
@@ -25,12 +20,7 @@ metadata:
   name: {{ include "ack-s3-controller.app.fullname" . }}-configmaps-cache
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: {{ include "ack-s3-controller.app.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-    k8s-app: {{ include "ack-s3-controller.app.name" . }}
-    helm.sh/chart: {{ include "ack-s3-controller.chart.name-version" . }}
+    {{- include "ack-s3-controller.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - ""

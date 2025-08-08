@@ -26,6 +26,30 @@ If release name contains chart name it will be used as a full name.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/*
+Common labels
+*/}}
+{{- define "ack-s3-controller.labels" -}}
+helm.sh/chart: {{ include "ack-s3-controller.chart.name-version" $ }}
+{{ include "ack-s3-controller.selectorLabels" $ }}
+app.kubernetes.io/component: s3-controller
+app.kubernetes.io/managed-by: Helm
+app.kubernetes.io/part-of: ack-s3-controller
+app.kubernetes.io/version: {{ $.Chart.AppVersion | quote }}
+k8s-app: {{ include "ack-s3-controller.app.name" $ }}
+{{- if .Values.additionalLabels }}
+{{ toYaml $.Values.additionalLabels $ }}
+{{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "ack-s3-controller.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "ack-s3-controller.app.name" . }}
+app.kubernetes.io/instance: {{ $.Release.Name }}
+{{- end }}
+
 {{/* The name of the service account to use */}}
 {{- define "ack-s3-controller.service-account.name" -}}
     {{ default "default" .Values.serviceAccount.name }}
