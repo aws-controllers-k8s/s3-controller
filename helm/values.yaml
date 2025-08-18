@@ -4,7 +4,7 @@
 
 image:
   repository: public.ecr.aws/aws-controllers-k8s/s3-controller
-  tag: 1.0.35
+  tag: 1.1.0
   pullPolicy: IfNotPresent
   pullSecrets: []
 
@@ -180,7 +180,7 @@ featureGates:
   ServiceLevelCARM: false
   # Enables the Team level granularity for CARM. See https://github.com/aws-controllers-k8s/community/issues/2031
   TeamLevelCARM: false
-  # Enable ReadOnlyResources feature/annotation.
-  ReadOnlyResources: false
-  # Enable ResourceAdoption feature/annotation.
-  ResourceAdoption: false
+  # Enable ReadOnlyResources feature/annotation. 
+  ReadOnlyResources: true
+  # Enable ResourceAdoption feature/annotation. 
+  ResourceAdoption: true
