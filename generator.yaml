@@ -54,6 +54,10 @@ resources:
         from:
           operation: PutBucketLogging
           path: BucketLoggingStatus
+      Logging.LoggingEnabled.TargetGrants.Grantee.URI:
+        # Forcing CRD field to "uRI" to avoid breaking change following
+        # fix in aws-controller-k8s/pkg dependency for URI -> uri. 
+        go_tag: json:"uRI,omitempty"
       Metrics:
         custom_field:
           list_of: MetricsConfiguration
