@@ -76,7 +76,7 @@ def bucket_adoption_policy(request, s3_client):
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
     cr = k8s.wait_resource_consumed_by_controller(ref)
 
-    k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+    k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
     cr = k8s.get_resource(ref)
     assert cr is not None
 
@@ -158,7 +158,7 @@ class TestAdoptionPolicyBucket:
         (ref, cr) = bucket_adoption_policy
 
         # Spec will be added by controller
-        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         assert 'spec' in cr
         assert 'name' in cr['spec']
         bucket_name = cr['spec']['name']
@@ -188,7 +188,7 @@ class TestAdoptionPolicyBucket:
         # Spec will be added by controller
         assert 'spec' in cr
         assert 'name' in cr['spec']
-        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         name = cr['spec']['name']
         latest = get_bucket(s3_resource, name)
@@ -217,7 +217,7 @@ class TestAdoptionPolicyBucket:
 
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
-        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         cr = k8s.get_resource(ref)
         assert cr is not None
