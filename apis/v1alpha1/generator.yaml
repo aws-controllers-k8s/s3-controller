@@ -12,8 +12,6 @@ ignore:
     - "VersioningConfiguration.MFADelete"
     # This subfield struct has no members...
     - "NotificationConfiguration.EventBridgeConfiguration"
-    - CreateBucketInput.CreateBucketConfiguration.Location
-    - CreateBucketInput.CreateBucketConfiguration.Bucket
     - LoggingEnabled.TargetObjectKeyFormat
 resources:
   Bucket:

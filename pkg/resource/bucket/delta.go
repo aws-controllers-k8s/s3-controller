@@ -83,6 +83,42 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration) {
 		delta.Add("Spec.CreateBucketConfiguration", a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration)
 	} else if a.ko.Spec.CreateBucketConfiguration != nil && b.ko.Spec.CreateBucketConfiguration != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.Bucket, b.ko.Spec.CreateBucketConfiguration.Bucket) {
+			delta.Add("Spec.CreateBucketConfiguration.Bucket", a.ko.Spec.CreateBucketConfiguration.Bucket, b.ko.Spec.CreateBucketConfiguration.Bucket)
+		} else if a.ko.Spec.CreateBucketConfiguration.Bucket != nil && b.ko.Spec.CreateBucketConfiguration.Bucket != nil {
+			if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy, b.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy) {
+				delta.Add("Spec.CreateBucketConfiguration.Bucket.DataRedundancy", a.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy, b.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy)
+			} else if a.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy != nil && b.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy != nil {
+				if *a.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy != *b.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy {
+					delta.Add("Spec.CreateBucketConfiguration.Bucket.DataRedundancy", a.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy, b.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy)
+				}
+			}
+			if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.Bucket.Type, b.ko.Spec.CreateBucketConfiguration.Bucket.Type) {
+				delta.Add("Spec.CreateBucketConfiguration.Bucket.Type", a.ko.Spec.CreateBucketConfiguration.Bucket.Type, b.ko.Spec.CreateBucketConfiguration.Bucket.Type)
+			} else if a.ko.Spec.CreateBucketConfiguration.Bucket.Type != nil && b.ko.Spec.CreateBucketConfiguration.Bucket.Type != nil {
+				if *a.ko.Spec.CreateBucketConfiguration.Bucket.Type != *b.ko.Spec.CreateBucketConfiguration.Bucket.Type {
+					delta.Add("Spec.CreateBucketConfiguration.Bucket.Type", a.ko.Spec.CreateBucketConfiguration.Bucket.Type, b.ko.Spec.CreateBucketConfiguration.Bucket.Type)
+				}
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.Location, b.ko.Spec.CreateBucketConfiguration.Location) {
+			delta.Add("Spec.CreateBucketConfiguration.Location", a.ko.Spec.CreateBucketConfiguration.Location, b.ko.Spec.CreateBucketConfiguration.Location)
+		} else if a.ko.Spec.CreateBucketConfiguration.Location != nil && b.ko.Spec.CreateBucketConfiguration.Location != nil {
+			if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.Location.Name, b.ko.Spec.CreateBucketConfiguration.Location.Name) {
+				delta.Add("Spec.CreateBucketConfiguration.Location.Name", a.ko.Spec.CreateBucketConfiguration.Location.Name, b.ko.Spec.CreateBucketConfiguration.Location.Name)
+			} else if a.ko.Spec.CreateBucketConfiguration.Location.Name != nil && b.ko.Spec.CreateBucketConfiguration.Location.Name != nil {
+				if *a.ko.Spec.CreateBucketConfiguration.Location.Name != *b.ko.Spec.CreateBucketConfiguration.Location.Name {
+					delta.Add("Spec.CreateBucketConfiguration.Location.Name", a.ko.Spec.CreateBucketConfiguration.Location.Name, b.ko.Spec.CreateBucketConfiguration.Location.Name)
+				}
+			}
+			if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.Location.Type, b.ko.Spec.CreateBucketConfiguration.Location.Type) {
+				delta.Add("Spec.CreateBucketConfiguration.Location.Type", a.ko.Spec.CreateBucketConfiguration.Location.Type, b.ko.Spec.CreateBucketConfiguration.Location.Type)
+			} else if a.ko.Spec.CreateBucketConfiguration.Location.Type != nil && b.ko.Spec.CreateBucketConfiguration.Location.Type != nil {
+				if *a.ko.Spec.CreateBucketConfiguration.Location.Type != *b.ko.Spec.CreateBucketConfiguration.Location.Type {
+					delta.Add("Spec.CreateBucketConfiguration.Location.Type", a.ko.Spec.CreateBucketConfiguration.Location.Type, b.ko.Spec.CreateBucketConfiguration.Location.Type)
+				}
+			}
+		}
 		if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint) {
 			delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
 		} else if a.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil && b.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil {

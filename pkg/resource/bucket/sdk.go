@@ -154,8 +154,13 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
+	// Set default region for general-purpose buckets only (not directory buckets)
+	// Directory buckets use Location/Bucket fields instead of LocationConstraint
+	isDirectoryBucket := input.CreateBucketConfiguration != nil &&
+		input.CreateBucketConfiguration.Location != nil &&
+		input.CreateBucketConfiguration.Bucket != nil
 
-	if rm.awsRegion != "us-east-1" {
+	if rm.awsRegion != "us-east-1" && !isDirectoryBucket {
 		// Set default region if not specified
 		if input.CreateBucketConfiguration == nil ||
 			input.CreateBucketConfiguration.LocationConstraint == "" {
@@ -205,6 +210,26 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.CreateBucketConfiguration != nil {
 		f2 := &svcsdktypes.CreateBucketConfiguration{}
+		if r.ko.Spec.CreateBucketConfiguration.Bucket != nil {
+			f2f0 := &svcsdktypes.BucketInfo{}
+			if r.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy != nil {
+				f2f0.DataRedundancy = svcsdktypes.DataRedundancy(*r.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy)
+			}
+			if r.ko.Spec.CreateBucketConfiguration.Bucket.Type != nil {
+				f2f0.Type = svcsdktypes.BucketType(*r.ko.Spec.CreateBucketConfiguration.Bucket.Type)
+			}
+			f2.Bucket = f2f0
+		}
+		if r.ko.Spec.CreateBucketConfiguration.Location != nil {
+			f2f1 := &svcsdktypes.LocationInfo{}
+			if r.ko.Spec.CreateBucketConfiguration.Location.Name != nil {
+				f2f1.Name = r.ko.Spec.CreateBucketConfiguration.Location.Name
+			}
+			if r.ko.Spec.CreateBucketConfiguration.Location.Type != nil {
+				f2f1.Type = svcsdktypes.LocationType(*r.ko.Spec.CreateBucketConfiguration.Location.Type)
+			}
+			f2.Location = f2f1
+		}
 		if r.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil {
 			f2.LocationConstraint = svcsdktypes.BucketLocationConstraint(*r.ko.Spec.CreateBucketConfiguration.LocationConstraint)
 		}
