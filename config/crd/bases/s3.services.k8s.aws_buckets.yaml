@@ -181,7 +181,7 @@ spec:
                     properties:
                       dataRedundancy:
                         type: string
-                      type_:
+                      type:
                         type: string
                     type: object
                   location:
@@ -196,7 +196,7 @@ spec:
                     properties:
                       name:
                         type: string
-                      type_:
+                      type:
                         type: string
                     type: object
                   locationConstraint:

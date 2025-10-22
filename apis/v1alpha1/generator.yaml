@@ -56,6 +56,12 @@ resources:
         # Forcing CRD field to "uRI" to avoid breaking change following
         # fix in aws-controller-k8s/pkg dependency for URI -> uri. 
         go_tag: json:"uRI,omitempty"
+      CreateBucketConfiguration.Bucket.Type:
+        # Override json tag to use "type" instead of "type_" to avoid underscore in CRD
+        go_tag: json:"type,omitempty"
+      CreateBucketConfiguration.Location.Type:
+        # Override json tag to use "type" instead of "type_" to avoid underscore in CRD
+        go_tag: json:"type,omitempty"
       Metrics:
         custom_field:
           list_of: MetricsConfiguration

@@ -111,7 +111,7 @@ type AnalyticsS3BucketDestination struct {
 // This functionality is only supported by directory buckets.
 type BucketInfo struct {
 	DataRedundancy *string `json:"dataRedundancy,omitempty"`
-	Type           *string `json:"type_,omitempty"`
+	Type           *string `json:"type,omitempty"`
 }
 
 // Specifies the lifecycle configuration for objects in an Amazon S3 bucket.
@@ -534,7 +534,7 @@ type Location struct {
 // This functionality is only supported by directory buckets.
 type LocationInfo struct {
 	Name *string `json:"name,omitempty"`
-	Type *string `json:"type_,omitempty"`
+	Type *string `json:"type,omitempty"`
 }
 
 // Describes where logs are stored and the prefix that Amazon S3 assigns to
