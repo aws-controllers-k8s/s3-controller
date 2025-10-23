@@ -28,6 +28,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/s3"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/aws-sdk-go-v2/service/s3control"
+	s3controltypes "github.com/aws/aws-sdk-go-v2/service/s3control/types"
 	smithy "github.com/aws/smithy-go"
 )
 
@@ -182,8 +184,8 @@ func (rm *resourceManager) createPutFields(
 			return errors.Wrapf(err, ErrSyncingPutProperty, "RequestPayment")
 		}
 	}
-	// Tagging is not supported for directory buckets (also checked in syncTagging itself)
-	if !isDirectoryBucket && r.ko.Spec.Tagging != nil {
+	// Tagging is supported for both general-purpose and directory buckets
+	if r.ko.Spec.Tagging != nil {
 		if err := rm.syncTagging(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Tagging")
 		}
@@ -311,8 +313,8 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "RequestPayment")
 		}
 	}
-	// Tagging is not supported for directory buckets
-	if !isDirectoryBucket && delta.DifferentAt("Spec.Tagging") {
+	// Tagging is supported for both general-purpose and directory buckets
+	if delta.DifferentAt("Spec.Tagging") {
 		if err := rm.syncTagging(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Tagging")
 		}
@@ -609,7 +611,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		ko.Spec.RequestPayment = nil
 	}
 
-	// Tagging operations are not supported for directory buckets
+	// Handle tagging for both general-purpose and directory buckets
 	if !isDirectoryBucket {
 		getTaggingResponse, err := rm.sdkapi.GetBucketTagging(ctx, rm.newGetBucketTaggingPayload(r))
 		if err != nil {
@@ -623,7 +625,11 @@ func (rm *resourceManager) addPutFieldsToSpec(
 			ko.Spec.Tagging = nil
 		}
 	} else {
-		ko.Spec.Tagging = nil
+		// Directory buckets use S3 Control API for tagging
+		err := rm.getDirectoryBucketTagging(ctx, r, ko)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Versioning is not supported for directory buckets
@@ -1651,10 +1657,9 @@ func (rm *resourceManager) putTagging(
 	exit := rlog.Trace("rm.putTagging")
 	defer exit(err)
 
-	// PutBucketTagging is not supported for directory buckets
+	// Directory buckets use S3 Control API for tagging
 	if r.ko.Spec.Name != nil && isDirectoryBucketName(*r.ko.Spec.Name) {
-		rlog.Info("Skipping PutBucketTagging for directory bucket")
-		return nil
+		return rm.putDirectoryBucketTagging(ctx, r)
 	}
 
 	input := rm.newPutBucketTaggingPayload(r)
@@ -1668,6 +1673,123 @@ func (rm *resourceManager) putTagging(
 	return nil
 }
 
+// putDirectoryBucketTagging applies tags to a directory bucket using the S3 Control API
+func (rm *resourceManager) putDirectoryBucketTagging(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+
+	if r.ko.Spec.Tagging == nil || r.ko.Spec.Tagging.TagSet == nil {
+		rlog.Info("No tags to apply to directory bucket")
+		return nil
+	}
+
+	s3controlClient := s3control.NewFromConfig(rm.clientcfg)
+
+	// Convert tags to S3 Control format
+	var tags []s3controltypes.Tag
+	for _, tag := range r.ko.Spec.Tagging.TagSet {
+		if tag.Key != nil && tag.Value != nil {
+			tags = append(tags, s3controltypes.Tag{
+				Key:   tag.Key,
+				Value: tag.Value,
+			})
+		}
+	}
+
+	if len(tags) == 0 {
+		rlog.Info("No valid tags to apply to directory bucket")
+		return nil
+	}
+
+	// Build bucket ARN for directory bucket
+	bucketName := *r.ko.Spec.Name
+	bucketARN := fmt.Sprintf("arn:aws:s3express:%s:%s:bucket/%s",
+		string(rm.awsRegion),
+		string(rm.awsAccountID),
+		bucketName)
+
+	rlog.Info("Applying tags to directory bucket using S3 Control API",
+		"bucketARN", bucketARN,
+		"tagCount", len(tags))
+
+	input := &s3control.TagResourceInput{
+		ResourceArn: aws.String(bucketARN),
+		AccountId:   aws.String(string(rm.awsAccountID)),
+		Tags:        tags,
+	}
+
+	_, err = s3controlClient.TagResource(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "TagResource", err)
+	if err != nil {
+		return errors.Wrap(err, "failed to tag directory bucket")
+	}
+
+	rlog.Info("Successfully applied tags to directory bucket")
+	return nil
+}
+
+// getDirectoryBucketTagging retrieves tags from a directory bucket using the S3 Control API
+func (rm *resourceManager) getDirectoryBucketTagging(
+	ctx context.Context,
+	r *resource,
+	ko *svcapitypes.Bucket,
+) error {
+	rlog := ackrtlog.FromContext(ctx)
+
+	s3controlClient := s3control.NewFromConfig(rm.clientcfg)
+
+	bucketName := *r.ko.Spec.Name
+	bucketARN := fmt.Sprintf("arn:aws:s3express:%s:%s:bucket/%s",
+		string(rm.awsRegion),
+		string(rm.awsAccountID),
+		bucketName)
+
+	rlog.Info("Retrieving tags from directory bucket using S3 Control API",
+		"bucketARN", bucketARN)
+
+	input := &s3control.ListTagsForResourceInput{
+		ResourceArn: aws.String(bucketARN),
+		AccountId:   aws.String(string(rm.awsAccountID)),
+	}
+
+	resp, err := s3controlClient.ListTagsForResource(ctx, input)
+	rm.metrics.RecordAPICall("READ_ONE", "ListTagsForResource", err)
+	rlog.Debug("",
+		"bucketARN", bucketARN)
+	if err != nil {
+		// Handle no tags case
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.ErrorCode() == "NoSuchTagSet" {
+			ko.Spec.Tagging = nil
+			return nil
+		}
+		return errors.Wrap(err, "failed to get directory bucket tags")
+	}
+
+	if resp == nil || len(resp.Tags) == 0 {
+		ko.Spec.Tagging = nil
+		return nil
+	}
+
+	tagging := &svcapitypes.Tagging{
+		TagSet: make([]*svcapitypes.Tag, 0, len(resp.Tags)),
+	}
+
+	for _, tag := range resp.Tags {
+		if tag.Key != nil && tag.Value != nil {
+			tagging.TagSet = append(tagging.TagSet, &svcapitypes.Tag{
+				Key:   tag.Key,
+				Value: tag.Value,
+			})
+		}
+	}
+
+	ko.Spec.Tagging = tagging
+	rlog.Info("Successfully retrieved tags from directory bucket", "tagCount", len(resp.Tags))
+	return nil
+}
+
 func (rm *resourceManager) deleteTagging(
 	ctx context.Context,
 	r *resource,
@@ -1676,10 +1798,9 @@ func (rm *resourceManager) deleteTagging(
 	exit := rlog.Trace("rm.deleteTagging")
 	defer exit(err)
 
-	// DeleteBucketTagging is not supported for directory buckets
+	// Directory buckets use S3 Control API for tag deletion
 	if r.ko.Spec.Name != nil && isDirectoryBucketName(*r.ko.Spec.Name) {
-		rlog.Info("Skipping DeleteBucketTagging for directory bucket")
-		return nil
+		return rm.deleteDirectoryBucketTagging(ctx, r)
 	}
 
 	input := rm.newDeleteBucketTaggingPayload(r)
@@ -1690,6 +1811,73 @@ func (rm *resourceManager) deleteTagging(
 		return err
 	}
 
+	return nil
+}
+
+// deleteDirectoryBucketTagging removes all tags from a directory bucket using the S3 Control API
+func (rm *resourceManager) deleteDirectoryBucketTagging(
+	ctx context.Context,
+	r *resource,
+) error {
+	rlog := ackrtlog.FromContext(ctx)
+
+	s3controlClient := s3control.NewFromConfig(rm.clientcfg)
+
+	bucketName := *r.ko.Spec.Name
+	bucketARN := fmt.Sprintf("arn:aws:s3express:%s:%s:bucket/%s",
+		string(rm.awsRegion),
+		string(rm.awsAccountID),
+		bucketName)
+
+	getInput := &s3control.ListTagsForResourceInput{
+		ResourceArn: aws.String(bucketARN),
+		AccountId:   aws.String(string(rm.awsAccountID)),
+	}
+
+	resp, err := s3controlClient.ListTagsForResource(ctx, getInput)
+	if err != nil {
+		// Handle no tags case
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.ErrorCode() == "NoSuchTagSet" {
+			rlog.Info("No tags to delete from directory bucket")
+			return nil
+		}
+		return errors.Wrap(err, "failed to get directory bucket tags for deletion")
+	}
+
+	if resp == nil || len(resp.Tags) == 0 {
+		rlog.Info("No tags to delete from directory bucket")
+		return nil
+	}
+
+	tagKeys := make([]string, 0, len(resp.Tags))
+	for _, tag := range resp.Tags {
+		if tag.Key != nil {
+			tagKeys = append(tagKeys, *tag.Key)
+		}
+	}
+
+	if len(tagKeys) == 0 {
+		rlog.Info("No valid tag keys to delete from directory bucket")
+		return nil
+	}
+
+	rlog.Info("Deleting tags from directory bucket using S3 Control API",
+		"bucketARN", bucketARN,
+		"tagCount", len(tagKeys))
+
+	deleteInput := &s3control.UntagResourceInput{
+		ResourceArn: aws.String(bucketARN),
+		AccountId:   aws.String(string(rm.awsAccountID)),
+		TagKeys:     tagKeys,
+	}
+
+	_, err = s3controlClient.UntagResource(ctx, deleteInput)
+	rm.metrics.RecordAPICall("DELETE", "UntagResource", err)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete directory bucket tags")
+	}
+
+	rlog.Info("Successfully deleted tags from directory bucket")
 	return nil
 }
 
