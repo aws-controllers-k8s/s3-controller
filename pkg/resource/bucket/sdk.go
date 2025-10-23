@@ -57,85 +57,8 @@ var (
 func (rm *resourceManager) sdkFind(
 	ctx context.Context,
 	r *resource,
-) (latest *resource, err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.sdkFind")
-	defer func() {
-		exit(err)
-	}()
-	// If any required fields in the input shape are missing, AWS resource is
-	// not created yet. Return NotFound here to indicate to callers that the
-	// resource isn't yet created.
-	if rm.requiredFieldsMissingFromReadManyInput(r) {
-		return nil, ackerr.NotFound
-	}
-
-	input, err := rm.newListRequestPayload(r)
-	if err != nil {
-		return nil, err
-	}
-	var resp *svcsdk.ListBucketsOutput
-	resp, err = rm.sdkapi.ListBuckets(ctx, input)
-	rm.metrics.RecordAPICall("READ_MANY", "ListBuckets", err)
-	if err != nil {
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchBucket" {
-			return nil, ackerr.NotFound
-		}
-		return nil, err
-	}
-
-	// Merge in the information we read from the API call above to the copy of
-	// the original Kubernetes object we passed to the function
-	ko := r.ko.DeepCopy()
-
-	found := false
-	for _, elem := range resp.Buckets {
-		if elem.Name != nil {
-			if ko.Spec.Name != nil {
-				if *elem.Name != *ko.Spec.Name {
-					continue
-				}
-			}
-			ko.Spec.Name = elem.Name
-		} else {
-			ko.Spec.Name = nil
-		}
-		found = true
-		break
-	}
-	if !found {
-		return nil, ackerr.NotFound
-	}
-
-	rm.setStatusDefaults(ko)
-	if err := rm.addPutFieldsToSpec(ctx, r, ko); err != nil {
-		return nil, err
-	}
-
-	// Set bucket ARN in the output
-	bucketARN := ackv1alpha1.AWSResourceName(bucketARN(*ko.Spec.Name))
-	ko.Status.ACKResourceMetadata.ARN = &bucketARN
-	return &resource{ko}, nil
-}
-
-// requiredFieldsMissingFromReadManyInput returns true if there are any fields
-// for the ReadMany Input shape that are required but not present in the
-// resource's Spec or Status
-func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
-	r *resource,
-) bool {
-	return false
-}
-
-// newListRequestPayload returns SDK-specific struct for the HTTP request
-// payload of the List API call for the resource
-func (rm *resourceManager) newListRequestPayload(
-	r *resource,
-) (*svcsdk.ListBucketsInput, error) {
-	res := &svcsdk.ListBucketsInput{}
-
-	return res, nil
+) (*resource, error) {
+	return rm.customFindBucket(ctx, r)
 }
 
 // sdkCreate creates the supplied resource in the backend AWS service API and
