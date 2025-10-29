@@ -13,12 +13,6 @@ ignore:
     # This subfield struct has no members...
     - "NotificationConfiguration.EventBridgeConfiguration"
     - LoggingEnabled.TargetObjectKeyFormat
-operations:
-  ListDirectoryBuckets:
-    operation_type:
-      - List
-    resource_name:
-      - Bucket
 resources:
   Bucket:
     find_operation:
