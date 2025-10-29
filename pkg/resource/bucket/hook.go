@@ -80,6 +80,90 @@ const (
 
 const ErrSyncingPutProperty = "Error syncing property '%s'"
 
+// Returns a terminal error if unsupported fields are detected.
+func validateDirectoryBucketSpec(ko *svcapitypes.Bucket) error {
+	if ko.Spec.Name == nil || !isDirectoryBucketName(*ko.Spec.Name) {
+		return nil
+	}
+
+	var unsupportedFields []string
+
+	if ko.Spec.Accelerate != nil {
+		unsupportedFields = append(unsupportedFields, "Accelerate")
+	}
+	if len(ko.Spec.Analytics) > 0 {
+		unsupportedFields = append(unsupportedFields, "Analytics")
+	}
+	if ko.Spec.ACL != nil {
+		unsupportedFields = append(unsupportedFields, "ACL")
+	}
+	if ko.Spec.GrantFullControl != nil {
+		unsupportedFields = append(unsupportedFields, "GrantFullControl")
+	}
+	if ko.Spec.GrantRead != nil {
+		unsupportedFields = append(unsupportedFields, "GrantRead")
+	}
+	if ko.Spec.GrantReadACP != nil {
+		unsupportedFields = append(unsupportedFields, "GrantReadACP")
+	}
+	if ko.Spec.GrantWrite != nil {
+		unsupportedFields = append(unsupportedFields, "GrantWrite")
+	}
+	if ko.Spec.GrantWriteACP != nil {
+		unsupportedFields = append(unsupportedFields, "GrantWriteACP")
+	}
+	if ko.Spec.CORS != nil {
+		unsupportedFields = append(unsupportedFields, "CORS")
+	}
+	if len(ko.Spec.IntelligentTiering) > 0 {
+		unsupportedFields = append(unsupportedFields, "IntelligentTiering")
+	}
+	if len(ko.Spec.Inventory) > 0 {
+		unsupportedFields = append(unsupportedFields, "Inventory")
+	}
+	if ko.Spec.Lifecycle != nil {
+		unsupportedFields = append(unsupportedFields, "Lifecycle")
+	}
+	if ko.Spec.Logging != nil {
+		unsupportedFields = append(unsupportedFields, "Logging")
+	}
+	if len(ko.Spec.Metrics) > 0 {
+		unsupportedFields = append(unsupportedFields, "Metrics")
+	}
+	if ko.Spec.Notification != nil {
+		unsupportedFields = append(unsupportedFields, "Notification")
+	}
+	if ko.Spec.OwnershipControls != nil {
+		unsupportedFields = append(unsupportedFields, "OwnershipControls")
+	}
+	if ko.Spec.PublicAccessBlock != nil {
+		unsupportedFields = append(unsupportedFields, "PublicAccessBlock")
+	}
+	if ko.Spec.Replication != nil {
+		unsupportedFields = append(unsupportedFields, "Replication")
+	}
+	if ko.Spec.RequestPayment != nil {
+		unsupportedFields = append(unsupportedFields, "RequestPayment")
+	}
+	if ko.Spec.Versioning != nil {
+		unsupportedFields = append(unsupportedFields, "Versioning")
+	}
+	if ko.Spec.Website != nil {
+		unsupportedFields = append(unsupportedFields, "Website")
+	}
+
+	if len(unsupportedFields) > 0 {
+		return ackerr.NewTerminalError(fmt.Errorf(
+			"directory buckets do not support the following fields: %s. "+
+				"Please modify your bucket specification to valid Directory Bucket configurations. "+
+				"See https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-differences.html",
+			strings.Join(unsupportedFields, ", "),
+		))
+	}
+
+	return nil
+}
+
 func (rm *resourceManager) createPutFields(
 	ctx context.Context,
 	r *resource,
@@ -210,6 +294,11 @@ func (rm *resourceManager) customUpdateBucket(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.customUpdateBucket")
 	defer exit(err)
+
+	// Validate directory bucket configuration
+	if err := validateDirectoryBucketSpec(desired.ko); err != nil {
+		return nil, err
+	}
 
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
