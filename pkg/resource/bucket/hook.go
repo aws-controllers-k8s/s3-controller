@@ -44,7 +44,7 @@ func bucketARN(bucketName string) string {
 	// e.g the generated function `ARNFromName` also uses `aws` as the
 	// default partition.
 	var arnFormat string
-	if isDirectoryBucketName(bucketName) {
+	if IsDirectoryBucketName(bucketName) {
 		arnFormat = "arn:aws:s3-express:::%s"
 	} else {
 		arnFormat = "arn:aws:s3:::%s"
@@ -82,7 +82,7 @@ const ErrSyncingPutProperty = "Error syncing property '%s'"
 
 // Returns a terminal error if unsupported fields are detected.
 func validateDirectoryBucketSpec(ko *svcapitypes.Bucket) error {
-	if ko.Spec.Name == nil || !isDirectoryBucketName(*ko.Spec.Name) {
+	if ko.Spec.Name == nil || !IsDirectoryBucketName(*ko.Spec.Name) {
 		return nil
 	}
 
@@ -169,7 +169,7 @@ func (rm *resourceManager) createPutFields(
 	r *resource,
 ) error {
 	// Check if this is a directory bucket to skip unsupported operations
-	isDirectoryBucket := r.ko.Spec.Name != nil && isDirectoryBucketName(*r.ko.Spec.Name)
+	isDirectoryBucket := r.ko.Spec.Name != nil && IsDirectoryBucketName(*r.ko.Spec.Name)
 
 	// Other configuration options (Replication) require versioning to be
 	// enabled before they can be configured
@@ -307,7 +307,7 @@ func (rm *resourceManager) customUpdateBucket(
 	rm.setStatusDefaults(ko)
 
 	// Check if this is a directory bucket to skip unsupported operations
-	isDirectoryBucket := desired.ko.Spec.Name != nil && isDirectoryBucketName(*desired.ko.Spec.Name)
+	isDirectoryBucket := desired.ko.Spec.Name != nil && IsDirectoryBucketName(*desired.ko.Spec.Name)
 
 	// Accelerate is not supported for directory buckets
 	if !isDirectoryBucket && delta.DifferentAt("Spec.Accelerate") {
@@ -448,7 +448,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	ko *svcapitypes.Bucket,
 ) (err error) {
 	// Check if this is a directory bucket to skip unsupported operations
-	isDirectoryBucket := r.ko.Spec.Name != nil && isDirectoryBucketName(*r.ko.Spec.Name)
+	isDirectoryBucket := r.ko.Spec.Name != nil && IsDirectoryBucketName(*r.ko.Spec.Name)
 
 	// Transfer acceleration is not supported for directory buckets
 	if !isDirectoryBucket {
@@ -1747,7 +1747,7 @@ func (rm *resourceManager) putTagging(
 	defer exit(err)
 
 	// Directory buckets use S3 Control API for tagging
-	if r.ko.Spec.Name != nil && isDirectoryBucketName(*r.ko.Spec.Name) {
+	if r.ko.Spec.Name != nil && IsDirectoryBucketName(*r.ko.Spec.Name) {
 		return rm.putDirectoryBucketTagging(ctx, r)
 	}
 
@@ -1888,7 +1888,7 @@ func (rm *resourceManager) deleteTagging(
 	defer exit(err)
 
 	// Directory buckets use S3 Control API for tag deletion
-	if r.ko.Spec.Name != nil && isDirectoryBucketName(*r.ko.Spec.Name) {
+	if r.ko.Spec.Name != nil && IsDirectoryBucketName(*r.ko.Spec.Name) {
 		return rm.deleteDirectoryBucketTagging(ctx, r)
 	}
 
@@ -2107,10 +2107,10 @@ func (rm *resourceManager) syncWebsite(
 
 //endregion website
 
-// isDirectoryBucketName checks if a bucket name follows the directory bucket naming pattern.
+// IsDirectoryBucketName checks if a bucket name follows the directory bucket naming pattern.
 // Directory buckets must end with "--x-s3" suffix and follow the format:
 // bucket-base-name--zone-id--x-s3
-func isDirectoryBucketName(bucketName string) bool {
+func IsDirectoryBucketName(bucketName string) bool {
 	return strings.HasSuffix(bucketName, "--x-s3")
 }
 
@@ -2136,7 +2136,7 @@ func (rm *resourceManager) customFindBucket(
 	ko := r.ko.DeepCopy()
 	found := false
 
-	if isDirectoryBucketName(bucketName) {
+	if IsDirectoryBucketName(bucketName) {
 		input := &svcsdk.ListDirectoryBucketsInput{}
 		var resp *svcsdk.ListDirectoryBucketsOutput
 		resp, err = rm.sdkapi.ListDirectoryBuckets(ctx, input)
