@@ -77,6 +77,10 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
+	// Validate directory bucket configuration
+	if err := validateDirectoryBucketSpec(desired.ko); err != nil {
+		return nil, err
+	}
 	// Set default region for general-purpose buckets only (not directory buckets)
 	// Directory buckets use Location/Bucket fields instead of LocationConstraint
 	isDirectoryBucket := input.CreateBucketConfiguration != nil &&

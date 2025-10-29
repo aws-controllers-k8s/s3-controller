@@ -44,6 +44,12 @@ type AccelerateConfiguration struct {
 	Status *string `json:"status,omitempty"`
 }
 
+// Contains the elements that set the ACL permissions for an object per grantee.
+type AccessControlPolicy struct {
+	// Container for the owner's display name and ID.
+	Owner *Owner `json:"owner,omitempty"`
+}
+
 // A container for information about access control for replicas.
 type AccessControlTranslation struct {
 	Owner *string `json:"owner,omitempty"`
@@ -200,6 +206,8 @@ type DefaultRetention struct {
 // Information about the delete marker.
 type DeleteMarkerEntry struct {
 	Key *string `json:"key,omitempty"`
+	// Container for the owner's display name and ID.
+	Owner *Owner `json:"owner,omitempty"`
 }
 
 // Specifies whether Amazon S3 replicates delete markers. If you specify a Filter
@@ -589,7 +597,9 @@ type MetricsFilter struct {
 
 // Container for the MultipartUpload for the Amazon S3 object.
 type MultipartUpload struct {
-	Key          *string `json:"key,omitempty"`
+	Key *string `json:"key,omitempty"`
+	// Container for the owner's display name and ID.
+	Owner        *Owner  `json:"owner,omitempty"`
 	StorageClass *string `json:"storageClass,omitempty"`
 }
 
@@ -639,6 +649,8 @@ type NotificationConfigurationFilter struct {
 // An object consists of data and its descriptive metadata.
 type Object struct {
 	Key *string `json:"key,omitempty"`
+	// Container for the owner's display name and ID.
+	Owner *Owner `json:"owner,omitempty"`
 }
 
 // Object Identifier is unique value to identify objects.
@@ -654,6 +666,8 @@ type ObjectLockRetention struct {
 // The version of an object.
 type ObjectVersion struct {
 	Key *string `json:"key,omitempty"`
+	// Container for the owner's display name and ID.
+	Owner *Owner `json:"owner,omitempty"`
 }
 
 // Describes the location where the restore job's output is stored.
