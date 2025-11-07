@@ -132,32 +132,6 @@ def basic_bucket(s3_client) -> Generator[Bucket, None, None]:
     exists = bucket_exists(s3_client, bucket)
     assert not exists
 
-class TestAdoptBucket(adoption.AbstractAdoptionTest):
-    RESOURCE_PLURAL: str = RESOURCE_PLURAL
-    RESOURCE_VERSION: str = CRD_VERSION
-
-    _bucket_name: str = random_suffix_name("ack-adopted-bucket", 63)
-
-    def bootstrap_resource(self):
-        client = boto3.client('s3')
-        region = get_region()
-        if region == "us-east-1":
-            client.create_bucket(Bucket=self._bucket_name)
-        else:
-            client.create_bucket(
-                Bucket=self._bucket_name, CreateBucketConfiguration={"LocationConstraint": region}
-            )
-
-    def cleanup_resource(self):
-        client = boto3.client('s3')
-        client.delete_bucket(Bucket=self._bucket_name)
-
-    def get_resource_spec(self) -> adoption.AdoptedResourceSpec:
-        return adoption.AdoptedResourceSpec(
-            aws=adoption.AdoptedResourceNameOrIDIdentifier(additionalKeys={}, nameOrID=self._bucket_name),
-            kubernetes=adoption.AdoptedResourceKubernetesIdentifiers(CRD_GROUP, RESOURCE_KIND),
-        )
-
 @service_marker
 class TestBucket:
     def test_basic(self, basic_bucket):
