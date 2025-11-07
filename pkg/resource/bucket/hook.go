@@ -20,6 +20,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -27,6 +28,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/s3"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/aws-sdk-go-v2/service/s3control"
+	s3controltypes "github.com/aws/aws-sdk-go-v2/service/s3control/types"
+	smithy "github.com/aws/smithy-go"
 )
 
 // bucketARN returns the ARN of the S3 bucket with the given name.
@@ -39,7 +43,13 @@ func bucketARN(bucketName string) string {
 	// NOTE(a-hilaly): Other parts of ACK also use this default partition
 	// e.g the generated function `ARNFromName` also uses `aws` as the
 	// default partition.
-	return fmt.Sprintf("arn:aws:s3:::%s", bucketName)
+	var arnFormat string
+	if IsDirectoryBucketName(bucketName) {
+		arnFormat = "arn:aws:s3-express:::%s"
+	} else {
+		arnFormat = "arn:aws:s3:::%s"
+	}
+	return fmt.Sprintf(arnFormat, bucketName)
 }
 
 var (
@@ -70,29 +80,120 @@ const (
 
 const ErrSyncingPutProperty = "Error syncing property '%s'"
 
+// Returns a terminal error if unsupported fields are detected.
+func validateDirectoryBucketSpec(ko *svcapitypes.Bucket) error {
+	if ko.Spec.Name == nil || !IsDirectoryBucketName(*ko.Spec.Name) {
+		return nil
+	}
+
+	var unsupportedFields []string
+
+	if ko.Spec.Accelerate != nil {
+		unsupportedFields = append(unsupportedFields, "Accelerate")
+	}
+	if len(ko.Spec.Analytics) > 0 {
+		unsupportedFields = append(unsupportedFields, "Analytics")
+	}
+	if ko.Spec.ACL != nil {
+		unsupportedFields = append(unsupportedFields, "ACL")
+	}
+	if ko.Spec.GrantFullControl != nil {
+		unsupportedFields = append(unsupportedFields, "GrantFullControl")
+	}
+	if ko.Spec.GrantRead != nil {
+		unsupportedFields = append(unsupportedFields, "GrantRead")
+	}
+	if ko.Spec.GrantReadACP != nil {
+		unsupportedFields = append(unsupportedFields, "GrantReadACP")
+	}
+	if ko.Spec.GrantWrite != nil {
+		unsupportedFields = append(unsupportedFields, "GrantWrite")
+	}
+	if ko.Spec.GrantWriteACP != nil {
+		unsupportedFields = append(unsupportedFields, "GrantWriteACP")
+	}
+	if ko.Spec.CORS != nil {
+		unsupportedFields = append(unsupportedFields, "CORS")
+	}
+	if len(ko.Spec.IntelligentTiering) > 0 {
+		unsupportedFields = append(unsupportedFields, "IntelligentTiering")
+	}
+	if len(ko.Spec.Inventory) > 0 {
+		unsupportedFields = append(unsupportedFields, "Inventory")
+	}
+	if ko.Spec.Lifecycle != nil {
+		unsupportedFields = append(unsupportedFields, "Lifecycle")
+	}
+	if ko.Spec.Logging != nil {
+		unsupportedFields = append(unsupportedFields, "Logging")
+	}
+	if len(ko.Spec.Metrics) > 0 {
+		unsupportedFields = append(unsupportedFields, "Metrics")
+	}
+	if ko.Spec.Notification != nil {
+		unsupportedFields = append(unsupportedFields, "Notification")
+	}
+	if ko.Spec.OwnershipControls != nil {
+		unsupportedFields = append(unsupportedFields, "OwnershipControls")
+	}
+	if ko.Spec.PublicAccessBlock != nil {
+		unsupportedFields = append(unsupportedFields, "PublicAccessBlock")
+	}
+	if ko.Spec.Replication != nil {
+		unsupportedFields = append(unsupportedFields, "Replication")
+	}
+	if ko.Spec.RequestPayment != nil {
+		unsupportedFields = append(unsupportedFields, "RequestPayment")
+	}
+	if ko.Spec.Versioning != nil {
+		unsupportedFields = append(unsupportedFields, "Versioning")
+	}
+	if ko.Spec.Website != nil {
+		unsupportedFields = append(unsupportedFields, "Website")
+	}
+
+	if len(unsupportedFields) > 0 {
+		return ackerr.NewTerminalError(fmt.Errorf(
+			"directory buckets do not support the following fields: %s. "+
+				"Please modify your bucket specification to valid Directory Bucket configurations. "+
+				"See https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-differences.html",
+			strings.Join(unsupportedFields, ", "),
+		))
+	}
+
+	return nil
+}
+
 func (rm *resourceManager) createPutFields(
 	ctx context.Context,
 	r *resource,
 ) error {
+	// Check if this is a directory bucket to skip unsupported operations
+	isDirectoryBucket := r.ko.Spec.Name != nil && IsDirectoryBucketName(*r.ko.Spec.Name)
+
 	// Other configuration options (Replication) require versioning to be
 	// enabled before they can be configured
-	if r.ko.Spec.Versioning != nil {
+	// Versioning is not supported for directory buckets
+	if !isDirectoryBucket && r.ko.Spec.Versioning != nil {
 		if err := rm.syncVersioning(ctx, r); err != nil {
 			return err
 		}
 	}
 
-	if r.ko.Spec.Accelerate != nil {
+	// Accelerate is not supported for directory buckets
+	if !isDirectoryBucket && r.ko.Spec.Accelerate != nil {
 		if err := rm.syncAccelerate(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Accelerate")
 		}
 	}
-	if len(r.ko.Spec.Analytics) != 0 {
+	// Analytics is not supported for directory buckets
+	if !isDirectoryBucket && len(r.ko.Spec.Analytics) != 0 {
 		if err := rm.syncAnalytics(ctx, r, nil); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Analytics")
 		}
 	}
-	if r.ko.Spec.CORS != nil {
+	// CORS is not supported for directory buckets
+	if !isDirectoryBucket && r.ko.Spec.CORS != nil {
 		if err := rm.syncCORS(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "CORS")
 		}
@@ -102,12 +203,14 @@ func (rm *resourceManager) createPutFields(
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Encryption")
 		}
 	}
-	if len(r.ko.Spec.IntelligentTiering) != 0 {
+	// Intelligent Tiering is not supported for directory buckets
+	if !isDirectoryBucket && len(r.ko.Spec.IntelligentTiering) != 0 {
 		if err := rm.syncIntelligentTiering(ctx, r, nil); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "IntelligentTiering")
 		}
 	}
-	if len(r.ko.Spec.Inventory) != 0 {
+	// Inventory is not supported for directory buckets
+	if !isDirectoryBucket && len(r.ko.Spec.Inventory) != 0 {
 		if err := rm.syncInventory(ctx, r, nil); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Inventory")
 		}
@@ -117,29 +220,33 @@ func (rm *resourceManager) createPutFields(
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Lifecycle")
 		}
 	}
-	if r.ko.Spec.Logging != nil {
+	// Logging is not supported for directory buckets
+	if !isDirectoryBucket && r.ko.Spec.Logging != nil {
 		if err := rm.syncLogging(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Logging")
 		}
 	}
-	if len(r.ko.Spec.Metrics) != 0 {
+	// Metrics is not supported for directory buckets
+	if !isDirectoryBucket && len(r.ko.Spec.Metrics) != 0 {
 		if err := rm.syncMetrics(ctx, r, nil); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Metrics")
 		}
 	}
-	if r.ko.Spec.Notification != nil {
+	// Notification is not supported for directory buckets
+	if !isDirectoryBucket && r.ko.Spec.Notification != nil {
 		if err := rm.syncNotification(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Notification")
 		}
 	}
-	if r.ko.Spec.OwnershipControls != nil {
+	// Ownership controls are not supported for directory buckets
+	if !isDirectoryBucket && r.ko.Spec.OwnershipControls != nil {
 		if err := rm.syncOwnershipControls(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "OwnershipControls")
 		}
 	}
 	// PublicAccessBlock may need to be set in order to use Policy, so sync it
-	// first
-	if r.ko.Spec.PublicAccessBlock != nil {
+	// first. Not supported for directory buckets.
+	if !isDirectoryBucket && r.ko.Spec.PublicAccessBlock != nil {
 		if err := rm.syncPublicAccessBlock(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "PublicAccessBlock")
 		}
@@ -149,22 +256,26 @@ func (rm *resourceManager) createPutFields(
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Policy")
 		}
 	}
-	if r.ko.Spec.Replication != nil {
+	// Replication is not supported for directory buckets
+	if !isDirectoryBucket && r.ko.Spec.Replication != nil {
 		if err := rm.syncReplication(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Replication")
 		}
 	}
-	if r.ko.Spec.RequestPayment != nil {
+	// Request payment is not supported for directory buckets
+	if !isDirectoryBucket && r.ko.Spec.RequestPayment != nil {
 		if err := rm.syncRequestPayment(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "RequestPayment")
 		}
 	}
+	// Tagging is supported for both general-purpose and directory buckets
 	if r.ko.Spec.Tagging != nil {
 		if err := rm.syncTagging(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Tagging")
 		}
 	}
-	if r.ko.Spec.Website != nil {
+	// Website is not supported for directory buckets
+	if !isDirectoryBucket && r.ko.Spec.Website != nil {
 		if err := rm.syncWebsite(ctx, r); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Website")
 		}
@@ -184,33 +295,45 @@ func (rm *resourceManager) customUpdateBucket(
 	exit := rlog.Trace("rm.customUpdateBucket")
 	defer exit(err)
 
+	// Validate directory bucket configuration
+	if err := validateDirectoryBucketSpec(desired.ko); err != nil {
+		return nil, err
+	}
+
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
 	rm.setStatusDefaults(ko)
 
-	if delta.DifferentAt("Spec.Accelerate") {
+	// Check if this is a directory bucket to skip unsupported operations
+	isDirectoryBucket := desired.ko.Spec.Name != nil && IsDirectoryBucketName(*desired.ko.Spec.Name)
+
+	// Accelerate is not supported for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.Accelerate") {
 		if err := rm.syncAccelerate(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Accelerate")
 		}
 	}
-	if delta.DifferentAt("Spec.Analytics") {
+	// Analytics is not supported for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.Analytics") {
 		if err := rm.syncAnalytics(ctx, desired, latest); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Analytics")
 		}
 	}
-	if delta.DifferentAt("Spec.ACL") ||
+	// ACL operations are not supported for directory buckets
+	if !isDirectoryBucket && (delta.DifferentAt("Spec.ACL") ||
 		delta.DifferentAt("Spec.GrantFullControl") ||
 		delta.DifferentAt("Spec.GrantRead") ||
 		delta.DifferentAt("Spec.GrantReadACP") ||
 		delta.DifferentAt("Spec.GrantWrite") ||
-		delta.DifferentAt("Spec.GrantWriteACP") {
+		delta.DifferentAt("Spec.GrantWriteACP")) {
 		if err := rm.syncACL(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "ACLs or Grant Headers")
 		}
 	}
-	if delta.DifferentAt("Spec.CORS") {
+	// CORS is not supported for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.CORS") {
 		if err := rm.syncCORS(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "CORS")
 		}
@@ -220,12 +343,14 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Encryption")
 		}
 	}
-	if delta.DifferentAt("Spec.IntelligentTiering") {
+	// Intelligent Tiering is not supported for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.IntelligentTiering") {
 		if err := rm.syncIntelligentTiering(ctx, desired, latest); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "IntelligentTiering")
 		}
 	}
-	if delta.DifferentAt("Spec.Inventory") {
+	// Inventory is not supported for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.Inventory") {
 		if err := rm.syncInventory(ctx, desired, latest); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Inventory")
 		}
@@ -235,29 +360,33 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Lifecycle")
 		}
 	}
-	if delta.DifferentAt("Spec.Logging") {
+	// Logging is not supported for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.Logging") {
 		if err := rm.syncLogging(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Logging")
 		}
 	}
-	if delta.DifferentAt("Spec.Metrics") {
+	// Metrics is not supported for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.Metrics") {
 		if err := rm.syncMetrics(ctx, desired, latest); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Metrics")
 		}
 	}
-	if delta.DifferentAt("Spec.Notification") {
+	// Notification is not supported for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.Notification") {
 		if err := rm.syncNotification(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Notification")
 		}
 	}
-	if delta.DifferentAt("Spec.OwnershipControls") {
+	// Ownership controls are not supported for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.OwnershipControls") {
 		if err := rm.syncOwnershipControls(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "OwnershipControls")
 		}
 	}
 	// PublicAccessBlock may need to be set in order to use Policy, so sync it
-	// first
-	if delta.DifferentAt("Spec.PublicAccessBlock") {
+	// first. Not supported for directory buckets.
+	if !isDirectoryBucket && delta.DifferentAt("Spec.PublicAccessBlock") {
 		if err := rm.syncPublicAccessBlock(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "PublicAccessBlock")
 		}
@@ -267,26 +396,30 @@ func (rm *resourceManager) customUpdateBucket(
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Policy")
 		}
 	}
-	if delta.DifferentAt("Spec.RequestPayment") {
+	// Request payment is not supported for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.RequestPayment") {
 		if err := rm.syncRequestPayment(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "RequestPayment")
 		}
 	}
+	// Tagging is supported for both general-purpose and directory buckets
 	if delta.DifferentAt("Spec.Tagging") {
 		if err := rm.syncTagging(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Tagging")
 		}
 	}
-	if delta.DifferentAt("Spec.Website") {
+	// Website is not supported for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.Website") {
 		if err := rm.syncWebsite(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Website")
 		}
 	}
 
+	// Replication and Versioning are not supported for directory buckets
 	// Replication requires versioning be enabled. We check that if we are
 	// disabling versioning, that we disable replication first. If we are
 	// enabling replication, that we enable versioning first.
-	if delta.DifferentAt("Spec.Replication") || delta.DifferentAt("Spec.Versioning") {
+	if !isDirectoryBucket && (delta.DifferentAt("Spec.Replication") || delta.DifferentAt("Spec.Versioning")) {
 		if desired.ko.Spec.Replication == nil || desired.ko.Spec.Replication.Rules == nil {
 			if err := rm.syncReplication(ctx, desired); err != nil {
 				return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Replication")
@@ -314,48 +447,69 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	r *resource,
 	ko *svcapitypes.Bucket,
 ) (err error) {
-	getAccelerateResponse, err := rm.sdkapi.GetBucketAccelerateConfiguration(ctx, rm.newGetBucketAcceleratePayload(r))
-	if err != nil {
-		// This method is not supported in every region, ignore any errors if
-		// we attempt to describe this property in a region in which it's not
-		// supported.
-		if awsErr, ok := ackerr.AWSError(err); !ok || (awsErr.ErrorCode() != "MethodNotAllowed" && awsErr.ErrorCode() != "UnsupportedArgument") {
-			return err
+	// Check if this is a directory bucket to skip unsupported operations
+	isDirectoryBucket := r.ko.Spec.Name != nil && IsDirectoryBucketName(*r.ko.Spec.Name)
+
+	// Transfer acceleration is not supported for directory buckets
+	if !isDirectoryBucket {
+		getAccelerateResponse, err := rm.sdkapi.GetBucketAccelerateConfiguration(ctx, rm.newGetBucketAcceleratePayload(r))
+		if err != nil {
+			// This method is not supported in every region, ignore any errors if
+			// we attempt to describe this property in a region in which it's not
+			// supported.
+			if awsErr, ok := ackerr.AWSError(err); !ok || (awsErr.ErrorCode() != "MethodNotAllowed" && awsErr.ErrorCode() != "UnsupportedArgument") {
+				return err
+			}
 		}
-	}
-	if getAccelerateResponse == nil || getAccelerateResponse.Status == "" {
-		ko.Spec.Accelerate = nil
+		if getAccelerateResponse == nil || getAccelerateResponse.Status == "" {
+			ko.Spec.Accelerate = nil
+		} else {
+			ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
+		}
 	} else {
-		ko.Spec.Accelerate = rm.setResourceAccelerate(r, getAccelerateResponse)
+		ko.Spec.Accelerate = nil
 	}
 
-	listAnalyticsResponse, err := rm.sdkapi.ListBucketAnalyticsConfigurations(ctx, rm.newListBucketAnalyticsPayload(r))
-	if err != nil {
-		return err
-	}
-	if listAnalyticsResponse != nil && len(listAnalyticsResponse.AnalyticsConfigurationList) > 0 {
-		ko.Spec.Analytics = make([]*svcapitypes.AnalyticsConfiguration, len(listAnalyticsResponse.AnalyticsConfigurationList))
-		for i, analyticsConfiguration := range listAnalyticsResponse.AnalyticsConfigurationList {
-			ko.Spec.Analytics[i] = rm.setResourceAnalyticsConfiguration(r, analyticsConfiguration)
+	// Analytics configurations are not supported for directory buckets
+	if !isDirectoryBucket {
+		listAnalyticsResponse, err := rm.sdkapi.ListBucketAnalyticsConfigurations(ctx, rm.newListBucketAnalyticsPayload(r))
+		if err != nil {
+			return err
+		}
+		if listAnalyticsResponse != nil && len(listAnalyticsResponse.AnalyticsConfigurationList) > 0 {
+			ko.Spec.Analytics = make([]*svcapitypes.AnalyticsConfiguration, len(listAnalyticsResponse.AnalyticsConfigurationList))
+			for i, analyticsConfiguration := range listAnalyticsResponse.AnalyticsConfigurationList {
+				ko.Spec.Analytics[i] = rm.setResourceAnalyticsConfiguration(r, analyticsConfiguration)
+			}
+		} else {
+			ko.Spec.Analytics = nil
 		}
 	} else {
 		ko.Spec.Analytics = nil
 	}
 
-	getACLResponse, err := rm.sdkapi.GetBucketAcl(ctx, rm.newGetBucketACLPayload(r))
-	if err != nil {
-		return err
-	}
-	rm.setResourceACL(ko, getACLResponse)
-
-	getCORSResponse, err := rm.sdkapi.GetBucketCors(ctx, rm.newGetBucketCORSPayload(r))
-	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchCORSConfiguration" {
+	// ACL operations are not supported for directory buckets
+	if !isDirectoryBucket {
+		getACLResponse, err := rm.sdkapi.GetBucketAcl(ctx, rm.newGetBucketACLPayload(r))
+		if err != nil {
 			return err
 		}
+		rm.setResourceACL(ko, getACLResponse)
 	}
-	if getCORSResponse != nil {
-		ko.Spec.CORS = rm.setResourceCORS(r, getCORSResponse)
+
+	// CORS is not supported for directory buckets
+	if !isDirectoryBucket {
+		getCORSResponse, err := rm.sdkapi.GetBucketCors(ctx, rm.newGetBucketCORSPayload(r))
+		if err != nil {
+			if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchCORSConfiguration" {
+				return err
+			}
+		}
+		if getCORSResponse != nil {
+			ko.Spec.CORS = rm.setResourceCORS(r, getCORSResponse)
+		} else {
+			ko.Spec.CORS = nil
+		}
 	} else {
 		ko.Spec.CORS = nil
 	}
@@ -372,27 +526,37 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		ko.Spec.Encryption = nil
 	}
 
-	listIntelligentTieringResponse, err := rm.sdkapi.ListBucketIntelligentTieringConfigurations(ctx, rm.newListBucketIntelligentTieringPayload(r))
-	if err != nil {
-		return err
-	}
-	if len(listIntelligentTieringResponse.IntelligentTieringConfigurationList) > 0 {
-		ko.Spec.IntelligentTiering = make([]*svcapitypes.IntelligentTieringConfiguration, len(listIntelligentTieringResponse.IntelligentTieringConfigurationList))
-		for i, intelligentTieringConfiguration := range listIntelligentTieringResponse.IntelligentTieringConfigurationList {
-			ko.Spec.IntelligentTiering[i] = rm.setResourceIntelligentTieringConfiguration(r, intelligentTieringConfiguration)
+	// Intelligent Tiering is not supported for directory buckets
+	if !isDirectoryBucket {
+		listIntelligentTieringResponse, err := rm.sdkapi.ListBucketIntelligentTieringConfigurations(ctx, rm.newListBucketIntelligentTieringPayload(r))
+		if err != nil {
+			return err
+		}
+		if len(listIntelligentTieringResponse.IntelligentTieringConfigurationList) > 0 {
+			ko.Spec.IntelligentTiering = make([]*svcapitypes.IntelligentTieringConfiguration, len(listIntelligentTieringResponse.IntelligentTieringConfigurationList))
+			for i, intelligentTieringConfiguration := range listIntelligentTieringResponse.IntelligentTieringConfigurationList {
+				ko.Spec.IntelligentTiering[i] = rm.setResourceIntelligentTieringConfiguration(r, intelligentTieringConfiguration)
+			}
+		} else {
+			ko.Spec.IntelligentTiering = nil
 		}
 	} else {
 		ko.Spec.IntelligentTiering = nil
 	}
 
-	listInventoryResponse, err := rm.sdkapi.ListBucketInventoryConfigurations(ctx, rm.newListBucketInventoryPayload(r))
-	if err != nil {
-		return err
-	}
+	// Inventory is not supported for directory buckets
+	if !isDirectoryBucket {
+		listInventoryResponse, err := rm.sdkapi.ListBucketInventoryConfigurations(ctx, rm.newListBucketInventoryPayload(r))
+		if err != nil {
+			return err
+		}
 
-	ko.Spec.Inventory = make([]*svcapitypes.InventoryConfiguration, len(listInventoryResponse.InventoryConfigurationList))
-	for i, inventoryConfiguration := range listInventoryResponse.InventoryConfigurationList {
-		ko.Spec.Inventory[i] = rm.setResourceInventoryConfiguration(r, inventoryConfiguration)
+		ko.Spec.Inventory = make([]*svcapitypes.InventoryConfiguration, len(listInventoryResponse.InventoryConfigurationList))
+		for i, inventoryConfiguration := range listInventoryResponse.InventoryConfigurationList {
+			ko.Spec.Inventory[i] = rm.setResourceInventoryConfiguration(r, inventoryConfiguration)
+		}
+	} else {
+		ko.Spec.Inventory = nil
 	}
 
 	getLifecycleResponse, err := rm.sdkapi.GetBucketLifecycleConfiguration(ctx, rm.newGetBucketLifecyclePayload(r))
@@ -407,50 +571,70 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		ko.Spec.Lifecycle = nil
 	}
 
-	getLoggingResponse, err := rm.sdkapi.GetBucketLogging(ctx, rm.newGetBucketLoggingPayload(r))
-	if err != nil {
-		return err
-	}
-	if getLoggingResponse.LoggingEnabled != nil {
-		ko.Spec.Logging = rm.setResourceLogging(r, getLoggingResponse)
+	// Logging is not supported for directory buckets
+	if !isDirectoryBucket {
+		getLoggingResponse, err := rm.sdkapi.GetBucketLogging(ctx, rm.newGetBucketLoggingPayload(r))
+		if err != nil {
+			return err
+		}
+		if getLoggingResponse.LoggingEnabled != nil {
+			ko.Spec.Logging = rm.setResourceLogging(r, getLoggingResponse)
+		} else {
+			ko.Spec.Logging = nil
+		}
 	} else {
 		ko.Spec.Logging = nil
 	}
 
-	listMetricsResponse, err := rm.sdkapi.ListBucketMetricsConfigurations(ctx, rm.newListBucketMetricsPayload(r))
-	if err != nil {
-		return err
-	}
-	if len(listMetricsResponse.MetricsConfigurationList) > 0 {
-		ko.Spec.Metrics = make([]*svcapitypes.MetricsConfiguration, len(listMetricsResponse.MetricsConfigurationList))
-		for i, metricsConfiguration := range listMetricsResponse.MetricsConfigurationList {
-			ko.Spec.Metrics[i] = rm.setResourceMetricsConfiguration(r, &metricsConfiguration)
+	// Metrics is not supported for directory buckets
+	if !isDirectoryBucket {
+		listMetricsResponse, err := rm.sdkapi.ListBucketMetricsConfigurations(ctx, rm.newListBucketMetricsPayload(r))
+		if err != nil {
+			return err
+		}
+		if len(listMetricsResponse.MetricsConfigurationList) > 0 {
+			ko.Spec.Metrics = make([]*svcapitypes.MetricsConfiguration, len(listMetricsResponse.MetricsConfigurationList))
+			for i, metricsConfiguration := range listMetricsResponse.MetricsConfigurationList {
+				ko.Spec.Metrics[i] = rm.setResourceMetricsConfiguration(r, &metricsConfiguration)
+			}
+		} else {
+			ko.Spec.Metrics = nil
 		}
 	} else {
 		ko.Spec.Metrics = nil
 	}
 
-	getNotificationResponse, err := rm.sdkapi.GetBucketNotificationConfiguration(ctx, rm.newGetBucketNotificationPayload(r))
-	if err != nil {
-		return err
-	}
-	if getNotificationResponse.LambdaFunctionConfigurations != nil ||
-		getNotificationResponse.QueueConfigurations != nil ||
-		getNotificationResponse.TopicConfigurations != nil {
+	// Notification is not supported for directory buckets
+	if !isDirectoryBucket {
+		getNotificationResponse, err := rm.sdkapi.GetBucketNotificationConfiguration(ctx, rm.newGetBucketNotificationPayload(r))
+		if err != nil {
+			return err
+		}
+		if getNotificationResponse.LambdaFunctionConfigurations != nil ||
+			getNotificationResponse.QueueConfigurations != nil ||
+			getNotificationResponse.TopicConfigurations != nil {
 
-		ko.Spec.Notification = rm.setResourceNotification(r, getNotificationResponse)
+			ko.Spec.Notification = rm.setResourceNotification(r, getNotificationResponse)
+		} else {
+			ko.Spec.Notification = nil
+		}
 	} else {
 		ko.Spec.Notification = nil
 	}
 
-	getOwnershipControlsResponse, err := rm.sdkapi.GetBucketOwnershipControls(ctx, rm.newGetBucketOwnershipControlsPayload(r))
-	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "OwnershipControlsNotFoundError" {
-			return err
+	// Ownership controls are not supported for directory buckets (they use bucket owner enforced by default)
+	if !isDirectoryBucket {
+		getOwnershipControlsResponse, err := rm.sdkapi.GetBucketOwnershipControls(ctx, rm.newGetBucketOwnershipControlsPayload(r))
+		if err != nil {
+			if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "OwnershipControlsNotFoundError" {
+				return err
+			}
 		}
-	}
-	if getOwnershipControlsResponse != nil {
-		ko.Spec.OwnershipControls = rm.setResourceOwnershipControls(r, getOwnershipControlsResponse)
+		if getOwnershipControlsResponse != nil {
+			ko.Spec.OwnershipControls = rm.setResourceOwnershipControls(r, getOwnershipControlsResponse)
+		} else {
+			ko.Spec.OwnershipControls = nil
+		}
 	} else {
 		ko.Spec.OwnershipControls = nil
 	}
@@ -467,70 +651,104 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		ko.Spec.Policy = nil
 	}
 
-	getPublicAccessBlockResponse, err := rm.sdkapi.GetPublicAccessBlock(ctx, rm.newGetPublicAccessBlockPayload(r))
-	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchPublicAccessBlockConfiguration" {
-			return err
+	// Public access block is not supported for directory buckets
+	if !isDirectoryBucket {
+		getPublicAccessBlockResponse, err := rm.sdkapi.GetPublicAccessBlock(ctx, rm.newGetPublicAccessBlockPayload(r))
+		if err != nil {
+			if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchPublicAccessBlockConfiguration" {
+				return err
+			}
 		}
-	}
-	if getPublicAccessBlockResponse != nil {
-		ko.Spec.PublicAccessBlock = rm.setResourcePublicAccessBlock(r, getPublicAccessBlockResponse)
+		if getPublicAccessBlockResponse != nil {
+			ko.Spec.PublicAccessBlock = rm.setResourcePublicAccessBlock(r, getPublicAccessBlockResponse)
+		} else {
+			ko.Spec.PublicAccessBlock = nil
+		}
 	} else {
 		ko.Spec.PublicAccessBlock = nil
 	}
 
-	getReplicationResponse, err := rm.sdkapi.GetBucketReplication(ctx, rm.newGetBucketReplicationPayload(r))
-	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "ReplicationConfigurationNotFoundError" {
-			return err
+	// Replication is not supported for directory buckets
+	if !isDirectoryBucket {
+		getReplicationResponse, err := rm.sdkapi.GetBucketReplication(ctx, rm.newGetBucketReplicationPayload(r))
+		if err != nil {
+			if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "ReplicationConfigurationNotFoundError" {
+				return err
+			}
 		}
-	}
-	if getReplicationResponse != nil {
-		ko.Spec.Replication = rm.setResourceReplication(r, getReplicationResponse)
+		if getReplicationResponse != nil {
+			ko.Spec.Replication = rm.setResourceReplication(r, getReplicationResponse)
+		} else {
+			ko.Spec.Replication = nil
+		}
 	} else {
 		ko.Spec.Replication = nil
 	}
 
-	getRequestPaymentResponse, err := rm.sdkapi.GetBucketRequestPayment(ctx, rm.newGetBucketRequestPaymentPayload(r))
-	if err != nil {
-		return nil
-	}
-	if getRequestPaymentResponse.Payer != "" {
-		ko.Spec.RequestPayment = rm.setResourceRequestPayment(r, getRequestPaymentResponse)
+	// Request payment is not supported for directory buckets
+	if !isDirectoryBucket {
+		getRequestPaymentResponse, err := rm.sdkapi.GetBucketRequestPayment(ctx, rm.newGetBucketRequestPaymentPayload(r))
+		if err != nil {
+			return err
+		}
+		if getRequestPaymentResponse.Payer != "" {
+			ko.Spec.RequestPayment = rm.setResourceRequestPayment(r, getRequestPaymentResponse)
+		} else {
+			ko.Spec.RequestPayment = nil
+		}
 	} else {
 		ko.Spec.RequestPayment = nil
 	}
 
-	getTaggingResponse, err := rm.sdkapi.GetBucketTagging(ctx, rm.newGetBucketTaggingPayload(r))
-	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchTagSet" {
+	// Handle tagging for both general-purpose and directory buckets
+	if !isDirectoryBucket {
+		getTaggingResponse, err := rm.sdkapi.GetBucketTagging(ctx, rm.newGetBucketTaggingPayload(r))
+		if err != nil {
+			if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchTagSet" {
+				return err
+			}
+		}
+		if getTaggingResponse != nil && getTaggingResponse.TagSet != nil {
+			ko.Spec.Tagging = rm.setResourceTagging(r, getTaggingResponse)
+		} else {
+			ko.Spec.Tagging = nil
+		}
+	} else {
+		// Directory buckets use S3 Control API for tagging
+		err := rm.getDirectoryBucketTagging(ctx, r, ko)
+		if err != nil {
 			return err
 		}
 	}
-	if getTaggingResponse != nil && getTaggingResponse.TagSet != nil {
-		ko.Spec.Tagging = rm.setResourceTagging(r, getTaggingResponse)
-	} else {
-		ko.Spec.Tagging = nil
-	}
 
-	getVersioningResponse, err := rm.sdkapi.GetBucketVersioning(ctx, rm.newGetBucketVersioningPayload(r))
-	if err != nil {
-		return err
-	}
-	if getVersioningResponse.Status != "" {
-		ko.Spec.Versioning = rm.setResourceVersioning(r, getVersioningResponse)
+	// Versioning is not supported for directory buckets
+	if !isDirectoryBucket {
+		getVersioningResponse, err := rm.sdkapi.GetBucketVersioning(ctx, rm.newGetBucketVersioningPayload(r))
+		if err != nil {
+			return err
+		}
+		if getVersioningResponse.Status != "" {
+			ko.Spec.Versioning = rm.setResourceVersioning(r, getVersioningResponse)
+		} else {
+			ko.Spec.Versioning = nil
+		}
 	} else {
 		ko.Spec.Versioning = nil
 	}
 
-	getWebsiteResponse, err := rm.sdkapi.GetBucketWebsite(ctx, rm.newGetBucketWebsitePayload(r))
-	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchWebsiteConfiguration" {
-			return err
+	// Website hosting is not supported for directory buckets
+	if !isDirectoryBucket {
+		getWebsiteResponse, err := rm.sdkapi.GetBucketWebsite(ctx, rm.newGetBucketWebsitePayload(r))
+		if err != nil {
+			if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchWebsiteConfiguration" {
+				return err
+			}
 		}
-	}
-	if getWebsiteResponse != nil {
-		ko.Spec.Website = rm.setResourceWebsite(r, getWebsiteResponse)
+		if getWebsiteResponse != nil {
+			ko.Spec.Website = rm.setResourceWebsite(r, getWebsiteResponse)
+		} else {
+			ko.Spec.Website = nil
+		}
 	} else {
 		ko.Spec.Website = nil
 	}
@@ -1527,6 +1745,12 @@ func (rm *resourceManager) putTagging(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.putTagging")
 	defer exit(err)
+
+	// Directory buckets use S3 Control API for tagging
+	if r.ko.Spec.Name != nil && IsDirectoryBucketName(*r.ko.Spec.Name) {
+		return rm.putDirectoryBucketTagging(ctx, r)
+	}
+
 	input := rm.newPutBucketTaggingPayload(r)
 
 	_, err = rm.sdkapi.PutBucketTagging(ctx, input)
@@ -1538,6 +1762,123 @@ func (rm *resourceManager) putTagging(
 	return nil
 }
 
+// putDirectoryBucketTagging applies tags to a directory bucket using the S3 Control API
+func (rm *resourceManager) putDirectoryBucketTagging(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+
+	if r.ko.Spec.Tagging == nil || r.ko.Spec.Tagging.TagSet == nil {
+		rlog.Info("No tags to apply to directory bucket")
+		return nil
+	}
+
+	s3controlClient := s3control.NewFromConfig(rm.clientcfg)
+
+	// Convert tags to S3 Control format
+	var tags []s3controltypes.Tag
+	for _, tag := range r.ko.Spec.Tagging.TagSet {
+		if tag.Key != nil && tag.Value != nil {
+			tags = append(tags, s3controltypes.Tag{
+				Key:   tag.Key,
+				Value: tag.Value,
+			})
+		}
+	}
+
+	if len(tags) == 0 {
+		rlog.Info("No valid tags to apply to directory bucket")
+		return nil
+	}
+
+	// Build bucket ARN for directory bucket
+	bucketName := *r.ko.Spec.Name
+	bucketARN := fmt.Sprintf("arn:aws:s3express:%s:%s:bucket/%s",
+		string(rm.awsRegion),
+		string(rm.awsAccountID),
+		bucketName)
+
+	rlog.Info("Applying tags to directory bucket using S3 Control API",
+		"bucketARN", bucketARN,
+		"tagCount", len(tags))
+
+	input := &s3control.TagResourceInput{
+		ResourceArn: aws.String(bucketARN),
+		AccountId:   aws.String(string(rm.awsAccountID)),
+		Tags:        tags,
+	}
+
+	_, err = s3controlClient.TagResource(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "TagResource", err)
+	if err != nil {
+		return errors.Wrap(err, "failed to tag directory bucket")
+	}
+
+	rlog.Info("Successfully applied tags to directory bucket")
+	return nil
+}
+
+// getDirectoryBucketTagging retrieves tags from a directory bucket using the S3 Control API
+func (rm *resourceManager) getDirectoryBucketTagging(
+	ctx context.Context,
+	r *resource,
+	ko *svcapitypes.Bucket,
+) error {
+	rlog := ackrtlog.FromContext(ctx)
+
+	s3controlClient := s3control.NewFromConfig(rm.clientcfg)
+
+	bucketName := *r.ko.Spec.Name
+	bucketARN := fmt.Sprintf("arn:aws:s3express:%s:%s:bucket/%s",
+		string(rm.awsRegion),
+		string(rm.awsAccountID),
+		bucketName)
+
+	rlog.Info("Retrieving tags from directory bucket using S3 Control API",
+		"bucketARN", bucketARN)
+
+	input := &s3control.ListTagsForResourceInput{
+		ResourceArn: aws.String(bucketARN),
+		AccountId:   aws.String(string(rm.awsAccountID)),
+	}
+
+	resp, err := s3controlClient.ListTagsForResource(ctx, input)
+	rm.metrics.RecordAPICall("READ_ONE", "ListTagsForResource", err)
+	rlog.Debug("",
+		"bucketARN", bucketARN)
+	if err != nil {
+		// Handle no tags case
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.ErrorCode() == "NoSuchTagSet" {
+			ko.Spec.Tagging = nil
+			return nil
+		}
+		return errors.Wrap(err, "failed to get directory bucket tags")
+	}
+
+	if resp == nil || len(resp.Tags) == 0 {
+		ko.Spec.Tagging = nil
+		return nil
+	}
+
+	tagging := &svcapitypes.Tagging{
+		TagSet: make([]*svcapitypes.Tag, 0, len(resp.Tags)),
+	}
+
+	for _, tag := range resp.Tags {
+		if tag.Key != nil && tag.Value != nil {
+			tagging.TagSet = append(tagging.TagSet, &svcapitypes.Tag{
+				Key:   tag.Key,
+				Value: tag.Value,
+			})
+		}
+	}
+
+	ko.Spec.Tagging = tagging
+	rlog.Info("Successfully retrieved tags from directory bucket", "tagCount", len(resp.Tags))
+	return nil
+}
+
 func (rm *resourceManager) deleteTagging(
 	ctx context.Context,
 	r *resource,
@@ -1545,6 +1886,12 @@ func (rm *resourceManager) deleteTagging(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.deleteTagging")
 	defer exit(err)
+
+	// Directory buckets use S3 Control API for tag deletion
+	if r.ko.Spec.Name != nil && IsDirectoryBucketName(*r.ko.Spec.Name) {
+		return rm.deleteDirectoryBucketTagging(ctx, r)
+	}
+
 	input := rm.newDeleteBucketTaggingPayload(r)
 
 	_, err = rm.sdkapi.DeleteBucketTagging(ctx, input)
@@ -1553,6 +1900,73 @@ func (rm *resourceManager) deleteTagging(
 		return err
 	}
 
+	return nil
+}
+
+// deleteDirectoryBucketTagging removes all tags from a directory bucket using the S3 Control API
+func (rm *resourceManager) deleteDirectoryBucketTagging(
+	ctx context.Context,
+	r *resource,
+) error {
+	rlog := ackrtlog.FromContext(ctx)
+
+	s3controlClient := s3control.NewFromConfig(rm.clientcfg)
+
+	bucketName := *r.ko.Spec.Name
+	bucketARN := fmt.Sprintf("arn:aws:s3express:%s:%s:bucket/%s",
+		string(rm.awsRegion),
+		string(rm.awsAccountID),
+		bucketName)
+
+	getInput := &s3control.ListTagsForResourceInput{
+		ResourceArn: aws.String(bucketARN),
+		AccountId:   aws.String(string(rm.awsAccountID)),
+	}
+
+	resp, err := s3controlClient.ListTagsForResource(ctx, getInput)
+	if err != nil {
+		// Handle no tags case
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.ErrorCode() == "NoSuchTagSet" {
+			rlog.Info("No tags to delete from directory bucket")
+			return nil
+		}
+		return errors.Wrap(err, "failed to get directory bucket tags for deletion")
+	}
+
+	if resp == nil || len(resp.Tags) == 0 {
+		rlog.Info("No tags to delete from directory bucket")
+		return nil
+	}
+
+	tagKeys := make([]string, 0, len(resp.Tags))
+	for _, tag := range resp.Tags {
+		if tag.Key != nil {
+			tagKeys = append(tagKeys, *tag.Key)
+		}
+	}
+
+	if len(tagKeys) == 0 {
+		rlog.Info("No valid tag keys to delete from directory bucket")
+		return nil
+	}
+
+	rlog.Info("Deleting tags from directory bucket using S3 Control API",
+		"bucketARN", bucketARN,
+		"tagCount", len(tagKeys))
+
+	deleteInput := &s3control.UntagResourceInput{
+		ResourceArn: aws.String(bucketARN),
+		AccountId:   aws.String(string(rm.awsAccountID)),
+		TagKeys:     tagKeys,
+	}
+
+	_, err = s3controlClient.UntagResource(ctx, deleteInput)
+	rm.metrics.RecordAPICall("DELETE", "UntagResource", err)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete directory bucket tags")
+	}
+
+	rlog.Info("Successfully deleted tags from directory bucket")
 	return nil
 }
 
@@ -1692,3 +2106,88 @@ func (rm *resourceManager) syncWebsite(
 }
 
 //endregion website
+
+// IsDirectoryBucketName checks if a bucket name follows the directory bucket naming pattern.
+// Directory buckets must end with "--x-s3" suffix and follow the format:
+// bucket-base-name--zone-id--x-s3
+func IsDirectoryBucketName(bucketName string) bool {
+	return strings.HasSuffix(bucketName, "--x-s3")
+}
+
+// customFindBucket is a custom implementation of sdkFind that handles both
+// general-purpose buckets and directory buckets by calling the appropriate
+// List operation based on the bucket name pattern.
+func (rm *resourceManager) customFindBucket(
+	ctx context.Context,
+	r *resource,
+) (latest *resource, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.customFindBucket")
+	defer func() {
+		exit(err)
+	}()
+
+	// Check if we have a bucket name to search for
+	if r.ko.Spec.Name == nil {
+		return nil, ackerr.NotFound
+	}
+
+	bucketName := *r.ko.Spec.Name
+	ko := r.ko.DeepCopy()
+	found := false
+
+	if IsDirectoryBucketName(bucketName) {
+		input := &svcsdk.ListDirectoryBucketsInput{}
+		var resp *svcsdk.ListDirectoryBucketsOutput
+		resp, err = rm.sdkapi.ListDirectoryBuckets(ctx, input)
+		rm.metrics.RecordAPICall("READ_MANY", "ListDirectoryBuckets", err)
+		if err != nil {
+			return nil, err
+		}
+
+		// Search for the bucket in the response
+		for _, bucket := range resp.Buckets {
+			if bucket.Name != nil && *bucket.Name == bucketName {
+				ko.Spec.Name = bucket.Name
+				found = true
+				break
+			}
+		}
+	} else {
+		// Use ListBuckets for general-purpose buckets
+		input := &svcsdk.ListBucketsInput{}
+		var resp *svcsdk.ListBucketsOutput
+		resp, err = rm.sdkapi.ListBuckets(ctx, input)
+		rm.metrics.RecordAPICall("READ_MANY", "ListBuckets", err)
+		if err != nil {
+			var awsErr smithy.APIError
+			if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchBucket" {
+				return nil, ackerr.NotFound
+			}
+			return nil, err
+		}
+
+		// Search for the bucket in the response
+		for _, bucket := range resp.Buckets {
+			if bucket.Name != nil && *bucket.Name == bucketName {
+				ko.Spec.Name = bucket.Name
+				found = true
+				break
+			}
+		}
+	}
+
+	if !found {
+		return nil, ackerr.NotFound
+	}
+
+	rm.setStatusDefaults(ko)
+	if err := rm.addPutFieldsToSpec(ctx, r, ko); err != nil {
+		return nil, err
+	}
+
+	// Set bucket ARN in the output
+	arn := bucketARN(bucketName)
+	ko.Status.ACKResourceMetadata.ARN = (*ackv1alpha1.AWSResourceName)(&arn)
+	return &resource{ko}, nil
+}
