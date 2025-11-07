@@ -27,7 +27,7 @@ from e2e.tests.test_bucket import bucket_exists, get_bucket
 from e2e.replacement_values import REPLACEMENT_VALUES
 
 CREATE_WAIT_AFTER_SECONDS = 10
-MODIFY_WAIT_AFTER_SECONDS = 10
+MODIFY_WAIT_AFTER_SECONDS = 20
 DELETE_WAIT_AFTER_SECONDS = 10
 ACK_SYSTEM_TAG_PREFIX = "services.k8s.aws/"
 AWS_SYSTEM_TAG_PREFIX = "aws:"
