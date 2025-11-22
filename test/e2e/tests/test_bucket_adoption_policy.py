@@ -27,7 +27,7 @@ from e2e.tests.test_bucket import bucket_exists, get_bucket
 from e2e.replacement_values import REPLACEMENT_VALUES
 
 CREATE_WAIT_AFTER_SECONDS = 10
-MODIFY_WAIT_AFTER_SECONDS = 20
+MODIFY_WAIT_AFTER_SECONDS = 30
 DELETE_WAIT_AFTER_SECONDS = 10
 ACK_SYSTEM_TAG_PREFIX = "services.k8s.aws/"
 AWS_SYSTEM_TAG_PREFIX = "aws:"
@@ -162,6 +162,10 @@ class TestAdoptionPolicyBucket:
         assert 'spec' in cr
         assert 'name' in cr['spec']
         bucket_name = cr['spec']['name']
+               
+        # wait for resource to be updated
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         latest = get_bucket(s3_resource, bucket_name)
         assert latest is not None
