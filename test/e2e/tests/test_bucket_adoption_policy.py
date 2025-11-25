@@ -27,7 +27,7 @@ from e2e.tests.test_bucket import bucket_exists, get_bucket
 from e2e.replacement_values import REPLACEMENT_VALUES
 
 CREATE_WAIT_AFTER_SECONDS = 10
-MODIFY_WAIT_AFTER_SECONDS = 20
+MODIFY_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 ACK_SYSTEM_TAG_PREFIX = "services.k8s.aws/"
 AWS_SYSTEM_TAG_PREFIX = "aws:"
@@ -150,6 +150,20 @@ class TestAdoptionPolicyBucket:
         assert latest is not None
         versioning = latest.Versioning()
         assert versioning.status == status
+
+    @pytest.mark.resource_data({'adoption-policy': AdoptionPolicy.ADOPT, 'filename': 'bucket_adopt_no_fields', 'resource-name': 'adopt'})
+    def test_adopt_policy_missing_fields(
+        self, s3_client, bucket_adoption_policy, s3_resource
+    ):
+        (ref, cr) = bucket_adoption_policy
+
+        k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=5)
+
+        condition = k8s.get_resource_condition(ref, "ACK.Terminal")
+        assert condition is not None
+
+        expected_msg = "adoption-fields is not defined"
+        assert expected_msg in condition['reason']
     
     @pytest.mark.resource_data({'adoption-policy': AdoptionPolicy.ADOPT_OR_CREATE, 'filename': 'bucket_adopt_or_create', 'resource-name': 'adopt-or-create'})
     def test_adopt_or_create_policy(
@@ -162,7 +176,9 @@ class TestAdoptionPolicyBucket:
         assert 'spec' in cr
         assert 'name' in cr['spec']
         bucket_name = cr['spec']['name']
-
+        
+        # Wait for tags to appear on describe 
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
         latest = get_bucket(s3_resource, bucket_name)
         assert latest is not None
         tagging = latest.Tagging()
