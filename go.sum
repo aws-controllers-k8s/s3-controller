@@ -115,8 +115,8 @@ github.com/mailru/easyjson v0.7.7 h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0
 github.com/mailru/easyjson v0.7.7/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJJLY9Nlc=
 github.com/mattn/go-isatty v0.0.14/go.mod h1:7GGIvUiUoEMVVmxf/4nioHXj79iQHKdU27kJ6hsGG94=
 github.com/mattn/go-runewidth v0.0.9/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m2gUSrubnMI=
-github.com/michaelhtm/ack-runtime v0.49.1-0.20251125200234-a9b99409495f h1:3g8FiST0S0SZTt346twBca3JjumYdMuxj16J9Y4CBpU=
-github.com/michaelhtm/ack-runtime v0.49.1-0.20251125200234-a9b99409495f/go.mod h1:OkUJN+Ds799JLYZsMJrO2vDJ4snxUeHK2MgrQHbU+Qc=
+github.com/michaelhtm/ack-runtime v0.49.1-0.20251128221640-3f1a6cfbdbb0 h1:uazsV2Xsloxb7DQbMLayNFfHYAShiPIjGdD2IlmWysM=
+github.com/michaelhtm/ack-runtime v0.49.1-0.20251128221640-3f1a6cfbdbb0/go.mod h1:OkUJN+Ds799JLYZsMJrO2vDJ4snxUeHK2MgrQHbU+Qc=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
