@@ -897,7 +897,9 @@ type SSEKMSEncryptedObjects struct {
 //     options for server-side encryption: SSE-S3 and SSE-KMS.
 type ServerSideEncryptionByDefault struct {
 	KMSMasterKeyID *string `json:"kmsMasterKeyID,omitempty"`
-	SSEAlgorithm   *string `json:"sseAlgorithm,omitempty"`
+	// Reference field for KMSMasterKeyID
+	KMSMasterKeyRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"kmsMasterKeyRef,omitempty"`
+	SSEAlgorithm    *string                                  `json:"sseAlgorithm,omitempty"`
 }
 
 // Specifies the default server-side-encryption configuration.
