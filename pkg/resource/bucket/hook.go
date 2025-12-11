@@ -16,6 +16,7 @@ package bucket
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -1685,7 +1686,7 @@ func (rm *resourceManager) syncWebsite(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
-	if r.ko.Spec.Website == nil {
+	if r.ko.Spec.Website == nil || reflect.ValueOf(*r.ko.Spec.Website).IsZero() {
 		return rm.deleteWebsite(ctx, r)
 	}
 	return rm.putWebsite(ctx, r)
