@@ -1684,7 +1684,10 @@ func (rm *resourceManager) syncWebsite(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
-	if r.ko.Spec.Website == nil {
+	// IndexDocument is a required field for PutBucketWebsite API call. If it is missing
+	// we want to call DeleteBucketWebsite
+	// https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketWebsite.html
+	if r.ko.Spec.Website == nil || r.ko.Spec.Website.IndexDocument == nil {
 		return rm.deleteWebsite(ctx, r)
 	}
 	return rm.putWebsite(ctx, r)
