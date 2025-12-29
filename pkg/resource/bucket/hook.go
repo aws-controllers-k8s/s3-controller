@@ -187,8 +187,7 @@ func (rm *resourceManager) customUpdateBucket(
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
-
-	rm.setStatusDefaults(ko)
+	ko.Status = *latest.ko.Status.DeepCopy()
 
 	if delta.DifferentAt("Spec.Accelerate") {
 		if err := rm.syncAccelerate(ctx, desired); err != nil {
