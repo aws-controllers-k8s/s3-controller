@@ -173,6 +173,7 @@ class TestAdoptionPolicyBucket:
         tags.assert_ack_system_tags(
             tags=tagging.tag_set,
         )
+        time.sleep(5)
         tags.assert_equal_without_ack_tags(
             expected=initial_tags,
             actual=tagging.tag_set,
