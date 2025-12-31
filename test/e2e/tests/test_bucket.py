@@ -147,6 +147,7 @@ class TestBucket:
         self._update_assert_notification(basic_bucket, s3_resource)
         self._update_assert_ownership_controls(basic_bucket, s3_client)
         self._update_assert_policy(basic_bucket, s3_resource)
+        self._update_assert_empty_policy(basic_bucket, s3_resource)
         self._update_assert_public_access_block(basic_bucket, s3_client)
         self._update_assert_replication(basic_bucket, s3_client)
         self._update_assert_request_payment(basic_bucket, s3_resource)
@@ -246,6 +247,21 @@ class TestBucket:
         latest = re.sub(r"\s+", "", policy.policy, flags=re.UNICODE)
 
         assert desired == latest
+
+    def _update_assert_empty_policy(self, bucket: Bucket, s3_resource):
+        replace_bucket_spec(bucket, "bucket_empty_policy")
+
+        latest = get_bucket(s3_resource, bucket.resource_name)
+        policy = latest.Policy()
+
+        try:
+            policy.policy
+        except Exception as e:
+            assert "NoSuchBucketPolicy" in str(e)
+            return
+        
+        # if there is no error, fail test
+        assert False
 
     def _update_assert_public_access_block(self, bucket: Bucket, s3_client):
         replace_bucket_spec(bucket, "bucket_public_access_block")
