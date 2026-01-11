@@ -104,6 +104,16 @@ type AnalyticsS3BucketDestination struct {
 	Prefix          *string `json:"prefix,omitempty"`
 }
 
+// Specifies the information about the bucket that will be created. For more
+// information about directory buckets, see Directory buckets (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-overview.html)
+// in the Amazon S3 User Guide.
+//
+// This functionality is only supported by directory buckets.
+type BucketInfo struct {
+	DataRedundancy *string `json:"dataRedundancy,omitempty"`
+	Type           *string `json:"type,omitempty"`
+}
+
 // Specifies the lifecycle configuration for objects in an Amazon S3 bucket.
 // For more information, see Object Lifecycle Management (https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lifecycle-mgmt.html)
 // in the Amazon S3 User Guide.
@@ -165,7 +175,21 @@ type Condition struct {
 
 // The configuration information for the bucket.
 type CreateBucketConfiguration struct {
-	LocationConstraint *string `json:"locationConstraint,omitempty"`
+	// Specifies the information about the bucket that will be created. For more
+	// information about directory buckets, see Directory buckets (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-overview.html)
+	// in the Amazon S3 User Guide.
+	//
+	// This functionality is only supported by directory buckets.
+	Bucket *BucketInfo `json:"bucket,omitempty"`
+	// Specifies the location where the bucket will be created.
+	//
+	// For directory buckets, the location type is Availability Zone or Local Zone.
+	// For more information about directory buckets, see Directory buckets (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-overview.html)
+	// in the Amazon S3 User Guide.
+	//
+	// This functionality is only supported by directory buckets.
+	Location           *LocationInfo `json:"location,omitempty"`
+	LocationConstraint *string       `json:"locationConstraint,omitempty"`
 }
 
 // The container element for optionally specifying the default Object Lock retention
@@ -499,6 +523,18 @@ type Location struct {
 	StorageClass *string `json:"storageClass,omitempty"`
 	// Container for TagSet elements.
 	Tagging *Tagging `json:"tagging,omitempty"`
+}
+
+// Specifies the location where the bucket will be created.
+//
+// For directory buckets, the location type is Availability Zone or Local Zone.
+// For more information about directory buckets, see Directory buckets (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-overview.html)
+// in the Amazon S3 User Guide.
+//
+// This functionality is only supported by directory buckets.
+type LocationInfo struct {
+	Name *string `json:"name,omitempty"`
+	Type *string `json:"type,omitempty"`
 }
 
 // Describes where logs are stored and the prefix that Amazon S3 assigns to
