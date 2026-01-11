@@ -1815,10 +1815,15 @@ func (rm *resourceManager) putDirectoryBucketTagging(
 
 	s3controlClient := s3control.NewFromConfig(rm.clientcfg)
 
-	var tags []s3controltypes.Tag
+	desiredKeys := make(map[string]struct{})
+	var desiredTags []s3controltypes.Tag
 	if r.ko.Spec.Tagging != nil && r.ko.Spec.Tagging.TagSet != nil {
 		for _, tag := range r.ko.Spec.Tagging.TagSet {
-			tags = append(tags, s3controltypes.Tag{
+			if tag == nil || tag.Key == nil || tag.Value == nil {
+				continue
+			}
+			desiredKeys[*tag.Key] = struct{}{}
+			desiredTags = append(desiredTags, s3controltypes.Tag{
 				Key:   tag.Key,
 				Value: tag.Value,
 			})
@@ -1826,16 +1831,57 @@ func (rm *resourceManager) putDirectoryBucketTagging(
 	}
 
 	bucketARN := rm.directoryBucketARN(*r.ko.Spec.Name)
-	input := &s3control.TagResourceInput{
+	accountID := aws.String(string(rm.awsAccountID))
+
+	// S3Control TagResource only adds/updates tags. To reconcile fully,
+	// first remove tags absent from the desired set.
+	listInput := &s3control.ListTagsForResourceInput{
 		ResourceArn: aws.String(bucketARN),
-		AccountId:   aws.String(string(rm.awsAccountID)),
-		Tags:        tags,
+		AccountId:   accountID,
+	}
+	listResp, err := s3controlClient.ListTagsForResource(ctx, listInput)
+	rm.metrics.RecordAPICall("READ", "ListTagsForResource", err)
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchTagSet" {
+			return err
+		}
 	}
 
-	_, err = s3controlClient.TagResource(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "TagResource", err)
-	if err != nil {
-		return err
+	var keysToRemove []string
+	if listResp != nil {
+		for _, tag := range listResp.Tags {
+			if tag.Key == nil {
+				continue
+			}
+			if _, ok := desiredKeys[*tag.Key]; !ok {
+				keysToRemove = append(keysToRemove, *tag.Key)
+			}
+		}
+	}
+	if len(keysToRemove) > 0 {
+		untagInput := &s3control.UntagResourceInput{
+			ResourceArn: aws.String(bucketARN),
+			AccountId:   accountID,
+			TagKeys:     keysToRemove,
+		}
+		_, err = s3controlClient.UntagResource(ctx, untagInput)
+		rm.metrics.RecordAPICall("DELETE", "UntagResource", err)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(desiredTags) > 0 {
+		tagInput := &s3control.TagResourceInput{
+			ResourceArn: aws.String(bucketARN),
+			AccountId:   accountID,
+			Tags:        desiredTags,
+		}
+		_, err = s3controlClient.TagResource(ctx, tagInput)
+		rm.metrics.RecordAPICall("UPDATE", "TagResource", err)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
