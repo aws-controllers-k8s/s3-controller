@@ -57,85 +57,8 @@ var (
 func (rm *resourceManager) sdkFind(
 	ctx context.Context,
 	r *resource,
-) (latest *resource, err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.sdkFind")
-	defer func() {
-		exit(err)
-	}()
-	// If any required fields in the input shape are missing, AWS resource is
-	// not created yet. Return NotFound here to indicate to callers that the
-	// resource isn't yet created.
-	if rm.requiredFieldsMissingFromReadManyInput(r) {
-		return nil, ackerr.NotFound
-	}
-
-	input, err := rm.newListRequestPayload(r)
-	if err != nil {
-		return nil, err
-	}
-	var resp *svcsdk.ListBucketsOutput
-	resp, err = rm.sdkapi.ListBuckets(ctx, input)
-	rm.metrics.RecordAPICall("READ_MANY", "ListBuckets", err)
-	if err != nil {
-		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NoSuchBucket" {
-			return nil, ackerr.NotFound
-		}
-		return nil, err
-	}
-
-	// Merge in the information we read from the API call above to the copy of
-	// the original Kubernetes object we passed to the function
-	ko := r.ko.DeepCopy()
-
-	found := false
-	for _, elem := range resp.Buckets {
-		if elem.Name != nil {
-			if ko.Spec.Name != nil {
-				if *elem.Name != *ko.Spec.Name {
-					continue
-				}
-			}
-			ko.Spec.Name = elem.Name
-		} else {
-			ko.Spec.Name = nil
-		}
-		found = true
-		break
-	}
-	if !found {
-		return nil, ackerr.NotFound
-	}
-
-	rm.setStatusDefaults(ko)
-	if err := rm.addPutFieldsToSpec(ctx, r, ko); err != nil {
-		return nil, err
-	}
-
-	// Set bucket ARN in the output
-	bucketARN := ackv1alpha1.AWSResourceName(bucketARN(*ko.Spec.Name))
-	ko.Status.ACKResourceMetadata.ARN = &bucketARN
-	return &resource{ko}, nil
-}
-
-// requiredFieldsMissingFromReadManyInput returns true if there are any fields
-// for the ReadMany Input shape that are required but not present in the
-// resource's Spec or Status
-func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
-	r *resource,
-) bool {
-	return false
-}
-
-// newListRequestPayload returns SDK-specific struct for the HTTP request
-// payload of the List API call for the resource
-func (rm *resourceManager) newListRequestPayload(
-	r *resource,
-) (*svcsdk.ListBucketsInput, error) {
-	res := &svcsdk.ListBucketsInput{}
-
-	return res, nil
+) (*resource, error) {
+	return rm.customFindBucket(ctx, r)
 }
 
 // sdkCreate creates the supplied resource in the backend AWS service API and
@@ -155,12 +78,21 @@ func (rm *resourceManager) sdkCreate(
 		return nil, err
 	}
 
-	if rm.awsRegion != "us-east-1" {
-		// Set default region if not specified
-		if input.CreateBucketConfiguration == nil ||
-			input.CreateBucketConfiguration.LocationConstraint == "" {
-			input.CreateBucketConfiguration = &svcsdktypes.CreateBucketConfiguration{
-				LocationConstraint: svcsdktypes.BucketLocationConstraint(rm.awsRegion),
+	// Validate directory bucket spec before creation
+	if err := validateDirectoryBucketSpec(desired.ko); err != nil {
+		return nil, err
+	}
+
+	// Only set default LocationConstraint for general-purpose buckets
+	// Directory buckets use CreateBucketConfiguration.Location instead
+	if desired.ko.Spec.Name == nil || !IsDirectoryBucketName(*desired.ko.Spec.Name) {
+		if rm.awsRegion != "us-east-1" {
+			// Set default region if not specified
+			if input.CreateBucketConfiguration == nil ||
+				input.CreateBucketConfiguration.LocationConstraint == "" {
+				input.CreateBucketConfiguration = &svcsdktypes.CreateBucketConfiguration{
+					LocationConstraint: svcsdktypes.BucketLocationConstraint(rm.awsRegion),
+				}
 			}
 		}
 	}
@@ -205,6 +137,26 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.CreateBucketConfiguration != nil {
 		f2 := &svcsdktypes.CreateBucketConfiguration{}
+		if r.ko.Spec.CreateBucketConfiguration.Bucket != nil {
+			f2f0 := &svcsdktypes.BucketInfo{}
+			if r.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy != nil {
+				f2f0.DataRedundancy = svcsdktypes.DataRedundancy(*r.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy)
+			}
+			if r.ko.Spec.CreateBucketConfiguration.Bucket.Type != nil {
+				f2f0.Type = svcsdktypes.BucketType(*r.ko.Spec.CreateBucketConfiguration.Bucket.Type)
+			}
+			f2.Bucket = f2f0
+		}
+		if r.ko.Spec.CreateBucketConfiguration.Location != nil {
+			f2f1 := &svcsdktypes.LocationInfo{}
+			if r.ko.Spec.CreateBucketConfiguration.Location.Name != nil {
+				f2f1.Name = r.ko.Spec.CreateBucketConfiguration.Location.Name
+			}
+			if r.ko.Spec.CreateBucketConfiguration.Location.Type != nil {
+				f2f1.Type = svcsdktypes.LocationType(*r.ko.Spec.CreateBucketConfiguration.Location.Type)
+			}
+			f2.Location = f2f1
+		}
 		if r.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil {
 			f2.LocationConstraint = svcsdktypes.BucketLocationConstraint(*r.ko.Spec.CreateBucketConfiguration.LocationConstraint)
 		}
