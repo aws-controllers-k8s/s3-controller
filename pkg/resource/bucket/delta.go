@@ -17,16 +17,15 @@ package bucket
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -65,7 +64,7 @@ func newResourceDelta(
 	if len(a.ko.Spec.Analytics) != len(b.ko.Spec.Analytics) {
 		delta.Add("Spec.Analytics", a.ko.Spec.Analytics, b.ko.Spec.Analytics)
 	} else if len(a.ko.Spec.Analytics) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.Analytics, b.ko.Spec.Analytics) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Analytics, b.ko.Spec.Analytics) {
 			delta.Add("Spec.Analytics", a.ko.Spec.Analytics, b.ko.Spec.Analytics)
 		}
 	}
@@ -75,7 +74,7 @@ func newResourceDelta(
 		if len(a.ko.Spec.CORS.CORSRules) != len(b.ko.Spec.CORS.CORSRules) {
 			delta.Add("Spec.CORS.CORSRules", a.ko.Spec.CORS.CORSRules, b.ko.Spec.CORS.CORSRules)
 		} else if len(a.ko.Spec.CORS.CORSRules) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.CORS.CORSRules, b.ko.Spec.CORS.CORSRules) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.CORS.CORSRules, b.ko.Spec.CORS.CORSRules) {
 				delta.Add("Spec.CORS.CORSRules", a.ko.Spec.CORS.CORSRules, b.ko.Spec.CORS.CORSRules)
 			}
 		}
@@ -133,7 +132,7 @@ func newResourceDelta(
 		if len(a.ko.Spec.Encryption.Rules) != len(b.ko.Spec.Encryption.Rules) {
 			delta.Add("Spec.Encryption.Rules", a.ko.Spec.Encryption.Rules, b.ko.Spec.Encryption.Rules)
 		} else if len(a.ko.Spec.Encryption.Rules) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Encryption.Rules, b.ko.Spec.Encryption.Rules) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Encryption.Rules, b.ko.Spec.Encryption.Rules) {
 				delta.Add("Spec.Encryption.Rules", a.ko.Spec.Encryption.Rules, b.ko.Spec.Encryption.Rules)
 			}
 		}
@@ -176,14 +175,14 @@ func newResourceDelta(
 	if len(a.ko.Spec.IntelligentTiering) != len(b.ko.Spec.IntelligentTiering) {
 		delta.Add("Spec.IntelligentTiering", a.ko.Spec.IntelligentTiering, b.ko.Spec.IntelligentTiering)
 	} else if len(a.ko.Spec.IntelligentTiering) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.IntelligentTiering, b.ko.Spec.IntelligentTiering) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.IntelligentTiering, b.ko.Spec.IntelligentTiering) {
 			delta.Add("Spec.IntelligentTiering", a.ko.Spec.IntelligentTiering, b.ko.Spec.IntelligentTiering)
 		}
 	}
 	if len(a.ko.Spec.Inventory) != len(b.ko.Spec.Inventory) {
 		delta.Add("Spec.Inventory", a.ko.Spec.Inventory, b.ko.Spec.Inventory)
 	} else if len(a.ko.Spec.Inventory) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.Inventory, b.ko.Spec.Inventory) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Inventory, b.ko.Spec.Inventory) {
 			delta.Add("Spec.Inventory", a.ko.Spec.Inventory, b.ko.Spec.Inventory)
 		}
 	}
@@ -193,7 +192,7 @@ func newResourceDelta(
 		if len(a.ko.Spec.Lifecycle.Rules) != len(b.ko.Spec.Lifecycle.Rules) {
 			delta.Add("Spec.Lifecycle.Rules", a.ko.Spec.Lifecycle.Rules, b.ko.Spec.Lifecycle.Rules)
 		} else if len(a.ko.Spec.Lifecycle.Rules) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Lifecycle.Rules, b.ko.Spec.Lifecycle.Rules) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Lifecycle.Rules, b.ko.Spec.Lifecycle.Rules) {
 				delta.Add("Spec.Lifecycle.Rules", a.ko.Spec.Lifecycle.Rules, b.ko.Spec.Lifecycle.Rules)
 			}
 		}
@@ -214,7 +213,7 @@ func newResourceDelta(
 			if len(a.ko.Spec.Logging.LoggingEnabled.TargetGrants) != len(b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
 				delta.Add("Spec.Logging.LoggingEnabled.TargetGrants", a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants)
 			} else if len(a.ko.Spec.Logging.LoggingEnabled.TargetGrants) > 0 {
-				if !reflect.DeepEqual(a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
+				if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
 					delta.Add("Spec.Logging.LoggingEnabled.TargetGrants", a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants)
 				}
 			}
@@ -230,7 +229,7 @@ func newResourceDelta(
 	if len(a.ko.Spec.Metrics) != len(b.ko.Spec.Metrics) {
 		delta.Add("Spec.Metrics", a.ko.Spec.Metrics, b.ko.Spec.Metrics)
 	} else if len(a.ko.Spec.Metrics) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.Metrics, b.ko.Spec.Metrics) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Metrics, b.ko.Spec.Metrics) {
 			delta.Add("Spec.Metrics", a.ko.Spec.Metrics, b.ko.Spec.Metrics)
 		}
 	}
@@ -247,21 +246,21 @@ func newResourceDelta(
 		if len(a.ko.Spec.Notification.LambdaFunctionConfigurations) != len(b.ko.Spec.Notification.LambdaFunctionConfigurations) {
 			delta.Add("Spec.Notification.LambdaFunctionConfigurations", a.ko.Spec.Notification.LambdaFunctionConfigurations, b.ko.Spec.Notification.LambdaFunctionConfigurations)
 		} else if len(a.ko.Spec.Notification.LambdaFunctionConfigurations) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Notification.LambdaFunctionConfigurations, b.ko.Spec.Notification.LambdaFunctionConfigurations) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Notification.LambdaFunctionConfigurations, b.ko.Spec.Notification.LambdaFunctionConfigurations) {
 				delta.Add("Spec.Notification.LambdaFunctionConfigurations", a.ko.Spec.Notification.LambdaFunctionConfigurations, b.ko.Spec.Notification.LambdaFunctionConfigurations)
 			}
 		}
 		if len(a.ko.Spec.Notification.QueueConfigurations) != len(b.ko.Spec.Notification.QueueConfigurations) {
 			delta.Add("Spec.Notification.QueueConfigurations", a.ko.Spec.Notification.QueueConfigurations, b.ko.Spec.Notification.QueueConfigurations)
 		} else if len(a.ko.Spec.Notification.QueueConfigurations) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Notification.QueueConfigurations, b.ko.Spec.Notification.QueueConfigurations) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Notification.QueueConfigurations, b.ko.Spec.Notification.QueueConfigurations) {
 				delta.Add("Spec.Notification.QueueConfigurations", a.ko.Spec.Notification.QueueConfigurations, b.ko.Spec.Notification.QueueConfigurations)
 			}
 		}
 		if len(a.ko.Spec.Notification.TopicConfigurations) != len(b.ko.Spec.Notification.TopicConfigurations) {
 			delta.Add("Spec.Notification.TopicConfigurations", a.ko.Spec.Notification.TopicConfigurations, b.ko.Spec.Notification.TopicConfigurations)
 		} else if len(a.ko.Spec.Notification.TopicConfigurations) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Notification.TopicConfigurations, b.ko.Spec.Notification.TopicConfigurations) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Notification.TopicConfigurations, b.ko.Spec.Notification.TopicConfigurations) {
 				delta.Add("Spec.Notification.TopicConfigurations", a.ko.Spec.Notification.TopicConfigurations, b.ko.Spec.Notification.TopicConfigurations)
 			}
 		}
@@ -286,7 +285,7 @@ func newResourceDelta(
 		if len(a.ko.Spec.OwnershipControls.Rules) != len(b.ko.Spec.OwnershipControls.Rules) {
 			delta.Add("Spec.OwnershipControls.Rules", a.ko.Spec.OwnershipControls.Rules, b.ko.Spec.OwnershipControls.Rules)
 		} else if len(a.ko.Spec.OwnershipControls.Rules) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.OwnershipControls.Rules, b.ko.Spec.OwnershipControls.Rules) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.OwnershipControls.Rules, b.ko.Spec.OwnershipControls.Rules) {
 				delta.Add("Spec.OwnershipControls.Rules", a.ko.Spec.OwnershipControls.Rules, b.ko.Spec.OwnershipControls.Rules)
 			}
 		}
@@ -343,7 +342,7 @@ func newResourceDelta(
 		if len(a.ko.Spec.Replication.Rules) != len(b.ko.Spec.Replication.Rules) {
 			delta.Add("Spec.Replication.Rules", a.ko.Spec.Replication.Rules, b.ko.Spec.Replication.Rules)
 		} else if len(a.ko.Spec.Replication.Rules) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Replication.Rules, b.ko.Spec.Replication.Rules) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Replication.Rules, b.ko.Spec.Replication.Rules) {
 				delta.Add("Spec.Replication.Rules", a.ko.Spec.Replication.Rules, b.ko.Spec.Replication.Rules)
 			}
 		}
@@ -425,7 +424,7 @@ func newResourceDelta(
 		if len(a.ko.Spec.Website.RoutingRules) != len(b.ko.Spec.Website.RoutingRules) {
 			delta.Add("Spec.Website.RoutingRules", a.ko.Spec.Website.RoutingRules, b.ko.Spec.Website.RoutingRules)
 		} else if len(a.ko.Spec.Website.RoutingRules) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Website.RoutingRules, b.ko.Spec.Website.RoutingRules) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Website.RoutingRules, b.ko.Spec.Website.RoutingRules) {
 				delta.Add("Spec.Website.RoutingRules", a.ko.Spec.Website.RoutingRules, b.ko.Spec.Website.RoutingRules)
 			}
 		}
