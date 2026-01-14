@@ -224,7 +224,14 @@ func (rm *resourceManager) customFindBucket(
 	}
 
 	// Set bucket ARN in the output
-	arnStr := ackv1alpha1.AWSResourceName(bucketARN(*ko.Spec.Name))
+	var arnStr ackv1alpha1.AWSResourceName
+
+	// Directory buckets use fully-qualified ARN for S3 Control API compatibility
+	if IsDirectoryBucketName(*ko.Spec.Name) {
+		arnStr = ackv1alpha1.AWSResourceName(rm.directoryBucketARN(*ko.Spec.Name))
+	} else {
+		arnStr = ackv1alpha1.AWSResourceName(bucketARN(*ko.Spec.Name))
+	}
 	ko.Status.ACKResourceMetadata.ARN = &arnStr
 
 	return &resource{ko}, nil
@@ -1830,7 +1837,13 @@ func (rm *resourceManager) putDirectoryBucketTagging(
 		}
 	}
 
-	bucketARN := rm.directoryBucketARN(*r.ko.Spec.Name)
+	// Status ARN may not be set yet during create
+	var bucketARN string
+	if r.ko.Status.ACKResourceMetadata != nil && r.ko.Status.ACKResourceMetadata.ARN != nil {
+		bucketARN = string(*r.ko.Status.ACKResourceMetadata.ARN)
+	} else {
+		bucketARN = rm.directoryBucketARN(*r.ko.Spec.Name)
+	}
 	accountID := aws.String(string(rm.awsAccountID))
 
 	// S3Control TagResource only adds/updates tags. To reconcile fully,
@@ -1898,7 +1911,14 @@ func (rm *resourceManager) getDirectoryBucketTagging(
 	defer func() { exit(err) }()
 
 	s3controlClient := s3control.NewFromConfig(rm.clientcfg)
-	bucketARN := rm.directoryBucketARN(*r.ko.Spec.Name)
+
+	// Status ARN may not be set yet during create
+	var bucketARN string
+	if r.ko.Status.ACKResourceMetadata != nil && r.ko.Status.ACKResourceMetadata.ARN != nil {
+		bucketARN = string(*r.ko.Status.ACKResourceMetadata.ARN)
+	} else {
+		bucketARN = rm.directoryBucketARN(*r.ko.Spec.Name)
+	}
 	input := &s3control.ListTagsForResourceInput{
 		ResourceArn: aws.String(bucketARN),
 		AccountId:   aws.String(string(rm.awsAccountID)),
@@ -1942,8 +1962,7 @@ func (rm *resourceManager) deleteDirectoryBucketTagging(
 
 	s3controlClient := s3control.NewFromConfig(rm.clientcfg)
 
-	// First, get existing tags to know which keys to delete
-	bucketARN := rm.directoryBucketARN(*r.ko.Spec.Name)
+	bucketARN := string(*r.ko.Status.ACKResourceMetadata.ARN)
 	getInput := &s3control.ListTagsForResourceInput{
 		ResourceArn: aws.String(bucketARN),
 		AccountId:   aws.String(string(rm.awsAccountID)),
