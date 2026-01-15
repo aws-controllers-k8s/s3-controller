@@ -24,6 +24,7 @@ License version 2.0, we include the full text of the package's License below.
 * `github.com/aws/aws-sdk-go`
 * `github.com/aws/aws-sdk-go-v2`
 * `github.com/aws/aws-sdk-go-v2/service/s3`
+* `github.com/aws/aws-sdk-go-v2/service/s3control`
 * `github.com/aws/smithy-go`
 * `github.com/go-logr/logr`
 * `github.com/pkg/errors`
@@ -1691,7 +1692,10 @@ License Identifier: Apache-2.0
 
 Subdependencies:
 * `github.com/aws/smithy-go`
-* `github.com/jmespath/go-jmespath`
+
+#### github.com/aws/smithy-go
+
+License Identifier: Apache-2.0
 
 ### github.com/aws/aws-sdk-go-v2/service/s3
 
@@ -1709,7 +1713,9 @@ Subdependencies:
 * `github.com/aws/aws-sdk-go-v2/service/internal/s3shared`
 * `github.com/aws/smithy-go`
 
+#### github.com/aws/aws-sdk-go-v2
 
+License Identifier: Apache-2.0
 
 #### github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream
 
@@ -1734,6 +1740,17 @@ License Identifier: Apache-2.0
 #### github.com/aws/aws-sdk-go-v2/service/internal/s3shared
 
 License Identifier: Apache-2.0
+
+### github.com/aws/aws-sdk-go-v2/service/s3control
+
+License Identifier: Apache-2.0
+
+Subdependencies:
+* `github.com/aws/aws-sdk-go-v2`
+* `github.com/aws/aws-sdk-go-v2/internal/configsources`
+* `github.com/aws/aws-sdk-go-v2/internal/endpoints/v2`
+* `github.com/aws/aws-sdk-go-v2/service/internal/s3shared`
+* `github.com/aws/smithy-go`
 
 
 
