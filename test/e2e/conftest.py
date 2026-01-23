@@ -49,4 +49,8 @@ def s3_client():
 
 @pytest.fixture(scope='module')
 def s3_resource():
-    return boto3.resource('s3') 
+    return boto3.resource('s3')
+
+@pytest.fixture(scope='module')
+def s3control_client():
+    return boto3.client('s3control')

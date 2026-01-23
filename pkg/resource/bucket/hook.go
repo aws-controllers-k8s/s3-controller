@@ -331,7 +331,7 @@ func (rm *resourceManager) createPutFields(
 
 	// Policy is supported for both bucket types
 	if r.ko.Spec.Policy != nil {
-		if err := rm.syncPolicy(ctx, r); err != nil {
+		if err := rm.syncPolicy(ctx, r, isDirectoryBucket); err != nil {
 			return errors.Wrapf(err, ErrSyncingPutProperty, "Policy")
 		}
 	}
@@ -467,7 +467,7 @@ func (rm *resourceManager) customUpdateBucket(
 	}
 	// Policy is supported for both bucket types
 	if delta.DifferentAt("Spec.Policy") {
-		if err := rm.syncPolicy(ctx, desired); err != nil {
+		if err := rm.syncPolicy(ctx, desired, isDirectoryBucket); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Policy")
 		}
 	}
@@ -1456,11 +1456,16 @@ func (rm *resourceManager) newGetBucketPolicyPayload(
 
 func (rm *resourceManager) newPutBucketPolicyPayload(
 	r *resource,
+	isDirectoryBucket bool,
 ) *svcsdk.PutBucketPolicyInput {
 	res := &svcsdk.PutBucketPolicyInput{}
 	res.Bucket = r.ko.Spec.Name
-	res.ConfirmRemoveSelfBucketAccess = aws.Bool(false)
 	res.Policy = r.ko.Spec.Policy
+
+	// ConfirmRemoveSelfBucketAccess is not supported by directory
+	if !isDirectoryBucket {
+		res.ConfirmRemoveSelfBucketAccess = aws.Bool(false)
+	}
 
 	return res
 }
@@ -1476,11 +1481,12 @@ func (rm *resourceManager) newDeleteBucketPolicyPayload(
 func (rm *resourceManager) putPolicy(
 	ctx context.Context,
 	r *resource,
+	isDirectoryBucket bool,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.putPolicy")
 	defer exit(err)
-	input := rm.newPutBucketPolicyPayload(r)
+	input := rm.newPutBucketPolicyPayload(r, isDirectoryBucket)
 
 	_, err = rm.sdkapi.PutBucketPolicy(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutBucketPolicy", err)
@@ -1512,11 +1518,12 @@ func (rm *resourceManager) deletePolicy(
 func (rm *resourceManager) syncPolicy(
 	ctx context.Context,
 	r *resource,
+	isDirectoryBucket bool,
 ) (err error) {
 	if r.ko.Spec.Policy == nil || *r.ko.Spec.Policy == "" {
 		return rm.deletePolicy(ctx, r)
 	}
-	return rm.putPolicy(ctx, r)
+	return rm.putPolicy(ctx, r, isDirectoryBucket)
 }
 
 //endregion
