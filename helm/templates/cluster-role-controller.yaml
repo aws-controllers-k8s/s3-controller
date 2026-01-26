@@ -41,4 +41,36 @@ metadata:
   {{- end }}
 {{ $rbacRules }}
 {{ end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $fullname }}-iamroleselector
+  labels:
+    app.kubernetes.io/name: {{ $fullname }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    k8s-app: {{ $fullname }}
+    helm.sh/chart: {{ include "ack-s3-controller.chart.name-version" . }}
+  {{- range $key, $value := $labels }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - services.k8s.aws
+  resources:
+  - iamroleselectors
+  verbs:
+  - get
+  - list
+  - watch
 {{ end }}

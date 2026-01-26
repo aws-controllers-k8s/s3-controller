@@ -49,4 +49,24 @@ subjects:
   name: {{ $serviceAccountName }}
   namespace: {{ $releaseNamespace }}
 {{ end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $fullname }}-iamroleselector
+  labels:
+    app.kubernetes.io/name: {{ $fullname }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    k8s-app: {{ $fullname }}
+    helm.sh/chart: {{ include "ack-s3-controller.chart.name-version" . }}
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: {{ $fullname }}-iamroleselector
+subjects:
+- kind: ServiceAccount
+  name: {{ $serviceAccountName }}
+  namespace: {{ $releaseNamespace }}
 {{ end }}
