@@ -1283,7 +1283,7 @@ func (rm *resourceManager) syncPolicy(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
-	if r.ko.Spec.Policy == nil {
+	if r.ko.Spec.Policy == nil || *r.ko.Spec.Policy == "" {
 		return rm.deletePolicy(ctx, r)
 	}
 	return rm.putPolicy(ctx, r)
