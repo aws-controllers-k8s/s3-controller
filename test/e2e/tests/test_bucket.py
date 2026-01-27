@@ -413,6 +413,9 @@ class TestBucket:
     def _update_assert_empty_policy(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_empty_policy")
 
+        latest = get_bucket(s3_resource, bucket.resource_name)
+        policy = latest.Policy()
+
         try:
             policy.policy
         except Exception as e:
