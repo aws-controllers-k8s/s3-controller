@@ -49,9 +49,6 @@ func bucketARN(bucketName string) string {
 	// NOTE(a-hilaly): Other parts of ACK also use this default partition
 	// e.g the generated function `ARNFromName` also uses `aws` as the
 	// default partition.
-	if IsDirectoryBucketName(bucketName) {
-		return fmt.Sprintf("arn:aws:s3express:::%s", bucketName)
-	}
 	return fmt.Sprintf("arn:aws:s3:::%s", bucketName)
 }
 
