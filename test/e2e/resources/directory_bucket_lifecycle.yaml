@@ -1,0 +1,14 @@
+apiVersion: s3.services.k8s.aws/v1alpha1
+kind: Bucket
+metadata:
+  name: $BUCKET_NAME
+spec:
+  name: $BUCKET_NAME
+  lifecycle:
+    rules:
+    - id: "Abort Multipart Upload After 5 day"
+      filter:
+        prefix: "/logs/"
+      status: "Enabled"
+      abortIncompleteMultipartUpload:
+        daysAfterInitiation: 5
