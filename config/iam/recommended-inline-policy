@@ -6,7 +6,8 @@
       "Effect": "Allow",
       "Action": [
         "s3:*",
-        "s3-object-lambda:*"
+        "s3-object-lambda:*",
+        "s3express:*"
       ],
       "Resource": "*"
     },

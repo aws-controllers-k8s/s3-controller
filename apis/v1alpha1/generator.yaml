@@ -12,8 +12,6 @@ ignore:
     - "VersioningConfiguration.MFADelete"
     # This subfield struct has no members...
     - "NotificationConfiguration.EventBridgeConfiguration"
-    - CreateBucketInput.CreateBucketConfiguration.Location
-    - CreateBucketInput.CreateBucketConfiguration.Bucket
     - LoggingEnabled.TargetObjectKeyFormat
 resources:
   Bucket:
@@ -36,6 +34,10 @@ resources:
         from:
           operation: PutBucketCors
           path: CORSConfiguration
+      CreateBucketConfiguration.Bucket.Type:
+        go_tag: json:"type,omitempty"
+      CreateBucketConfiguration.Location.Type:
+        go_tag: json:"type,omitempty"
       Encryption:
         from:
           operation: PutBucketEncryption
@@ -115,6 +117,8 @@ resources:
         template_path: hooks/bucket/sdk_read_many_post_set_output.go.tpl
       sdk_create_post_build_request:
         template_path: hooks/bucket/sdk_create_post_build_request.go.tpl
+    find_operation:
+      custom_method_name: customFindBucket
     update_operation:
       custom_method_name: customUpdateBucket
     renames:
