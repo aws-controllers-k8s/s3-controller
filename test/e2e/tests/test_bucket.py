@@ -229,7 +229,7 @@ def delete_bucket(bucket: Bucket):
         return
         
     # Delete k8s resource
-    _, deleted = k8s.delete_custom_resource(bucket.ref)
+    _, deleted = k8s.delete_custom_resource(bucket.ref, DELETE_WAIT_AFTER_SECONDS)
     assert deleted is True
 
     time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -240,6 +240,7 @@ def basic_bucket(s3_client) -> Generator[Bucket, None, None]:
     try:
         bucket = create_bucket("bucket")
         assert k8s.get_resource_exists(bucket.ref)
+        k8s.wait_on_condition(bucket.ref, "ACK.ResourceSynced", "True", wait_periods=5)
         
         # assert bucket ARN is present in status
         bucket_k8s = bucket.resource_data = k8s.get_resource(bucket.ref)
