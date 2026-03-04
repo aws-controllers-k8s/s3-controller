@@ -165,15 +165,19 @@ class TestAdoptionPolicyBucket:
 
         latest = get_bucket(s3_resource, bucket_name)
         assert latest is not None
-        tagging = latest.Tagging()
 
         initial_tags = {
             "tag_key": "tag_value"
         }
+
+        # Wait for tags to be applied by the controller
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Re-fetch tagging after waiting to get the current state
+        tagging = latest.Tagging()
         tags.assert_ack_system_tags(
             tags=tagging.tag_set,
         )
-        time.sleep(5)
         tags.assert_equal_without_ack_tags(
             expected=initial_tags,
             actual=tagging.tag_set,
