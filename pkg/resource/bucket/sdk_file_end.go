@@ -2415,19 +2415,6 @@ func (rm *resourceManager) newPublicAccessBlockConfiguration(
 ) *svcsdktypes.PublicAccessBlockConfiguration {
 	res := &svcsdktypes.PublicAccessBlockConfiguration{}
 
-	if r.ko.Spec.PublicAccessBlock.BlockPublicACLs != nil {
-		res.BlockPublicAcls = r.ko.Spec.PublicAccessBlock.BlockPublicACLs
-	}
-	if r.ko.Spec.PublicAccessBlock.BlockPublicPolicy != nil {
-		res.BlockPublicPolicy = r.ko.Spec.PublicAccessBlock.BlockPublicPolicy
-	}
-	if r.ko.Spec.PublicAccessBlock.IgnorePublicACLs != nil {
-		res.IgnorePublicAcls = r.ko.Spec.PublicAccessBlock.IgnorePublicACLs
-	}
-	if r.ko.Spec.PublicAccessBlock.RestrictPublicBuckets != nil {
-		res.RestrictPublicBuckets = r.ko.Spec.PublicAccessBlock.RestrictPublicBuckets
-	}
-
 	return res
 }
 

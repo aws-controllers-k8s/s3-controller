@@ -101,14 +101,8 @@ type BucketSpec struct {
 	//
 	// For directory buckets, the only IAM action supported in the bucket policy
 	// is s3express:CreateSession.
-	Policy *string `json:"policy,omitempty"`
-	// The PublicAccessBlock configuration that you want to apply to this Amazon
-	// S3 bucket. You can enable the configuration options in any combination. For
-	// more information about when Amazon S3 considers a bucket or object public,
-	// see The Meaning of "Public" (https://docs.aws.amazon.com/AmazonS3/latest/dev/access-control-block-public-access.html#access-control-block-public-access-policy-status)
-	// in the Amazon S3 User Guide.
-	PublicAccessBlock *PublicAccessBlockConfiguration `json:"publicAccessBlock,omitempty"`
-	Replication       *ReplicationConfiguration       `json:"replication,omitempty"`
+	Policy      *string                   `json:"policy,omitempty"`
+	Replication *ReplicationConfiguration `json:"replication,omitempty"`
 	// Container for Payer.
 	RequestPayment *RequestPaymentConfiguration `json:"requestPayment,omitempty"`
 	// Container for the TagSet and Tag elements.

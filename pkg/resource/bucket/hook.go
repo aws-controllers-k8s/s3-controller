@@ -115,7 +115,6 @@ func validateDirectoryBucketSpec(ko *svcapitypes.Bucket) error {
 		{"Metrics", func() bool { return len(ko.Spec.Metrics) > 0 }},
 		{"Notification", func() bool { return ko.Spec.Notification != nil }},
 		{"OwnershipControls", func() bool { return ko.Spec.OwnershipControls != nil }},
-		{"PublicAccessBlock", func() bool { return ko.Spec.PublicAccessBlock != nil }},
 		{"Replication", func() bool { return ko.Spec.Replication != nil }},
 		{"RequestPayment", func() bool { return ko.Spec.RequestPayment != nil }},
 		{"Versioning", func() bool { return ko.Spec.Versioning != nil }},
@@ -554,16 +553,10 @@ func (rm *resourceManager) addPutFieldsToSpec(
 	}
 
 	if !isDirectoryBucket {
-		getPublicAccessBlockResponse, err := rm.sdkapi.GetPublicAccessBlock(ctx, rm.newGetPublicAccessBlockPayload(r))
 		if err != nil {
 			if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "NoSuchPublicAccessBlockConfiguration" {
 				return err
 			}
-		}
-		if getPublicAccessBlockResponse != nil {
-			ko.Spec.PublicAccessBlock = rm.setResourcePublicAccessBlock(r, getPublicAccessBlockResponse)
-		} else {
-			ko.Spec.PublicAccessBlock = nil
 		}
 
 		getReplicationResponse, err := rm.sdkapi.GetBucketReplication(ctx, rm.newGetBucketReplicationPayload(r))
@@ -739,9 +732,6 @@ func customPreCompare(
 	}
 	if a.ko.Spec.OwnershipControls == nil && b.ko.Spec.OwnershipControls != nil {
 		a.ko.Spec.OwnershipControls = &svcapitypes.OwnershipControls{}
-	}
-	if a.ko.Spec.PublicAccessBlock == nil && b.ko.Spec.PublicAccessBlock != nil {
-		a.ko.Spec.PublicAccessBlock = &DefaultPublicBlockAccess
 	}
 	if a.ko.Spec.Replication == nil && b.ko.Spec.Replication != nil {
 		a.ko.Spec.Replication = &svcapitypes.ReplicationConfiguration{}
@@ -1464,9 +1454,6 @@ func (rm *resourceManager) syncPublicAccessBlock(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
-	if r.ko.Spec.PublicAccessBlock == nil || *r.ko.Spec.PublicAccessBlock == DefaultPublicBlockAccess {
-		return rm.deletePublicAccessBlock(ctx, r)
-	}
 	return rm.putPublicAccessBlock(ctx, r)
 }
 
