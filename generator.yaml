@@ -117,6 +117,8 @@ resources:
         template_path: hooks/bucket/sdk_read_many_post_set_output.go.tpl
       sdk_create_post_build_request:
         template_path: hooks/bucket/sdk_create_post_build_request.go.tpl
+      new_resource_manager_client_options:
+        template_path: hooks/bucket/new_resource_manager_client_options.go.tpl
     find_operation:
       custom_method_name: customFindBucket
     update_operation:
