@@ -356,7 +356,9 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	case "PermanentRedirect",
 		"InvalidLocationConstraint",
 		"MalformedXML",
-		"IllegalLocationConstraintException":
+		"IllegalLocationConstraintException",
+		"InvalidNamespaceHeader",
+		"MissingNamespaceHeader":
 		return true
 	default:
 		return false
