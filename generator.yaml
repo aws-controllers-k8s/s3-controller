@@ -112,6 +112,8 @@ resources:
         - InvalidLocationConstraint
         - MalformedXML
         - IllegalLocationConstraintException
+        - InvalidNamespaceHeader
+        - MissingNamespaceHeader
     hooks:
       delta_pre_compare:
         code: customPreCompare(a, b)
