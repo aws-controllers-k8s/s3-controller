@@ -189,7 +189,8 @@ spec:
                       Specifies the location where the bucket will be created.
 
                       For directory buckets, the location type is Availability Zone or Local Zone.
-                      For more information about directory buckets, see Directory buckets (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-overview.html)
+                      For more information about directory buckets, see Working with directory
+                      buckets (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-overview.html)
                       in the Amazon S3 User Guide.
 
                       This functionality is only supported by directory buckets.
@@ -235,8 +236,7 @@ spec:
 
                                * Directory buckets - Your SSE-KMS configuration can only support 1 customer
                                managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk)
-                               per directory bucket for the lifetime of the bucket. The Amazon Web Services
-                               managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk)
+                               per directory bucket's lifetime. The Amazon Web Services managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk)
                                (aws/s3) isn't supported.
 
                                * Directory buckets - For directory buckets, there are only two supported
@@ -352,18 +352,18 @@ spec:
               inventory:
                 items:
                   description: |-
-                    Specifies the inventory configuration for an Amazon S3 bucket. For more information,
-                    see GET Bucket inventory (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETInventoryConfig.html)
+                    Specifies the S3 Inventory configuration for an Amazon S3 bucket. For more
+                    information, see GET Bucket inventory (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETInventoryConfig.html)
                     in the Amazon S3 API Reference.
                   properties:
                     destination:
-                      description: Specifies the inventory configuration for an Amazon
-                        S3 bucket.
+                      description: Specifies the S3 Inventory configuration for an
+                        Amazon S3 bucket.
                       properties:
                         s3BucketDestination:
                           description: |-
                             Contains the bucket name, file format, bucket owner (optional), and prefix
-                            (optional) where inventory results are published.
+                            (optional) where S3 Inventory results are published.
                           properties:
                             accountID:
                               type: string
@@ -371,7 +371,7 @@ spec:
                               type: string
                             encryption:
                               description: |-
-                                Contains the type of server-side encryption used to encrypt the inventory
+                                Contains the type of server-side encryption used to encrypt the S3 Inventory
                                 results.
                               properties:
                                 sseKMS:
@@ -390,8 +390,8 @@ spec:
                       type: object
                     filter:
                       description: |-
-                        Specifies an inventory filter. The inventory only includes objects that meet
-                        the filter's criteria.
+                        Specifies an S3 Inventory filter. The inventory only includes objects that
+                        meet the filter's criteria.
                       properties:
                         prefix:
                           type: string
@@ -407,7 +407,7 @@ spec:
                         type: string
                       type: array
                     schedule:
-                      description: Specifies the schedule for generating inventory
+                      description: Specifies the schedule for generating S3 Inventory
                         results.
                       properties:
                         frequency:
@@ -690,6 +690,28 @@ spec:
                 x-kubernetes-validations:
                 - message: Value is immutable once set
                   rule: self == oldSelf
+              namespace:
+                description: |-
+                  Specifies the namespace where you want to create your general purpose bucket.
+                  When you create a general purpose bucket, you can choose to create a bucket
+                  in the shared global namespace or you can choose to create a bucket in your
+                  account regional namespace. Your account regional namespace is a subdivision
+                  of the global namespace that only your account can create buckets in. For
+                  more information on bucket namespaces, see Namespaces for general purpose
+                  buckets (https://docs.aws.amazon.com/AmazonS3/latest/userguide/gpbucketnamespaces.html).
+
+                  General purpose buckets in your account regional namespace must follow a
+                  specific naming convention. These buckets consist of a bucket name prefix
+                  that you create, and a suffix that contains your 12-digit Amazon Web Services
+                  Account ID, the Amazon Web Services Region code, and ends with -an. Bucket
+                  names must follow the format bucket-name-prefix-accountId-region-an (for
+                  example, amzn-s3-demo-bucket-111122223333-us-west-2-an). For information
+                  about bucket naming restrictions, see Account regional namespace naming rules
+                  (https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html#account-regional-naming-rules)
+                  in the Amazon S3 User Guide.
+
+                  This functionality is not supported for directory buckets.
+                type: string
               notification:
                 description: |-
                   A container for specifying the notification configuration of the bucket.
