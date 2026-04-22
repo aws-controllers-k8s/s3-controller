@@ -163,6 +163,7 @@ class TestAdoptionPolicyBucket:
         assert 'name' in cr['spec']
         bucket_name = cr['spec']['name']
 
+
         latest = get_bucket(s3_resource, bucket_name)
         assert latest is not None
         tagging = latest.Tagging()
