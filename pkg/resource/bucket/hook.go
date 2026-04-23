@@ -39,6 +39,12 @@ func IsDirectoryBucketName(bucketName string) bool {
 	return strings.HasSuffix(bucketName, "--x-s3")
 }
 
+// IsAccountRegionalBucketName check if a bucket name follow the account regional namespace naming pattern.
+// Account regional namespace buckets must end with "-an" suffix.
+func IsAccountRegionalBucketName(bucketName string) bool {
+	return strings.HasSuffix(bucketName, "-an")
+}
+
 // bucketARN returns the ARN of the S3 bucket with the given name.
 func bucketARN(bucketName string) string {
 	// TODO(a-hilaly): I know there could be other partitions, but I'm
@@ -218,6 +224,11 @@ func (rm *resourceManager) customFindBucket(
 	rm.setStatusDefaults(ko)
 	if err := rm.addPutFieldsToSpec(ctx, r, ko); err != nil {
 		return nil, err
+	}
+
+	// Set Spec.Namespace if account regional namespace bucket
+	if IsAccountRegionalBucketName(*ko.Spec.Name) {
+		ko.Spec.Namespace = aws.String(string(svcsdktypes.BucketNamespaceAccountRegional))
 	}
 
 	// Set bucket ARN in the output

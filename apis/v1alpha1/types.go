@@ -132,6 +132,7 @@ type BucketLoggingStatus struct {
 
 // In terms of implementation, a Bucket is a resource.
 type Bucket_SDK struct {
+	BucketARN    *string      `json:"bucketARN,omitempty"`
 	BucketRegion *string      `json:"bucketRegion,omitempty"`
 	CreationDate *metav1.Time `json:"creationDate,omitempty"`
 	Name         *string      `json:"name,omitempty"`
@@ -184,7 +185,8 @@ type CreateBucketConfiguration struct {
 	// Specifies the location where the bucket will be created.
 	//
 	// For directory buckets, the location type is Availability Zone or Local Zone.
-	// For more information about directory buckets, see Directory buckets (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-overview.html)
+	// For more information about directory buckets, see Working with directory
+	// buckets (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-overview.html)
 	// in the Amazon S3 User Guide.
 	//
 	// This functionality is only supported by directory buckets.
@@ -368,56 +370,56 @@ type IntelligentTieringFilter struct {
 	Tag *Tag `json:"tag,omitempty"`
 }
 
-// Specifies the inventory configuration for an Amazon S3 bucket. For more information,
-// see GET Bucket inventory (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETInventoryConfig.html)
+// Specifies the S3 Inventory configuration for an Amazon S3 bucket. For more
+// information, see GET Bucket inventory (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETInventoryConfig.html)
 // in the Amazon S3 API Reference.
 type InventoryConfiguration struct {
-	// Specifies the inventory configuration for an Amazon S3 bucket.
+	// Specifies the S3 Inventory configuration for an Amazon S3 bucket.
 	Destination *InventoryDestination `json:"destination,omitempty"`
-	// Specifies an inventory filter. The inventory only includes objects that meet
-	// the filter's criteria.
+	// Specifies an S3 Inventory filter. The inventory only includes objects that
+	// meet the filter's criteria.
 	Filter                 *InventoryFilter `json:"filter,omitempty"`
 	ID                     *string          `json:"id,omitempty"`
 	IncludedObjectVersions *string          `json:"includedObjectVersions,omitempty"`
 	IsEnabled              *bool            `json:"isEnabled,omitempty"`
 	OptionalFields         []*string        `json:"optionalFields,omitempty"`
-	// Specifies the schedule for generating inventory results.
+	// Specifies the schedule for generating S3 Inventory results.
 	Schedule *InventorySchedule `json:"schedule,omitempty"`
 }
 
-// Specifies the inventory configuration for an Amazon S3 bucket.
+// Specifies the S3 Inventory configuration for an Amazon S3 bucket.
 type InventoryDestination struct {
 	// Contains the bucket name, file format, bucket owner (optional), and prefix
-	// (optional) where inventory results are published.
+	// (optional) where S3 Inventory results are published.
 	S3BucketDestination *InventoryS3BucketDestination `json:"s3BucketDestination,omitempty"`
 }
 
-// Contains the type of server-side encryption used to encrypt the inventory
+// Contains the type of server-side encryption used to encrypt the S3 Inventory
 // results.
 type InventoryEncryption struct {
 	// Specifies the use of SSE-KMS to encrypt delivered inventory reports.
 	SSEKMS *SSEKMS `json:"sseKMS,omitempty"`
 }
 
-// Specifies an inventory filter. The inventory only includes objects that meet
-// the filter's criteria.
+// Specifies an S3 Inventory filter. The inventory only includes objects that
+// meet the filter's criteria.
 type InventoryFilter struct {
 	Prefix *string `json:"prefix,omitempty"`
 }
 
 // Contains the bucket name, file format, bucket owner (optional), and prefix
-// (optional) where inventory results are published.
+// (optional) where S3 Inventory results are published.
 type InventoryS3BucketDestination struct {
 	AccountID *string `json:"accountID,omitempty"`
 	Bucket    *string `json:"bucket,omitempty"`
-	// Contains the type of server-side encryption used to encrypt the inventory
+	// Contains the type of server-side encryption used to encrypt the S3 Inventory
 	// results.
 	Encryption *InventoryEncryption `json:"encryption,omitempty"`
 	Format     *string              `json:"format,omitempty"`
 	Prefix     *string              `json:"prefix,omitempty"`
 }
 
-// Specifies the schedule for generating inventory results.
+// Specifies the schedule for generating S3 Inventory results.
 type InventorySchedule struct {
 	Frequency *string `json:"frequency,omitempty"`
 }
@@ -528,7 +530,8 @@ type Location struct {
 // Specifies the location where the bucket will be created.
 //
 // For directory buckets, the location type is Availability Zone or Local Zone.
-// For more information about directory buckets, see Directory buckets (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-overview.html)
+// For more information about directory buckets, see Working with directory
+// buckets (https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-overview.html)
 // in the Amazon S3 User Guide.
 //
 // This functionality is only supported by directory buckets.
@@ -719,9 +722,10 @@ type OwnershipControlsRule struct {
 }
 
 // The PublicAccessBlock configuration that you want to apply to this Amazon
-// S3 bucket. You can enable the configuration options in any combination. For
-// more information about when Amazon S3 considers a bucket or object public,
-// see The Meaning of "Public" (https://docs.aws.amazon.com/AmazonS3/latest/dev/access-control-block-public-access.html#access-control-block-public-access-policy-status)
+// S3 bucket. You can enable the configuration options in any combination. Bucket-level
+// settings work alongside account-level settings (which may inherit from organization-level
+// policies). For more information about when Amazon S3 considers a bucket or
+// object public, see The Meaning of "Public" (https://docs.aws.amazon.com/AmazonS3/latest/dev/access-control-block-public-access.html#access-control-block-public-access-policy-status)
 // in the Amazon S3 User Guide.
 type PublicAccessBlockConfiguration struct {
 	BlockPublicACLs       *bool `json:"blockPublicACLs,omitempty"`
@@ -912,6 +916,14 @@ type SSEKMSEncryptedObjects struct {
 	Status *string `json:"status,omitempty"`
 }
 
+// If SSEKMS is specified for ObjectEncryption, this data type specifies the
+// Amazon Web Services KMS key Amazon Resource Name (ARN) to use and whether
+// to use an S3 Bucket Key for server-side encryption using Key Management Service
+// (KMS) keys (SSE-KMS).
+type SSEKMSEncryption struct {
+	BucketKeyEnabled *bool `json:"bucketKeyEnabled,omitempty"`
+}
+
 // Describes the default server-side encryption to apply to new objects in the
 // bucket. If a PUT Object request doesn't specify any server-side encryption,
 // this default encryption will be applied. For more information, see PutBucketEncryption
@@ -925,8 +937,7 @@ type SSEKMSEncryptedObjects struct {
 //
 //   - Directory buckets - Your SSE-KMS configuration can only support 1 customer
 //     managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk)
-//     per directory bucket for the lifetime of the bucket. The Amazon Web Services
-//     managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk)
+//     per directory bucket's lifetime. The Amazon Web Services managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk)
 //     (aws/s3) isn't supported.
 //
 //   - Directory buckets - For directory buckets, there are only two supported
@@ -966,8 +977,7 @@ type ServerSideEncryptionRule struct {
 	//
 	//    * Directory buckets - Your SSE-KMS configuration can only support 1 customer
 	//    managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk)
-	//    per directory bucket for the lifetime of the bucket. The Amazon Web Services
-	//    managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk)
+	//    per directory bucket's lifetime. The Amazon Web Services managed key (https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk)
 	//    (aws/s3) isn't supported.
 	//
 	//    * Directory buckets - For directory buckets, there are only two supported
