@@ -19,6 +19,8 @@ import pytest
 import time
 import logging
 
+import botocore.exceptions
+
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from acktest import tags as tags
@@ -31,6 +33,8 @@ MODIFY_WAIT_AFTER_SECONDS = 20
 DELETE_WAIT_AFTER_SECONDS = 10
 ACK_SYSTEM_TAG_PREFIX = "services.k8s.aws/"
 AWS_SYSTEM_TAG_PREFIX = "aws:"
+TAG_POLL_MAX_RETRIES = 12
+TAG_POLL_INTERVAL_SECONDS = 5
 
 class AdoptionPolicy(str, Enum):
     NONE = ""
@@ -61,6 +65,14 @@ def bucket_adoption_policy(request, s3_client):
     assert 'resource-name' in data
     resource_name = random_suffix_name(data['resource-name'], 32)
     replacements["RANDOM_BUCKET_NAME"] = resource_name
+
+    # Use a dedicated bucket for adopt-or-create tests so they don't
+    # conflict with the adopt test running in parallel on the same
+    # S3 bucket. The adoption-fields annotation must also point to
+    # the correct bucket for the controller's handlePopulation step.
+    if data.get('bucket-key'):
+        bucket_name = replacements[data['bucket-key']]
+        replacements["ADOPTION_FIELDS"] = f'{{\\\"name\\\": \\\"{bucket_name}\\\"}}'
 
     resource_data = load_s3_resource(
         filename,
@@ -151,7 +163,7 @@ class TestAdoptionPolicyBucket:
         versioning = latest.Versioning()
         assert versioning.status == status
     
-    @pytest.mark.resource_data({'adoption-policy': AdoptionPolicy.ADOPT_OR_CREATE, 'filename': 'bucket_adopt_or_create', 'resource-name': 'adopt-or-create'})
+    @pytest.mark.resource_data({'adoption-policy': AdoptionPolicy.ADOPT_OR_CREATE, 'filename': 'bucket_adopt_or_create', 'resource-name': 'adopt-or-create', 'bucket-key': 'ADOPT_OR_CREATE_BUCKET_NAME'})
     def test_adopt_or_create_policy(
         self, s3_client, bucket_adoption_policy, s3_resource
     ):
@@ -163,18 +175,35 @@ class TestAdoptionPolicyBucket:
         assert 'name' in cr['spec']
         bucket_name = cr['spec']['name']
 
-
-        latest = get_bucket(s3_resource, bucket_name)
-        assert latest is not None
-        tagging = latest.Tagging()
-
         initial_tags = {
             "tag_key": "tag_value"
         }
+
+        # The adopt-or-create flow may need multiple reconcile loops
+        # before tags are fully synced to AWS, and S3 tagging is
+        # eventually consistent. Poll until the expected user tags
+        # appear rather than relying on a fixed sleep.
+        tagging = None
+        for attempt in range(TAG_POLL_MAX_RETRIES):
+            latest = get_bucket(s3_resource, bucket_name)
+            assert latest is not None
+            try:
+                tagging = latest.Tagging()
+                filtered = [
+                    t for t in tagging.tag_set
+                    if not t['Key'].startswith(ACK_SYSTEM_TAG_PREFIX)
+                    and not t['Key'].startswith(AWS_SYSTEM_TAG_PREFIX)
+                ]
+                if len(filtered) == len(initial_tags):
+                    break
+            except botocore.exceptions.ClientError:
+                pass
+            time.sleep(TAG_POLL_INTERVAL_SECONDS)
+
+        assert tagging is not None, "Timed out waiting for tags to propagate"
         tags.assert_ack_system_tags(
             tags=tagging.tag_set,
         )
-        time.sleep(5)
         tags.assert_equal_without_ack_tags(
             expected=initial_tags,
             actual=tagging.tag_set,

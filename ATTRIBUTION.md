@@ -1609,20 +1609,6 @@ Subdependencies:
 * `github.com/aws/aws-sdk-go-v2/service/internal/s3shared`
 * `github.com/aws/smithy-go`
 
-#### github.com/aws/aws-sdk-go-v2
-
-License Identifier: Apache-2.0
-
-
-
-
-
-
-
-#### github.com/aws/smithy-go
-
-License Identifier: Apache-2.0
-
 
 
 
