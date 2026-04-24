@@ -19,6 +19,7 @@ from e2e.bootstrap_resources import get_bootstrap_resources
 REPLACEMENT_VALUES = {
     "REPLICATION_ROLE_ARN": get_bootstrap_resources().ReplicationRole.arn,
     "ADOPTION_BUCKET_NAME": get_bootstrap_resources().AdoptionBucket.name,
+    "ADOPT_OR_CREATE_BUCKET_NAME": get_bootstrap_resources().AdoptOrCreateBucket.name,
     "REPLICATION_BUCKET_NAME": get_bootstrap_resources().ReplicationBucket.name,
     "NOTIFICATION_TOPIC_ARN": get_bootstrap_resources().NotificationTopic.arn,
     "STACK_BUCKET_NAME": get_bootstrap_resources().StackBucket.template["Resources"]["MyS3Bucket"]["Properties"]["BucketName"],
