@@ -27,6 +27,7 @@ from e2e import bootstrap_directory
 class BootstrapResources(Resources):
     ReplicationBucket: Bucket
     AdoptionBucket: Bucket
+    AdoptOrCreateBucket: Bucket
     ReplicationRole: Role
     NotificationTopic: Topic
     StackBucket: Stack

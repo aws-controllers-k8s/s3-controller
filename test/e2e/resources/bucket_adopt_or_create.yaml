@@ -7,7 +7,7 @@ metadata:
     services.k8s.aws/adoption-fields: "$ADOPTION_FIELDS"
     services.k8s.aws/deletion-policy: retain
 spec:
-  name: $BUCKET_NAME
+  name: $ADOPT_OR_CREATE_BUCKET_NAME
   tagging:
     tagSet:
       - key: tag_key
