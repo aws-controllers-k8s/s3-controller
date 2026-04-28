@@ -390,7 +390,9 @@ func newResourceManager(
 		rr:           rr,
 		awsAccountID: id,
 		awsRegion:    region,
-		sdkapi:       svcsdk.NewFromConfig(clientcfg),
+		sdkapi: svcsdk.NewFromConfig(clientcfg, func(o *svcsdk.Options) {
+			o.UsePathStyle = cfg.UsePathStyle
+		}),
 	}, nil
 }
 
