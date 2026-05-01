@@ -3,16 +3,20 @@ ignore:
     - Object
     - MultipartUpload
     - Session
+    - BucketMetadataTableConfiguration
+    - BucketMetadataConfiguration
   shape_names:
     # These shapes are structs with no members...
     - SSES3
     - SimplePrefix
+    - BlockedEncryptionTypes
   field_paths:
     # We cannot support MFA, so if it is set we cannot unset
     - "VersioningConfiguration.MFADelete"
     # This subfield struct has no members...
     - "NotificationConfiguration.EventBridgeConfiguration"
     - LoggingEnabled.TargetObjectKeyFormat
+    - CreateBucketConfiguration.Tags
 resources:
   Bucket:
     fields:
@@ -109,6 +113,8 @@ resources:
         - InvalidLocationConstraint
         - MalformedXML
         - IllegalLocationConstraintException
+        - InvalidNamespaceHeader
+        - MissingNamespaceHeader
     hooks:
       delta_pre_compare:
         code: customPreCompare(a, b)
@@ -129,6 +135,7 @@ resources:
         CreateBucket:
           input_fields:
             Bucket: Name
+            BucketNamespace: Namespace
         DeleteBucket:
           input_fields:
             Bucket: Name

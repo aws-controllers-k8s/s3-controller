@@ -214,6 +214,28 @@ def create_directory_bucket(resource_file_name: str = "directory_bucket", namesp
     logging.info(f"Created directory bucket {directory_bucket_name} in availability zone {az_name}")
     return bucket
 
+def create_namespace_bucket(namespace_value: str, resource_file_name: str = "bucket_namespace", k8s_namespace: str = "default") -> Bucket:
+    account_id = str(get_account_id())
+    region = get_region()
+    base_name = random_suffix_name("s3-bucket", 24)
+    resource_name = f"{base_name}-{account_id}-{region}-an"
+    additional_replacements = {
+        "BUCKET_NAMESPACE": namespace_value,
+    }
+    resource_data = load_bucket_resource(resource_file_name, resource_name, additional_replacements)
+
+    logging.info(f"Creating namespace bucket {resource_name} with namespace={namespace_value}")
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace=k8s_namespace,
+    )
+    resource_data = k8s.create_custom_resource(ref, resource_data)
+    k8s.wait_resource_consumed_by_controller(ref)
+
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    return Bucket(ref, resource_name, resource_data)
+
 def replace_bucket_spec(bucket: Bucket, resource_file_name: str, additional_replacements: dict = None):
     resource_data = load_bucket_resource(resource_file_name, bucket.resource_name, additional_replacements)
     
@@ -277,6 +299,27 @@ def directory_bucket(s3_client) -> Generator[Bucket, None, None]:
 
     delete_bucket(bucket)
     exists = directory_bucket_exists(s3_client, bucket)
+    assert not exists
+
+@pytest.fixture(scope="function")
+def namespace_bucket(s3_client) -> Generator[Bucket, None, None]:
+    bucket = None
+    try:
+        bucket = create_namespace_bucket("account-regional")
+        assert k8s.get_resource_exists(bucket.ref)
+        k8s.wait_on_condition(bucket.ref, "ACK.ResourceSynced", "True", wait_periods=10)
+
+        exists = bucket_exists(s3_client, bucket)
+        assert exists
+    except:
+        if bucket is not None:
+            delete_bucket(bucket)
+        return pytest.fail("Namespace bucket failed to create")
+
+    yield bucket
+
+    delete_bucket(bucket)
+    exists = bucket_exists(s3_client, bucket)
     assert not exists
 
 @service_marker
@@ -537,3 +580,24 @@ class TestBucket:
         self._update_assert_tagging_directory_bucket(directory_bucket, s3control_client)
         self._update_assert_directory_policy(directory_bucket, s3_resource)
 
+    def test_namespace_bucket(self, s3_client, s3_resource, namespace_bucket):
+        """Test create, update tags, and delete of a bucket with spec.namespace set to account-regional."""
+        assert namespace_bucket
+
+        # Update: apply tagging to the namespace bucket
+        additional_replacements = {
+            "BUCKET_NAMESPACE": "account-regional",
+        }
+        replace_bucket_spec(namespace_bucket, "bucket_namespace_tagging", additional_replacements)
+        assert k8s.wait_on_condition(namespace_bucket.ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Verify tags were applied in AWS
+        latest = get_bucket(s3_resource, namespace_bucket.resource_name)
+        tagging = latest.Tagging()
+
+        desired = namespace_bucket.resource_data["spec"]["tagging"]["tagSet"]
+        latest_tags = tags.clean(tagging.tag_set)
+
+        for i in range(2):
+            assert desired[i]["key"] == latest_tags[i]["Key"]
+            assert desired[i]["value"] == latest_tags[i]["Value"]

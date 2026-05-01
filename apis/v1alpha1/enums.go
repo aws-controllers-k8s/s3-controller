@@ -28,6 +28,13 @@ const (
 	ArchiveStatus_DEEP_ARCHIVE_ACCESS ArchiveStatus = "DEEP_ARCHIVE_ACCESS"
 )
 
+type BucketAbacStatus string
+
+const (
+	BucketAbacStatus_Disabled BucketAbacStatus = "Disabled"
+	BucketAbacStatus_Enabled  BucketAbacStatus = "Enabled"
+)
+
 type BucketAccelerateStatus string
 
 const (
@@ -58,16 +65,21 @@ const (
 	BucketLocationConstraint_ap_southeast_1 BucketLocationConstraint = "ap-southeast-1"
 	BucketLocationConstraint_ap_southeast_2 BucketLocationConstraint = "ap-southeast-2"
 	BucketLocationConstraint_ap_southeast_3 BucketLocationConstraint = "ap-southeast-3"
+	BucketLocationConstraint_ap_southeast_4 BucketLocationConstraint = "ap-southeast-4"
+	BucketLocationConstraint_ap_southeast_5 BucketLocationConstraint = "ap-southeast-5"
 	BucketLocationConstraint_ca_central_1   BucketLocationConstraint = "ca-central-1"
 	BucketLocationConstraint_cn_north_1     BucketLocationConstraint = "cn-north-1"
 	BucketLocationConstraint_cn_northwest_1 BucketLocationConstraint = "cn-northwest-1"
 	BucketLocationConstraint_eu_central_1   BucketLocationConstraint = "eu-central-1"
+	BucketLocationConstraint_eu_central_2   BucketLocationConstraint = "eu-central-2"
 	BucketLocationConstraint_eu_north_1     BucketLocationConstraint = "eu-north-1"
 	BucketLocationConstraint_eu_south_1     BucketLocationConstraint = "eu-south-1"
 	BucketLocationConstraint_eu_south_2     BucketLocationConstraint = "eu-south-2"
 	BucketLocationConstraint_eu_west_1      BucketLocationConstraint = "eu-west-1"
 	BucketLocationConstraint_eu_west_2      BucketLocationConstraint = "eu-west-2"
 	BucketLocationConstraint_eu_west_3      BucketLocationConstraint = "eu-west-3"
+	BucketLocationConstraint_il_central_1   BucketLocationConstraint = "il-central-1"
+	BucketLocationConstraint_me_central_1   BucketLocationConstraint = "me-central-1"
 	BucketLocationConstraint_me_south_1     BucketLocationConstraint = "me-south-1"
 	BucketLocationConstraint_sa_east_1      BucketLocationConstraint = "sa-east-1"
 	BucketLocationConstraint_us_east_2      BucketLocationConstraint = "us-east-2"
@@ -83,6 +95,13 @@ const (
 	BucketLogsPermission_FULL_CONTROL BucketLogsPermission = "FULL_CONTROL"
 	BucketLogsPermission_READ         BucketLogsPermission = "READ"
 	BucketLogsPermission_WRITE        BucketLogsPermission = "WRITE"
+)
+
+type BucketNamespace string
+
+const (
+	BucketNamespace_account_regional BucketNamespace = "account-regional"
+	BucketNamespace_global           BucketNamespace = "global"
 )
 
 type BucketType string
@@ -101,16 +120,24 @@ const (
 type ChecksumAlgorithm string
 
 const (
-	ChecksumAlgorithm_CRC32  ChecksumAlgorithm = "CRC32"
-	ChecksumAlgorithm_CRC32C ChecksumAlgorithm = "CRC32C"
-	ChecksumAlgorithm_SHA1   ChecksumAlgorithm = "SHA1"
-	ChecksumAlgorithm_SHA256 ChecksumAlgorithm = "SHA256"
+	ChecksumAlgorithm_CRC32     ChecksumAlgorithm = "CRC32"
+	ChecksumAlgorithm_CRC32C    ChecksumAlgorithm = "CRC32C"
+	ChecksumAlgorithm_CRC64NVME ChecksumAlgorithm = "CRC64NVME"
+	ChecksumAlgorithm_SHA1      ChecksumAlgorithm = "SHA1"
+	ChecksumAlgorithm_SHA256    ChecksumAlgorithm = "SHA256"
 )
 
 type ChecksumMode string
 
 const (
 	ChecksumMode_ENABLED ChecksumMode = "ENABLED"
+)
+
+type ChecksumType string
+
+const (
+	ChecksumType_COMPOSITE   ChecksumType = "COMPOSITE"
+	ChecksumType_FULL_OBJECT ChecksumType = "FULL_OBJECT"
 )
 
 type CompressionType string
@@ -139,6 +166,13 @@ type EncodingType string
 
 const (
 	EncodingType_url EncodingType = "url"
+)
+
+type EncryptionType string
+
+const (
+	EncryptionType_NONE  EncryptionType = "NONE"
+	EncryptionType_SSE_C EncryptionType = "SSE-C"
 )
 
 type Event string
@@ -178,6 +212,13 @@ type ExistingObjectReplicationStatus string
 const (
 	ExistingObjectReplicationStatus_Disabled ExistingObjectReplicationStatus = "Disabled"
 	ExistingObjectReplicationStatus_Enabled  ExistingObjectReplicationStatus = "Enabled"
+)
+
+type ExpirationState string
+
+const (
+	ExpirationState_DISABLED ExpirationState = "DISABLED"
+	ExpirationState_ENABLED  ExpirationState = "ENABLED"
 )
 
 type ExpirationStatus string
@@ -222,6 +263,13 @@ const (
 	IntelligentTieringStatus_Enabled  IntelligentTieringStatus = "Enabled"
 )
 
+type InventoryConfigurationState string
+
+const (
+	InventoryConfigurationState_DISABLED InventoryConfigurationState = "DISABLED"
+	InventoryConfigurationState_ENABLED  InventoryConfigurationState = "ENABLED"
+)
+
 type InventoryFormat string
 
 const (
@@ -254,6 +302,7 @@ const (
 	InventoryOptionalField_IntelligentTieringAccessTier InventoryOptionalField = "IntelligentTieringAccessTier"
 	InventoryOptionalField_IsMultipartUploaded          InventoryOptionalField = "IsMultipartUploaded"
 	InventoryOptionalField_LastModifiedDate             InventoryOptionalField = "LastModifiedDate"
+	InventoryOptionalField_LifecycleExpirationDate      InventoryOptionalField = "LifecycleExpirationDate"
 	InventoryOptionalField_ObjectAccessControlList      InventoryOptionalField = "ObjectAccessControlList"
 	InventoryOptionalField_ObjectLockLegalHoldStatus    InventoryOptionalField = "ObjectLockLegalHoldStatus"
 	InventoryOptionalField_ObjectLockMode               InventoryOptionalField = "ObjectLockMode"
@@ -368,6 +417,8 @@ type ObjectStorageClass string
 const (
 	ObjectStorageClass_DEEP_ARCHIVE        ObjectStorageClass = "DEEP_ARCHIVE"
 	ObjectStorageClass_EXPRESS_ONEZONE     ObjectStorageClass = "EXPRESS_ONEZONE"
+	ObjectStorageClass_FSX_ONTAP           ObjectStorageClass = "FSX_ONTAP"
+	ObjectStorageClass_FSX_OPENZFS         ObjectStorageClass = "FSX_OPENZFS"
 	ObjectStorageClass_GLACIER             ObjectStorageClass = "GLACIER"
 	ObjectStorageClass_GLACIER_IR          ObjectStorageClass = "GLACIER_IR"
 	ObjectStorageClass_INTELLIGENT_TIERING ObjectStorageClass = "INTELLIGENT_TIERING"
@@ -484,6 +535,13 @@ const (
 	RestoreRequestType_SELECT RestoreRequestType = "SELECT"
 )
 
+type S3TablesBucketType string
+
+const (
+	S3TablesBucketType_aws      S3TablesBucketType = "aws"
+	S3TablesBucketType_customer S3TablesBucketType = "customer"
+)
+
 type SSEKMSEncryptedObjectsStatus string
 
 const (
@@ -495,6 +553,7 @@ type ServerSideEncryption string
 
 const (
 	ServerSideEncryption_AES256       ServerSideEncryption = "AES256"
+	ServerSideEncryption_aws_fsx      ServerSideEncryption = "aws:fsx"
 	ServerSideEncryption_aws_kms      ServerSideEncryption = "aws:kms"
 	ServerSideEncryption_aws_kms_dsse ServerSideEncryption = "aws:kms:dsse"
 )
@@ -511,6 +570,8 @@ type StorageClass string
 const (
 	StorageClass_DEEP_ARCHIVE        StorageClass = "DEEP_ARCHIVE"
 	StorageClass_EXPRESS_ONEZONE     StorageClass = "EXPRESS_ONEZONE"
+	StorageClass_FSX_ONTAP           StorageClass = "FSX_ONTAP"
+	StorageClass_FSX_OPENZFS         StorageClass = "FSX_OPENZFS"
 	StorageClass_GLACIER             StorageClass = "GLACIER"
 	StorageClass_GLACIER_IR          StorageClass = "GLACIER_IR"
 	StorageClass_INTELLIGENT_TIERING StorageClass = "INTELLIGENT_TIERING"
@@ -526,6 +587,13 @@ type StorageClassAnalysisSchemaVersion string
 
 const (
 	StorageClassAnalysisSchemaVersion_V_1 StorageClassAnalysisSchemaVersion = "V_1"
+)
+
+type TableSSEAlgorithm string
+
+const (
+	TableSSEAlgorithm_AES256  TableSSEAlgorithm = "AES256"
+	TableSSEAlgorithm_aws_kms TableSSEAlgorithm = "aws:kms"
 )
 
 type TaggingDirective string
