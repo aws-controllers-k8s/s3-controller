@@ -67,6 +67,8 @@ resources:
       Metrics:
         custom_field:
           list_of: MetricsConfiguration
+      Namespace:
+        is_immutable: true
       Notification:
         from:
           operation: PutBucketNotificationConfiguration

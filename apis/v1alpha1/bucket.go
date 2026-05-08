@@ -107,6 +107,7 @@ type BucketSpec struct {
 	// in the Amazon S3 User Guide.
 	//
 	// This functionality is not supported for directory buckets.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	Namespace    *string                    `json:"namespace,omitempty"`
 	Notification *NotificationConfiguration `json:"notification,omitempty"`
 	// Specifies whether you want S3 Object Lock to be enabled for the new bucket.
