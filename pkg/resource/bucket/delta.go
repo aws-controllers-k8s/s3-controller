@@ -240,6 +240,13 @@ func newResourceDelta(
 			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Namespace, b.ko.Spec.Namespace) {
+		delta.Add("Spec.Namespace", a.ko.Spec.Namespace, b.ko.Spec.Namespace)
+	} else if a.ko.Spec.Namespace != nil && b.ko.Spec.Namespace != nil {
+		if *a.ko.Spec.Namespace != *b.ko.Spec.Namespace {
+			delta.Add("Spec.Namespace", a.ko.Spec.Namespace, b.ko.Spec.Namespace)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Notification, b.ko.Spec.Notification) {
 		delta.Add("Spec.Notification", a.ko.Spec.Notification, b.ko.Spec.Notification)
 	} else if a.ko.Spec.Notification != nil && b.ko.Spec.Notification != nil {

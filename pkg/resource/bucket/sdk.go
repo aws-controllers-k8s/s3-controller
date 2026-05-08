@@ -109,6 +109,13 @@ func (rm *resourceManager) sdkCreate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
+	if ko.Status.ACKResourceMetadata == nil {
+		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	if resp.BucketArn != nil {
+		arn := ackv1alpha1.AWSResourceName(*resp.BucketArn)
+		ko.Status.ACKResourceMetadata.ARN = &arn
+	}
 	if resp.Location != nil {
 		ko.Status.Location = resp.Location
 	} else {
@@ -137,32 +144,35 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.Name != nil {
 		res.Bucket = r.ko.Spec.Name
 	}
+	if r.ko.Spec.Namespace != nil {
+		res.BucketNamespace = svcsdktypes.BucketNamespace(*r.ko.Spec.Namespace)
+	}
 	if r.ko.Spec.CreateBucketConfiguration != nil {
-		f2 := &svcsdktypes.CreateBucketConfiguration{}
+		f3 := &svcsdktypes.CreateBucketConfiguration{}
 		if r.ko.Spec.CreateBucketConfiguration.Bucket != nil {
-			f2f0 := &svcsdktypes.BucketInfo{}
+			f3f0 := &svcsdktypes.BucketInfo{}
 			if r.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy != nil {
-				f2f0.DataRedundancy = svcsdktypes.DataRedundancy(*r.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy)
+				f3f0.DataRedundancy = svcsdktypes.DataRedundancy(*r.ko.Spec.CreateBucketConfiguration.Bucket.DataRedundancy)
 			}
 			if r.ko.Spec.CreateBucketConfiguration.Bucket.Type != nil {
-				f2f0.Type = svcsdktypes.BucketType(*r.ko.Spec.CreateBucketConfiguration.Bucket.Type)
+				f3f0.Type = svcsdktypes.BucketType(*r.ko.Spec.CreateBucketConfiguration.Bucket.Type)
 			}
-			f2.Bucket = f2f0
+			f3.Bucket = f3f0
 		}
 		if r.ko.Spec.CreateBucketConfiguration.Location != nil {
-			f2f1 := &svcsdktypes.LocationInfo{}
+			f3f1 := &svcsdktypes.LocationInfo{}
 			if r.ko.Spec.CreateBucketConfiguration.Location.Name != nil {
-				f2f1.Name = r.ko.Spec.CreateBucketConfiguration.Location.Name
+				f3f1.Name = r.ko.Spec.CreateBucketConfiguration.Location.Name
 			}
 			if r.ko.Spec.CreateBucketConfiguration.Location.Type != nil {
-				f2f1.Type = svcsdktypes.LocationType(*r.ko.Spec.CreateBucketConfiguration.Location.Type)
+				f3f1.Type = svcsdktypes.LocationType(*r.ko.Spec.CreateBucketConfiguration.Location.Type)
 			}
-			f2.Location = f2f1
+			f3.Location = f3f1
 		}
 		if r.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil {
-			f2.LocationConstraint = svcsdktypes.BucketLocationConstraint(*r.ko.Spec.CreateBucketConfiguration.LocationConstraint)
+			f3.LocationConstraint = svcsdktypes.BucketLocationConstraint(*r.ko.Spec.CreateBucketConfiguration.LocationConstraint)
 		}
-		res.CreateBucketConfiguration = f2
+		res.CreateBucketConfiguration = f3
 	}
 	if r.ko.Spec.GrantFullControl != nil {
 		res.GrantFullControl = r.ko.Spec.GrantFullControl
@@ -346,7 +356,9 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	case "PermanentRedirect",
 		"InvalidLocationConstraint",
 		"MalformedXML",
-		"IllegalLocationConstraintException":
+		"IllegalLocationConstraintException",
+		"InvalidNamespaceHeader",
+		"MissingNamespaceHeader":
 		return true
 	default:
 		return false
