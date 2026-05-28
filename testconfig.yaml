@@ -1,0 +1,46 @@
+service: s3
+
+resources:
+  Bucket:
+    versioning_lifecycle:
+      create_values:
+        Versioning:
+          Status: "Enabled"
+      update_values:
+        Versioning:
+          Status: "Suspended"
+      create_wait: 30
+      delete_wait: 30
+    accelerate:
+      create_values:
+        Accelerate:
+          Status: "Enabled"
+      update_values:
+        Accelerate:
+          Status: "Suspended"
+      create_wait: 30
+      delete_wait: 30
+    request_payment:
+      create_values:
+        RequestPayment:
+          Payer: "Requester"
+      update_values:
+        RequestPayment:
+          Payer: "BucketOwner"
+      create_wait: 30
+      delete_wait: 30
+    public_access_block:
+      create_values:
+        PublicAccessBlock:
+          BlockPublicACLs: true
+          BlockPublicPolicy: true
+          IgnorePublicACLs: true
+          RestrictPublicBuckets: true
+      update_values:
+        PublicAccessBlock:
+          BlockPublicACLs: false
+          BlockPublicPolicy: false
+          IgnorePublicACLs: false
+          RestrictPublicBuckets: false
+      create_wait: 30
+      delete_wait: 30
