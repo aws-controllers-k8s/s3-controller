@@ -202,7 +202,9 @@ type CreateBucketConfiguration struct {
 //   - The DefaultRetention period can be either Days or Years but you must
 //     select one. You cannot specify Days and Years at the same time.
 type DefaultRetention struct {
-	Days *int64 `json:"days,omitempty"`
+	Days  *int64  `json:"days,omitempty"`
+	Mode  *string `json:"mode,omitempty"`
+	Years *int64  `json:"years,omitempty"`
 }
 
 // Information about the delete marker.
@@ -661,9 +663,28 @@ type ObjectIdentifier struct {
 	Key *string `json:"key,omitempty"`
 }
 
+// The container element for Object Lock configuration parameters.
+type ObjectLockConfiguration struct {
+	// The container element for an Object Lock rule.
+	Rule *ObjectLockRule `json:"rule,omitempty"`
+}
+
 // A Retention configuration for an object.
 type ObjectLockRetention struct {
+	Mode            *string      `json:"mode,omitempty"`
 	RetainUntilDate *metav1.Time `json:"retainUntilDate,omitempty"`
+}
+
+// The container element for an Object Lock rule.
+type ObjectLockRule struct {
+	// The container element for optionally specifying the default Object Lock retention
+	// settings for new objects placed in the specified bucket.
+	//
+	//    * The DefaultRetention settings require both a mode and a period.
+	//
+	//    * The DefaultRetention period can be either Days or Years but you must
+	//    select one. You cannot specify Days and Years at the same time.
+	DefaultRetention *DefaultRetention `json:"defaultRetention,omitempty"`
 }
 
 // The version of an object.

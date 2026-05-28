@@ -281,6 +281,7 @@ def basic_bucket(s3_client) -> Generator[Bucket, None, None]:
     exists = bucket_exists(s3_client, bucket)
     assert not exists
 
+
 @pytest.fixture(scope="function")
 def directory_bucket(s3_client) -> Generator[Bucket, None, None]:
     bucket = None
@@ -572,6 +573,22 @@ class TestBucket:
 
         assert desired["errorDocument"]["key"] == latest.error_document["Key"]
         assert desired["indexDocument"]["suffix"] == latest.index_document["Suffix"]
+
+    def test_bucket_object_lock_config(self, s3_client):
+        bucket = create_bucket("bucket_object_lock")
+        try:
+            assert k8s.wait_on_condition(bucket.ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+            object_lock_config = s3_client.get_object_lock_configuration(Bucket=bucket.resource_name)
+
+            desired = bucket.resource_data["spec"]["objectLockConfiguration"]
+            latest = object_lock_config["ObjectLockConfiguration"]
+
+            assert latest["ObjectLockEnabled"] == "Enabled"
+            assert desired["rule"]["defaultRetention"]["mode"] == latest["Rule"]["DefaultRetention"]["Mode"]
+            assert desired["rule"]["defaultRetention"]["days"] == latest["Rule"]["DefaultRetention"]["Days"]
+        finally:
+            delete_bucket(bucket)
 
     def test_directory_bucket_put_fields(self, directory_bucket, s3_client, s3_resource, s3control_client):
         """Test tag updates on directory buckets."""

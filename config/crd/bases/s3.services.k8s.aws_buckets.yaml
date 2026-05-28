@@ -883,6 +883,34 @@ spec:
                       type: object
                     type: array
                 type: object
+              objectLockConfiguration:
+                description: The Object Lock configuration that you want to apply
+                  to the specified bucket.
+                properties:
+                  rule:
+                    description: The container element for an Object Lock rule.
+                    properties:
+                      defaultRetention:
+                        description: |-
+                          The container element for optionally specifying the default Object Lock retention
+                          settings for new objects placed in the specified bucket.
+
+                             * The DefaultRetention settings require both a mode and a period.
+
+                             * The DefaultRetention period can be either Days or Years but you must
+                             select one. You cannot specify Days and Years at the same time.
+                        properties:
+                          days:
+                            format: int64
+                            type: integer
+                          mode:
+                            type: string
+                          years:
+                            format: int64
+                            type: integer
+                        type: object
+                    type: object
+                type: object
               objectLockEnabledForBucket:
                 description: |-
                   Specifies whether you want S3 Object Lock to be enabled for the new bucket.

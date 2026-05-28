@@ -272,6 +272,39 @@ func newResourceDelta(
 			}
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.ObjectLockConfiguration, b.ko.Spec.ObjectLockConfiguration) {
+		delta.Add("Spec.ObjectLockConfiguration", a.ko.Spec.ObjectLockConfiguration, b.ko.Spec.ObjectLockConfiguration)
+	} else if a.ko.Spec.ObjectLockConfiguration != nil && b.ko.Spec.ObjectLockConfiguration != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.ObjectLockConfiguration.Rule, b.ko.Spec.ObjectLockConfiguration.Rule) {
+			delta.Add("Spec.ObjectLockConfiguration.Rule", a.ko.Spec.ObjectLockConfiguration.Rule, b.ko.Spec.ObjectLockConfiguration.Rule)
+		} else if a.ko.Spec.ObjectLockConfiguration.Rule != nil && b.ko.Spec.ObjectLockConfiguration.Rule != nil {
+			if ackcompare.HasNilDifference(a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention, b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention) {
+				delta.Add("Spec.ObjectLockConfiguration.Rule.DefaultRetention", a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention, b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention)
+			} else if a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention != nil && b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention != nil {
+				if ackcompare.HasNilDifference(a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days, b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days) {
+					delta.Add("Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days", a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days, b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days)
+				} else if a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days != nil && b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days != nil {
+					if *a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days != *b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days {
+						delta.Add("Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days", a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days, b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days)
+					}
+				}
+				if ackcompare.HasNilDifference(a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode, b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode) {
+					delta.Add("Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode", a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode, b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode)
+				} else if a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode != nil && b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode != nil {
+					if *a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode != *b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode {
+						delta.Add("Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode", a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode, b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode)
+					}
+				}
+				if ackcompare.HasNilDifference(a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years, b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years) {
+					delta.Add("Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years", a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years, b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years)
+				} else if a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years != nil && b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years != nil {
+					if *a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years != *b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years {
+						delta.Add("Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years", a.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years, b.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years)
+					}
+				}
+			}
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ObjectLockEnabledForBucket, b.ko.Spec.ObjectLockEnabledForBucket) {
 		delta.Add("Spec.ObjectLockEnabledForBucket", a.ko.Spec.ObjectLockEnabledForBucket, b.ko.Spec.ObjectLockEnabledForBucket)
 	} else if a.ko.Spec.ObjectLockEnabledForBucket != nil && b.ko.Spec.ObjectLockEnabledForBucket != nil {

@@ -1,0 +1,14 @@
+apiVersion: s3.services.k8s.aws/v1alpha1
+kind: Bucket
+metadata:
+  name: $BUCKET_NAME
+spec:
+  name: $BUCKET_NAME
+  versioning:
+    status: Enabled
+  objectLockEnabledForBucket: true
+  objectLockConfiguration:
+    rule:
+      defaultRetention:
+        mode: GOVERNANCE
+        days: 1
