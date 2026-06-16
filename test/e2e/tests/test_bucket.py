@@ -348,6 +348,8 @@ class TestBucket:
     def _update_assert_accelerate(self, bucket: Bucket, s3_client):
         replace_bucket_spec(bucket, "bucket_accelerate")
 
+        assert k8s.wait_on_condition(bucket.ref, condition.CONDITION_TYPE_RESOURCE_SYNCED, "True", wait_periods=10)
+
         accelerate_configuration = s3_client.get_bucket_accelerate_configuration(Bucket=bucket.resource_name)
 
         desired = bucket.resource_data["spec"]["accelerate"]
