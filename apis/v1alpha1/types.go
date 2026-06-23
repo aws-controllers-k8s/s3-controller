@@ -782,8 +782,10 @@ type ReplicaModifications struct {
 // A container for replication rules. You can add up to 1,000 rules. The maximum
 // size of a replication configuration is 2 MB.
 type ReplicationConfiguration struct {
-	Role  *string            `json:"role,omitempty"`
-	Rules []*ReplicationRule `json:"rules,omitempty"`
+	Role *string `json:"role,omitempty"`
+	// Reference field for Role
+	RoleRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"roleRef,omitempty"`
+	Rules   []*ReplicationRule                       `json:"rules,omitempty"`
 }
 
 // Specifies which Amazon S3 objects to replicate and where to store the replicas.
