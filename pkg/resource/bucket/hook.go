@@ -591,7 +591,7 @@ func (rm *resourceManager) addPutFieldsToSpec(
 
 		getRequestPaymentResponse, err := rm.sdkapi.GetBucketRequestPayment(ctx, rm.newGetBucketRequestPaymentPayload(r))
 		if err != nil {
-			return nil
+			return err
 		}
 		if getRequestPaymentResponse.Payer != "" {
 			ko.Spec.RequestPayment = rm.setResourceRequestPayment(r, getRequestPaymentResponse)
