@@ -2415,6 +2415,11 @@ func (in *ReplicationConfiguration) DeepCopyInto(out *ReplicationConfiguration) 
 		*out = new(string)
 		**out = **in
 	}
+	if in.RoleRef != nil {
+		in, out := &in.RoleRef, &out.RoleRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Rules != nil {
 		in, out := &in.Rules, &out.Rules
 		*out = make([]*ReplicationRule, len(*in))

@@ -963,6 +963,20 @@ spec:
                 properties:
                   role:
                     type: string
+                  roleRef:
+                    description: Reference field for Role
+                    properties:
+                      from:
+                        description: |-
+                          AWSResourceReference provides all the values necessary to reference another
+                          k8s resource for finding the identifier(Id/ARN/Name)
+                        properties:
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                        type: object
+                    type: object
                   rules:
                     items:
                       description: Specifies which Amazon S3 objects to replicate

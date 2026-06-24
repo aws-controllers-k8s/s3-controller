@@ -90,6 +90,11 @@ resources:
         from:
           operation: PutBucketReplication
           path: ReplicationConfiguration
+      Replication.Role:
+        references:
+          service_name: iam
+          resource: Role
+          path: Status.ACKResourceMetadata.ARN
       RequestPayment:
         from:
           operation: PutBucketRequestPayment
