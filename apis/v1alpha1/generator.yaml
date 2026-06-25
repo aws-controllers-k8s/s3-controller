@@ -43,6 +43,8 @@ resources:
       CreateBucketConfiguration.Location.Type:
         go_tag: json:"type,omitempty"
       Encryption:
+        late_initialize:
+          skip_incomplete_check: {}
         from:
           operation: PutBucketEncryption
           path: ServerSideEncryptionConfiguration
@@ -74,6 +76,8 @@ resources:
           operation: PutBucketNotificationConfiguration
           path: NotificationConfiguration
       OwnershipControls:
+        late_initialize:
+          skip_incomplete_check: {}
         from:
           operation: PutBucketOwnershipControls
           path: OwnershipControls
