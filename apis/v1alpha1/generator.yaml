@@ -17,6 +17,8 @@ ignore:
     - "NotificationConfiguration.EventBridgeConfiguration"
     - LoggingEnabled.TargetObjectKeyFormat
     - CreateBucketConfiguration.Tags
+    # Redundant with ObjectLockEnabledForBucket on CreateBucket
+    - "ObjectLockConfiguration.ObjectLockEnabled"
 resources:
   Bucket:
     fields:
@@ -75,6 +77,10 @@ resources:
         from:
           operation: PutBucketNotificationConfiguration
           path: NotificationConfiguration
+      ObjectLockConfiguration:
+        from:
+          operation: PutObjectLockConfiguration
+          path: ObjectLockConfiguration
       OwnershipControls:
         late_initialize:
           skip_incomplete_check: {}

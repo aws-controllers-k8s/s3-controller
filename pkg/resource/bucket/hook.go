@@ -126,6 +126,7 @@ func validateDirectoryBucketSpec(ko *svcapitypes.Bucket) error {
 		{"RequestPayment", func() bool { return ko.Spec.RequestPayment != nil }},
 		{"Versioning", func() bool { return ko.Spec.Versioning != nil }},
 		{"Website", func() bool { return ko.Spec.Website != nil }},
+		{"ObjectLockConfiguration", func() bool { return ko.Spec.ObjectLockConfiguration != nil }},
 	}
 
 	var unsupportedFields []string
@@ -388,6 +389,11 @@ func (rm *resourceManager) customUpdateBucket(
 			}
 		}
 	}
+	if !isDirectoryBucket && (delta.DifferentAt("Spec.ObjectLockConfiguration") || delta.DifferentAt("Spec.ObjectLockEnabledForBucket")) {
+		if err := rm.syncObjectLockConfiguration(ctx, desired); err != nil {
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "ObjectLockConfiguration")
+		}
+	}
 
 	return &resource{ko}, nil
 }
@@ -641,6 +647,20 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		} else {
 			ko.Spec.Website = nil
 		}
+
+		getObjectLockConfigResponse, err := rm.sdkapi.GetObjectLockConfiguration(ctx, rm.newGetBucketObjectLockConfigurationPayload(r))
+		if err != nil {
+			if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.ErrorCode() != "ObjectLockConfigurationNotFoundError" {
+				return err
+			}
+		}
+		if getObjectLockConfigResponse != nil && getObjectLockConfigResponse.ObjectLockConfiguration != nil {
+			objectLockEnabled := getObjectLockConfigResponse.ObjectLockConfiguration.ObjectLockEnabled == svcsdktypes.ObjectLockEnabledEnabled
+			ko.Spec.ObjectLockEnabledForBucket = aws.Bool(objectLockEnabled)
+			ko.Spec.ObjectLockConfiguration = rm.setResourceObjectLockConfiguration(getObjectLockConfigResponse)
+		} else {
+			ko.Spec.ObjectLockConfiguration = nil
+		}
 	}
 
 	return nil
@@ -775,6 +795,9 @@ func customPreCompare(
 	}
 	if a.ko.Spec.Website == nil && b.ko.Spec.Website != nil {
 		a.ko.Spec.Website = &svcapitypes.WebsiteConfiguration{}
+	}
+	if a.ko.Spec.ObjectLockConfiguration == nil && b.ko.Spec.ObjectLockConfiguration != nil {
+		a.ko.Spec.ObjectLockConfiguration = &svcapitypes.ObjectLockConfiguration{}
 	}
 }
 
@@ -1890,6 +1913,102 @@ func (rm *resourceManager) deleteDirectoryBucketTagging(
 }
 
 //endregion tagging
+
+//region objectlockconfiguration
+
+func (rm *resourceManager) newGetBucketObjectLockConfigurationPayload(
+	r *resource,
+) *svcsdk.GetObjectLockConfigurationInput {
+	res := &svcsdk.GetObjectLockConfigurationInput{}
+	res.Bucket = r.ko.Spec.Name
+	return res
+}
+
+func (rm *resourceManager) newPutBucketObjectLockConfigurationPayload(
+	r *resource,
+) *svcsdk.PutObjectLockConfigurationInput {
+	res := &svcsdk.PutObjectLockConfigurationInput{}
+	res.Bucket = r.ko.Spec.Name
+	res.ObjectLockConfiguration = rm.newObjectLockConfiguration(r)
+	return res
+}
+
+func (rm *resourceManager) newObjectLockConfiguration(
+	r *resource,
+) *svcsdktypes.ObjectLockConfiguration {
+	res := &svcsdktypes.ObjectLockConfiguration{}
+
+	if r.ko.Spec.ObjectLockEnabledForBucket != nil && *r.ko.Spec.ObjectLockEnabledForBucket {
+		res.ObjectLockEnabled = svcsdktypes.ObjectLockEnabledEnabled
+	}
+
+	if r.ko.Spec.ObjectLockConfiguration != nil && r.ko.Spec.ObjectLockConfiguration.Rule != nil {
+		rule := &svcsdktypes.ObjectLockRule{}
+		if r.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention != nil {
+			retention := &svcsdktypes.DefaultRetention{}
+			if r.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days != nil {
+				retention.Days = aws.Int32(int32(*r.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Days))
+			}
+			if r.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode != nil {
+				retention.Mode = svcsdktypes.ObjectLockRetentionMode(*r.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Mode)
+			}
+			if r.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years != nil {
+				retention.Years = aws.Int32(int32(*r.ko.Spec.ObjectLockConfiguration.Rule.DefaultRetention.Years))
+			}
+			rule.DefaultRetention = retention
+		}
+		res.Rule = rule
+	}
+
+	return res
+}
+
+func (rm *resourceManager) setResourceObjectLockConfiguration(
+	resp *svcsdk.GetObjectLockConfigurationOutput,
+) *svcapitypes.ObjectLockConfiguration {
+	if resp.ObjectLockConfiguration == nil || resp.ObjectLockConfiguration.Rule == nil {
+		return nil
+	}
+
+	res := &svcapitypes.ObjectLockConfiguration{}
+	rule := &svcapitypes.ObjectLockRule{}
+	if resp.ObjectLockConfiguration.Rule.DefaultRetention != nil {
+		retention := &svcapitypes.DefaultRetention{}
+		if resp.ObjectLockConfiguration.Rule.DefaultRetention.Days != nil {
+			retention.Days = aws.Int64(int64(*resp.ObjectLockConfiguration.Rule.DefaultRetention.Days))
+		}
+		if resp.ObjectLockConfiguration.Rule.DefaultRetention.Mode != "" {
+			retention.Mode = aws.String(string(resp.ObjectLockConfiguration.Rule.DefaultRetention.Mode))
+		}
+		if resp.ObjectLockConfiguration.Rule.DefaultRetention.Years != nil {
+			retention.Years = aws.Int64(int64(*resp.ObjectLockConfiguration.Rule.DefaultRetention.Years))
+		}
+		rule.DefaultRetention = retention
+	}
+	res.Rule = rule
+
+	return res
+}
+
+func (rm *resourceManager) syncObjectLockConfiguration(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncObjectLockConfiguration")
+	defer exit(err)
+	input := rm.newPutBucketObjectLockConfigurationPayload(r)
+
+	_, err = rm.sdkapi.PutObjectLockConfiguration(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutObjectLockConfiguration", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//endregion objectlockconfiguration
 
 //region versioning
 

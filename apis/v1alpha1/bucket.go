@@ -110,6 +110,8 @@ type BucketSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	Namespace    *string                    `json:"namespace,omitempty"`
 	Notification *NotificationConfiguration `json:"notification,omitempty"`
+	// The Object Lock configuration that you want to apply to the specified bucket.
+	ObjectLockConfiguration *ObjectLockConfiguration `json:"objectLockConfiguration,omitempty"`
 	// Specifies whether you want S3 Object Lock to be enabled for the new bucket.
 	//
 	// This functionality is not supported for directory buckets.

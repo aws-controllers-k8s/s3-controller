@@ -74,6 +74,7 @@ func newMockedSDKClient(results map[string]opResult) *svcsdk.Client {
 		"GetBucketTagging":                           {err: apiErr("NoSuchTagSet")},
 		"GetBucketVersioning":                        {output: &svcsdk.GetBucketVersioningOutput{}},
 		"GetBucketWebsite":                           {err: apiErr("NoSuchWebsiteConfiguration")},
+		"GetObjectLockConfiguration":                 {err: apiErr("ObjectLockConfigurationNotFoundError")},
 	}
 
 	mockFinalize := smithymiddleware.FinalizeMiddlewareFunc(
