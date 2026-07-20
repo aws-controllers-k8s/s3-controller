@@ -660,6 +660,11 @@ func (rm *resourceManager) addPutFieldsToSpec(
 			ko.Spec.ObjectLockConfiguration = rm.setResourceObjectLockConfiguration(getObjectLockConfigResponse)
 		} else {
 			ko.Spec.ObjectLockConfiguration = nil
+			// Reflect that Object Lock is disabled, otherwise ko keeps the
+			// desired value and adopted buckets never get a delta.
+			if ko.Spec.ObjectLockEnabledForBucket != nil {
+				ko.Spec.ObjectLockEnabledForBucket = aws.Bool(false)
+			}
 		}
 	}
 
