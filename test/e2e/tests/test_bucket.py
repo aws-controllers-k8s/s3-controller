@@ -345,6 +345,8 @@ class TestBucket:
         self._update_assert_tagging(basic_bucket, s3_resource)
         self._update_assert_versioning(basic_bucket, s3_resource)
         self._update_assert_website(basic_bucket, s3_resource)
+        # Keep last: Object Lock cannot be disabled again.
+        self._update_assert_object_lock(basic_bucket, s3_client)
 
     def _update_assert_accelerate(self, bucket: Bucket, s3_client):
         replace_bucket_spec(bucket, "bucket_accelerate")
@@ -573,6 +575,16 @@ class TestBucket:
 
         assert desired["errorDocument"]["key"] == latest.error_document["Key"]
         assert desired["indexDocument"]["suffix"] == latest.index_document["Suffix"]
+
+    def _update_assert_object_lock(self, bucket: Bucket, s3_client):
+        replace_bucket_spec(bucket, "bucket_object_lock_enable")
+
+        assert k8s.wait_on_condition(bucket.ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        object_lock_config = s3_client.get_object_lock_configuration(Bucket=bucket.resource_name)
+        latest = object_lock_config["ObjectLockConfiguration"]
+
+        assert latest["ObjectLockEnabled"] == "Enabled"
 
     def test_bucket_object_lock_config(self, s3_client):
         bucket = create_bucket("bucket_object_lock")
