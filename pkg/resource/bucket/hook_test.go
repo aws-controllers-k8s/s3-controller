@@ -189,4 +189,79 @@ func Test_addPutFieldsToSpec_ReadsAllFields(t *testing.T) {
 	assert.Equal("ack", *ko.Spec.Tagging.TagSet[0].Value)
 }
 
+// Test_addPutFieldsToSpec_ObjectLockNotEnabledOnBucket is a regression test
+// for aws-controllers-k8s/community#2965. When the bucket has no Object Lock
+// configuration, the observed spec must report ObjectLockEnabledForBucket as
+// false; it used to keep the stale desired `true` (ko is seeded from a copy
+// of the desired resource), so adopted buckets never produced a delta and
+// Object Lock was never enabled.
+func Test_addPutFieldsToSpec_ObjectLockNotEnabledOnBucket(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	rm := &resourceManager{
+		sdkapi: newMockedSDKClient(nil),
+	}
+
+	desired := newBucketResource("my-adopted-bucket")
+	desired.ko.Spec.ObjectLockEnabledForBucket = boolPtr(true)
+	ko := desired.ko.DeepCopy()
+
+	err := rm.addPutFieldsToSpec(context.Background(), desired, ko)
+	require.NoError(err)
+
+	require.NotNil(ko.Spec.ObjectLockEnabledForBucket)
+	assert.False(*ko.Spec.ObjectLockEnabledForBucket)
+	assert.Nil(ko.Spec.ObjectLockConfiguration)
+}
+
+// Test_addPutFieldsToSpec_ObjectLockUnsetStaysNil verifies the reset only
+// applies when the user set the field, since nil-vs-false would produce a
+// permanent delta for buckets that never asked for Object Lock.
+func Test_addPutFieldsToSpec_ObjectLockUnsetStaysNil(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	rm := &resourceManager{
+		sdkapi: newMockedSDKClient(nil),
+	}
+
+	desired := newBucketResource("my-test-bucket")
+	ko := desired.ko.DeepCopy()
+
+	err := rm.addPutFieldsToSpec(context.Background(), desired, ko)
+	require.NoError(err)
+
+	assert.Nil(ko.Spec.ObjectLockEnabledForBucket)
+}
+
+// Test_addPutFieldsToSpec_ObjectLockEnabledOnBucket verifies a bucket that is
+// already locked produces no delta.
+func Test_addPutFieldsToSpec_ObjectLockEnabledOnBucket(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	rm := &resourceManager{
+		sdkapi: newMockedSDKClient(map[string]opResult{
+			"GetObjectLockConfiguration": {output: &svcsdk.GetObjectLockConfigurationOutput{
+				ObjectLockConfiguration: &svcsdktypes.ObjectLockConfiguration{
+					ObjectLockEnabled: svcsdktypes.ObjectLockEnabledEnabled,
+				},
+			}},
+		}),
+	}
+
+	desired := newBucketResource("my-locked-bucket")
+	desired.ko.Spec.ObjectLockEnabledForBucket = boolPtr(true)
+	ko := desired.ko.DeepCopy()
+
+	err := rm.addPutFieldsToSpec(context.Background(), desired, ko)
+	require.NoError(err)
+
+	require.NotNil(ko.Spec.ObjectLockEnabledForBucket)
+	assert.True(*ko.Spec.ObjectLockEnabledForBucket)
+}
+
 func strPtr(s string) *string { return &s }
+
+func boolPtr(b bool) *bool { return &b }
