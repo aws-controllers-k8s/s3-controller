@@ -50,6 +50,17 @@ func newResourceDelta(
 			delta.Add("Spec.ACL", a.ko.Spec.ACL, b.ko.Spec.ACL)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Abac, b.ko.Spec.Abac) {
+		delta.Add("Spec.Abac", a.ko.Spec.Abac, b.ko.Spec.Abac)
+	} else if a.ko.Spec.Abac != nil && b.ko.Spec.Abac != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.Abac.Status, b.ko.Spec.Abac.Status) {
+			delta.Add("Spec.Abac.Status", a.ko.Spec.Abac.Status, b.ko.Spec.Abac.Status)
+		} else if a.ko.Spec.Abac.Status != nil && b.ko.Spec.Abac.Status != nil {
+			if *a.ko.Spec.Abac.Status != *b.ko.Spec.Abac.Status {
+				delta.Add("Spec.Abac.Status", a.ko.Spec.Abac.Status, b.ko.Spec.Abac.Status)
+			}
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Accelerate, b.ko.Spec.Accelerate) {
 		delta.Add("Spec.Accelerate", a.ko.Spec.Accelerate, b.ko.Spec.Accelerate)
 	} else if a.ko.Spec.Accelerate != nil && b.ko.Spec.Accelerate != nil {

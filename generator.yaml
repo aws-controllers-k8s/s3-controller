@@ -29,6 +29,10 @@ resources:
         from:
           operation: CreateBucket
           path: Bucket
+      Abac:
+        from:
+          operation: PutBucketAbac
+          path: AbacStatus
       Accelerate:
         from:
           operation: PutBucketAccelerateConfiguration

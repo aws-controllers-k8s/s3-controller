@@ -29,6 +29,13 @@ type BucketSpec struct {
 	//
 	// This functionality is not supported for directory buckets.
 	ACL *string `json:"acl,omitempty"`
+	// The ABAC status of the general purpose bucket. When ABAC is enabled for the
+	// general purpose bucket, you can use tags to manage access to the general
+	// purpose buckets as well as for cost tracking purposes. When ABAC is disabled
+	// for the general purpose buckets, you can only use tags for cost tracking
+	// purposes. For more information, see Using tags with S3 general purpose buckets
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/buckets-tagging.html).
+	Abac *AbacStatus `json:"abac,omitempty"`
 	// Container for setting the transfer acceleration state.
 	Accelerate *AccelerateConfiguration  `json:"accelerate,omitempty"`
 	Analytics  []*AnalyticsConfiguration `json:"analytics,omitempty"`

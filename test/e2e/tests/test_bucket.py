@@ -602,6 +602,19 @@ class TestBucket:
         finally:
             delete_bucket(bucket)
 
+    def test_bucket_abac_config(self, s3_client, basic_bucket):
+        # Enabling ABAC changes bucket tag management semantics, so exercise it
+        # on its own bucket rather than as part of the shared put-fields flow.
+        replace_bucket_spec(basic_bucket, "bucket_abac")
+        assert k8s.wait_on_condition(basic_bucket.ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        abac = s3_client.get_bucket_abac(Bucket=basic_bucket.resource_name)
+
+        desired = basic_bucket.resource_data["spec"]["abac"]
+        latest = abac["AbacStatus"]
+
+        assert desired["status"] == latest["Status"]
+
     def test_directory_bucket_put_fields(self, directory_bucket, s3_client, s3_resource, s3control_client):
         """Test tag updates on directory buckets."""
         self._update_assert_encryption(directory_bucket, s3_client)

@@ -68,6 +68,7 @@ func (rm *resourceManager) directoryBucketARN(bucketName string) string {
 }
 
 var (
+	DefaultAbacStatus             = svcsdktypes.BucketAbacStatusDisabled
 	DefaultAccelerationStatus     = svcsdktypes.BucketAccelerateStatusSuspended
 	DefaultRequestPayer           = svcsdktypes.PayerBucketOwner
 	DefaultVersioningStatus       = svcsdktypes.BucketVersioningStatusSuspended
@@ -106,6 +107,7 @@ func validateDirectoryBucketSpec(ko *svcapitypes.Bucket) error {
 		name  string
 		isSet func() bool
 	}{
+		{"ABAC", func() bool { return ko.Spec.Abac != nil }},
 		{"Accelerate", func() bool { return ko.Spec.Accelerate != nil }},
 		{"Analytics", func() bool { return len(ko.Spec.Analytics) > 0 }},
 		{"ACL", func() bool { return ko.Spec.ACL != nil }},
@@ -271,6 +273,11 @@ func (rm *resourceManager) customUpdateBucket(
 	ko.Status = *latest.ko.Status.DeepCopy()
 
 	// Skip unsupported operations for directory buckets
+	if !isDirectoryBucket && delta.DifferentAt("Spec.Abac") {
+		if err := rm.syncABAC(ctx, desired); err != nil {
+			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "ABAC")
+		}
+	}
 	if !isDirectoryBucket && delta.DifferentAt("Spec.Accelerate") {
 		if err := rm.syncAccelerate(ctx, desired); err != nil {
 			return nil, errors.Wrapf(err, ErrSyncingPutProperty, "Accelerate")
@@ -409,6 +416,21 @@ func (rm *resourceManager) addPutFieldsToSpec(
 
 	// Skip unsupported API calls for directory buckets
 	if !isDirectoryBucket {
+		getAbacResponse, err := rm.sdkapi.GetBucketAbac(ctx, rm.newGetBucketAbacPayload(r))
+		if err != nil {
+			// This method is not supported in every region, ignore any errors if
+			// we attempt to describe this property in a region in which it's not
+			// supported.
+			if awsErr, ok := ackerr.AWSError(err); !ok || (awsErr.ErrorCode() != "MethodNotAllowed" && awsErr.ErrorCode() != "UnsupportedArgument") {
+				return err
+			}
+		}
+		if getAbacResponse == nil || getAbacResponse.AbacStatus == nil || getAbacResponse.AbacStatus.Status == "" {
+			ko.Spec.Abac = nil
+		} else {
+			ko.Spec.Abac = rm.setResourceAbac(r, getAbacResponse)
+		}
+
 		getAccelerateResponse, err := rm.sdkapi.GetBucketAccelerateConfiguration(ctx, rm.newGetBucketAcceleratePayload(r))
 		if err != nil {
 			// This method is not supported in every region, ignore any errors if
@@ -678,6 +700,14 @@ func customPreCompare(
 	a *resource,
 	b *resource,
 ) {
+	if a.ko.Spec.Abac == nil && b.ko.Spec.Abac != nil {
+		a.ko.Spec.Abac = &svcapitypes.AbacStatus{}
+
+		if b.ko.Spec.Abac.Status != nil &&
+			*b.ko.Spec.Abac.Status == string(DefaultAbacStatus) {
+			a.ko.Spec.Abac.Status = aws.String(string(DefaultAbacStatus))
+		}
+	}
 	if a.ko.Spec.Accelerate == nil && b.ko.Spec.Accelerate != nil {
 		a.ko.Spec.Accelerate = &svcapitypes.AccelerateConfiguration{}
 
@@ -805,6 +835,68 @@ func customPreCompare(
 		a.ko.Spec.ObjectLockConfiguration = &svcapitypes.ObjectLockConfiguration{}
 	}
 }
+
+//region abac
+
+func (rm *resourceManager) newGetBucketAbacPayload(
+	r *resource,
+) *svcsdk.GetBucketAbacInput {
+	res := &svcsdk.GetBucketAbacInput{}
+	res.Bucket = r.ko.Spec.Name
+	return res
+}
+
+func (rm *resourceManager) newPutBucketAbacPayload(
+	r *resource,
+) *svcsdk.PutBucketAbacInput {
+	res := &svcsdk.PutBucketAbacInput{}
+	res.Bucket = r.ko.Spec.Name
+	res.AbacStatus = &svcsdktypes.AbacStatus{}
+	if r.ko.Spec.Abac != nil && r.ko.Spec.Abac.Status != nil {
+		res.AbacStatus.Status = svcsdktypes.BucketAbacStatus(*r.ko.Spec.Abac.Status)
+	}
+
+	if res.AbacStatus.Status == "" {
+		res.AbacStatus.Status = DefaultAbacStatus
+	}
+
+	return res
+}
+
+// setResourceAbac sets the `ABAC` spec field given the output of a
+// `GetBucketAbac` operation.
+func (rm *resourceManager) setResourceAbac(
+	r *resource,
+	resp *svcsdk.GetBucketAbacOutput,
+) *svcapitypes.AbacStatus {
+	res := &svcapitypes.AbacStatus{}
+
+	if resp.AbacStatus != nil && resp.AbacStatus.Status != "" {
+		res.Status = aws.String(string(resp.AbacStatus.Status))
+	}
+
+	return res
+}
+
+func (rm *resourceManager) syncABAC(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncABAC")
+	defer exit(err)
+	input := rm.newPutBucketAbacPayload(r)
+
+	_, err = rm.sdkapi.PutBucketAbac(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutBucketAbac", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//endregion abac
 
 //region accelerate
 

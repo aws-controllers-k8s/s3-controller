@@ -55,6 +55,7 @@ func apiErr(code string) error {
 // empty output. Tests override individual operations via results.
 func newMockedSDKClient(results map[string]opResult) *svcsdk.Client {
 	defaults := map[string]opResult{
+		"GetBucketAbac":                              {output: &svcsdk.GetBucketAbacOutput{}},
 		"GetBucketAccelerateConfiguration":           {output: &svcsdk.GetBucketAccelerateConfigurationOutput{}},
 		"ListBucketAnalyticsConfigurations":          {output: &svcsdk.ListBucketAnalyticsConfigurationsOutput{}},
 		"GetBucketAcl":                               {output: &svcsdk.GetBucketAclOutput{Owner: &svcsdktypes.Owner{}}},
@@ -260,6 +261,53 @@ func Test_addPutFieldsToSpec_ObjectLockEnabledOnBucket(t *testing.T) {
 
 	require.NotNil(ko.Spec.ObjectLockEnabledForBucket)
 	assert.True(*ko.Spec.ObjectLockEnabledForBucket)
+}
+
+// Test_addPutFieldsToSpec_ABACEnabled verifies that when GetBucketAbac reports
+// ABAC enabled, addPutFieldsToSpec reads the status back into the spec so the
+// field round-trips for aws-controllers-k8s/community#2937.
+func Test_addPutFieldsToSpec_ABACEnabled(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	rm := &resourceManager{
+		sdkapi: newMockedSDKClient(map[string]opResult{
+			"GetBucketAbac": {output: &svcsdk.GetBucketAbacOutput{
+				AbacStatus: &svcsdktypes.AbacStatus{
+					Status: svcsdktypes.BucketAbacStatusEnabled,
+				},
+			}},
+		}),
+	}
+
+	desired := newBucketResource("my-abac-bucket")
+	ko := desired.ko.DeepCopy()
+
+	err := rm.addPutFieldsToSpec(context.Background(), desired, ko)
+	require.NoError(err)
+
+	require.NotNil(ko.Spec.Abac)
+	require.NotNil(ko.Spec.Abac.Status)
+	assert.Equal(string(svcsdktypes.BucketAbacStatusEnabled), *ko.Spec.Abac.Status)
+}
+
+// Test_addPutFieldsToSpec_ABACUnset verifies that a bucket with no ABAC status
+// reported leaves Spec.ABAC nil rather than keeping a stale desired value.
+func Test_addPutFieldsToSpec_ABACUnset(t *testing.T) {
+	require := require.New(t)
+
+	rm := &resourceManager{
+		sdkapi: newMockedSDKClient(nil),
+	}
+
+	desired := newBucketResource("my-test-bucket")
+	desired.ko.Spec.Abac = &svcapitypes.AbacStatus{Status: strPtr("Enabled")}
+	ko := desired.ko.DeepCopy()
+
+	err := rm.addPutFieldsToSpec(context.Background(), desired, ko)
+	require.NoError(err)
+
+	require.Nil(ko.Spec.Abac)
 }
 
 func strPtr(s string) *string { return &s }
