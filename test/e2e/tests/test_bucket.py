@@ -602,6 +602,26 @@ class TestBucket:
         finally:
             delete_bucket(bucket)
 
+    def test_bucket_abac_config(self, s3_client, basic_bucket):
+        # Enabling ABAC changes bucket tag management semantics, so exercise it
+        # on its own bucket rather than as part of the shared put-fields flow.
+        replace_bucket_spec(basic_bucket, "bucket_abac")
+
+        desired = basic_bucket.resource_data["spec"]["abac"]["status"]
+
+        # basic_bucket is already synced from the create, so the ResourceSynced
+        # condition is stale-True the instant the spec is replaced. Poll the AWS
+        # API directly until the enable-ABAC reconcile has been applied rather
+        # than trusting the condition (which does not track observedGeneration).
+        latest = None
+        for _ in range(12):
+            latest = s3_client.get_bucket_abac(Bucket=basic_bucket.resource_name).get("AbacStatus", {}).get("Status")
+            if latest == desired:
+                break
+            time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        assert desired == latest
+
     def test_directory_bucket_put_fields(self, directory_bucket, s3_client, s3_resource, s3control_client):
         """Test tag updates on directory buckets."""
         self._update_assert_encryption(directory_bucket, s3_client)
