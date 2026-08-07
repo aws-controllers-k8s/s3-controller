@@ -26,6 +26,8 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/s3"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/s3/types"
 
+	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
+
 	svcapitypes "github.com/aws-controllers-k8s/s3-controller/apis/v1alpha1"
 )
 
@@ -308,6 +310,79 @@ func Test_addPutFieldsToSpec_ABACUnset(t *testing.T) {
 	require.NoError(err)
 
 	require.Nil(ko.Spec.Abac)
+}
+
+// Test_syncABAC_SkipsWhenStatusUnset verifies that a desired resource with no
+// ABAC status does not issue a PutBucketAbac call. The status is late-initialized
+// from GetBucketAbac rather than defaulted locally, so on the reconcile pass
+// before late-init has populated it there is nothing to push. Pushing an empty
+// status here would send an invalid request, and hardcoding a default would make
+// the controller fight the service if the AWS-side default ever changes.
+func Test_syncABAC_SkipsWhenStatusUnset(t *testing.T) {
+	require := require.New(t)
+
+	rm := &resourceManager{
+		sdkapi: newMockedSDKClient(map[string]opResult{
+			// Fail loudly if PutBucketAbac is called at all.
+			"PutBucketAbac": {err: apiErr("ShouldNotBeCalled")},
+		}),
+		metrics: ackmetrics.NewMetrics("s3"),
+	}
+
+	desired := newBucketResource("my-abac-bucket")
+	require.NoError(rm.syncABAC(context.Background(), desired))
+
+	desired.ko.Spec.Abac = &svcapitypes.AbacStatus{}
+	require.NoError(rm.syncABAC(context.Background(), desired))
+}
+
+// Test_newPutBucketAbacPayload_NoLocalDefault verifies the put payload carries
+// the desired status verbatim and does not substitute a locally-hardcoded
+// default when the status is unset.
+func Test_newPutBucketAbacPayload_NoLocalDefault(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	rm := &resourceManager{}
+
+	desired := newBucketResource("my-abac-bucket")
+	desired.ko.Spec.Abac = &svcapitypes.AbacStatus{Status: strPtr("Enabled")}
+	input := rm.newPutBucketAbacPayload(desired)
+	require.NotNil(input.AbacStatus)
+	assert.Equal(svcsdktypes.BucketAbacStatusEnabled, input.AbacStatus.Status)
+
+	desired.ko.Spec.Abac = nil
+	input = rm.newPutBucketAbacPayload(desired)
+	require.NotNil(input.AbacStatus)
+	assert.Equal(svcsdktypes.BucketAbacStatus(""), input.AbacStatus.Status)
+}
+
+// Test_lateInitializeFromReadOneOutput_ABAC verifies that the AWS-reported ABAC
+// status is late-initialized into a spec that left the field unset, and that a
+// user-declared status is never overwritten by the observed value.
+func Test_lateInitializeFromReadOneOutput_ABAC(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	rm := &resourceManager{}
+
+	observed := newBucketResource("my-abac-bucket")
+	observed.ko.Spec.Abac = &svcapitypes.AbacStatus{Status: strPtr("Disabled")}
+
+	latest := newBucketResource("my-abac-bucket")
+	res := rm.lateInitializeFromReadOneOutput(observed, latest)
+	ko := rm.concreteResource(res).ko
+	require.NotNil(ko.Spec.Abac)
+	require.NotNil(ko.Spec.Abac.Status)
+	assert.Equal("Disabled", *ko.Spec.Abac.Status)
+
+	latest = newBucketResource("my-abac-bucket")
+	latest.ko.Spec.Abac = &svcapitypes.AbacStatus{Status: strPtr("Enabled")}
+	res = rm.lateInitializeFromReadOneOutput(observed, latest)
+	ko = rm.concreteResource(res).ko
+	require.NotNil(ko.Spec.Abac)
+	require.NotNil(ko.Spec.Abac.Status)
+	assert.Equal("Enabled", *ko.Spec.Abac.Status)
 }
 
 func strPtr(s string) *string { return &s }

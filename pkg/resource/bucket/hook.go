@@ -68,7 +68,6 @@ func (rm *resourceManager) directoryBucketARN(bucketName string) string {
 }
 
 var (
-	DefaultAbacStatus             = svcsdktypes.BucketAbacStatusDisabled
 	DefaultAccelerationStatus     = svcsdktypes.BucketAccelerateStatusSuspended
 	DefaultRequestPayer           = svcsdktypes.PayerBucketOwner
 	DefaultVersioningStatus       = svcsdktypes.BucketVersioningStatusSuspended
@@ -700,14 +699,6 @@ func customPreCompare(
 	a *resource,
 	b *resource,
 ) {
-	if a.ko.Spec.Abac == nil && b.ko.Spec.Abac != nil {
-		a.ko.Spec.Abac = &svcapitypes.AbacStatus{}
-
-		if b.ko.Spec.Abac.Status != nil &&
-			*b.ko.Spec.Abac.Status == string(DefaultAbacStatus) {
-			a.ko.Spec.Abac.Status = aws.String(string(DefaultAbacStatus))
-		}
-	}
 	if a.ko.Spec.Accelerate == nil && b.ko.Spec.Accelerate != nil {
 		a.ko.Spec.Accelerate = &svcapitypes.AccelerateConfiguration{}
 
@@ -856,10 +847,6 @@ func (rm *resourceManager) newPutBucketAbacPayload(
 		res.AbacStatus.Status = svcsdktypes.BucketAbacStatus(*r.ko.Spec.Abac.Status)
 	}
 
-	if res.AbacStatus.Status == "" {
-		res.AbacStatus.Status = DefaultAbacStatus
-	}
-
 	return res
 }
 
@@ -878,6 +865,10 @@ func (rm *resourceManager) setResourceAbac(
 	return res
 }
 
+// syncABAC pushes the desired ABAC status to S3. The status is left to be
+// late-initialized from GetBucketAbac rather than defaulted locally, so a
+// desired resource with no status set has nothing to sync and is skipped
+// instead of being pushed as an empty (invalid) status.
 func (rm *resourceManager) syncABAC(
 	ctx context.Context,
 	r *resource,
@@ -885,6 +876,9 @@ func (rm *resourceManager) syncABAC(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncABAC")
 	defer exit(err)
+	if r.ko.Spec.Abac == nil || r.ko.Spec.Abac.Status == nil {
+		return nil
+	}
 	input := rm.newPutBucketAbacPayload(r)
 
 	_, err = rm.sdkapi.PutBucketAbac(ctx, input)

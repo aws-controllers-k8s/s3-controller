@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=s3.services.k8s.aws,resources=buckets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=s3.services.k8s.aws,resources=buckets/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"Encryption", "OwnershipControls"}
+var lateInitializeFieldNames = []string{"Abac", "Encryption", "OwnershipControls"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -262,6 +262,9 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 ) acktypes.AWSResource {
 	observedKo := rm.concreteResource(observed).ko.DeepCopy()
 	latestKo := rm.concreteResource(latest).ko.DeepCopy()
+	if observedKo.Spec.Abac != nil && latestKo.Spec.Abac == nil {
+		latestKo.Spec.Abac = observedKo.Spec.Abac
+	}
 	if observedKo.Spec.Encryption != nil && latestKo.Spec.Encryption == nil {
 		latestKo.Spec.Encryption = observedKo.Spec.Encryption
 	}
