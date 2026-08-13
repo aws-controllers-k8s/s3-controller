@@ -17,3 +17,12 @@
 			}
 		}
 	}
+
+	// Copy Spec.Tagging into the request's CreateBucketConfiguration.Tags so
+	// that tags are applied at creation time. This allows bucket creation to
+	// succeed under IAM/SCP policies that enforce mandatory tags on
+	// s3:CreateBucket via aws:RequestTag conditions. Spec.Tagging remains the
+	// source of truth; post-create tag updates still flow through
+	// PutBucketTagging. NOTE: this must run after the LocationConstraint
+	// defaulting above, which may replace input.CreateBucketConfiguration.
+	addCreateBucketTags(desired.ko, input)
