@@ -388,3 +388,53 @@ func Test_lateInitializeFromReadOneOutput_ABAC(t *testing.T) {
 func strPtr(s string) *string { return &s }
 
 func boolPtr(b bool) *bool { return &b }
+
+// Test_addCreateBucketTags verifies that Spec.Tagging is copied into
+// CreateBucketConfiguration.Tags at creation time (so that tag-on-create
+// IAM/SCP policies using aws:RequestTag conditions are satisfied), without
+// clobbering an already-populated CreateBucketConfiguration.
+func Test_addCreateBucketTags(t *testing.T) {
+	assert := assert.New(t)
+
+	// nil Tagging -> no-op, configuration stays nil
+	r := newBucketResource("mybucket")
+	input := &svcsdk.CreateBucketInput{}
+	addCreateBucketTags(r.ko, input)
+	assert.Nil(input.CreateBucketConfiguration)
+
+	// empty TagSet -> no-op
+	r.ko.Spec.Tagging = &svcapitypes.Tagging{}
+	addCreateBucketTags(r.ko, input)
+	assert.Nil(input.CreateBucketConfiguration)
+
+	// nil-only TagSet entries -> no-op
+	r.ko.Spec.Tagging = &svcapitypes.Tagging{TagSet: []*svcapitypes.Tag{nil}}
+	addCreateBucketTags(r.ko, input)
+	assert.Nil(input.CreateBucketConfiguration)
+
+	// tags set, nil CreateBucketConfiguration -> struct created (us-east-1
+	// path, where the LocationConstraint defaulting leaves the config nil)
+	r.ko.Spec.Tagging = &svcapitypes.Tagging{TagSet: []*svcapitypes.Tag{
+		{Key: strPtr("env"), Value: strPtr("prod")},
+		nil,
+		{Key: strPtr("team"), Value: strPtr("devops")},
+	}}
+	addCreateBucketTags(r.ko, input)
+	require.NotNil(t, input.CreateBucketConfiguration)
+	require.Len(t, input.CreateBucketConfiguration.Tags, 2)
+	assert.Equal("env", *input.CreateBucketConfiguration.Tags[0].Key)
+	assert.Equal("prod", *input.CreateBucketConfiguration.Tags[0].Value)
+	assert.Equal("team", *input.CreateBucketConfiguration.Tags[1].Key)
+	assert.Equal("devops", *input.CreateBucketConfiguration.Tags[1].Value)
+
+	// existing CreateBucketConfiguration (LocationConstraint already
+	// defaulted) is preserved, tags are added alongside it
+	input2 := &svcsdk.CreateBucketInput{
+		CreateBucketConfiguration: &svcsdktypes.CreateBucketConfiguration{
+			LocationConstraint: svcsdktypes.BucketLocationConstraint("eu-west-1"),
+		},
+	}
+	addCreateBucketTags(r.ko, input2)
+	assert.Equal(svcsdktypes.BucketLocationConstraint("eu-west-1"), input2.CreateBucketConfiguration.LocationConstraint)
+	assert.Len(input2.CreateBucketConfiguration.Tags, 2)
+}

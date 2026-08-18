@@ -283,6 +283,28 @@ def basic_bucket(s3_client) -> Generator[Bucket, None, None]:
 
 
 @pytest.fixture(scope="function")
+def tagged_bucket(s3_client) -> Generator[Bucket, None, None]:
+    bucket = None
+    try:
+        bucket = create_bucket("bucket_tagging")
+        assert k8s.get_resource_exists(bucket.ref)
+        k8s.wait_on_condition(bucket.ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        exists = bucket_exists(s3_client, bucket)
+        assert exists
+    except:
+        if bucket is not None:
+            delete_bucket(bucket)
+        return pytest.fail("Tagged bucket failed to create")
+
+    yield bucket
+
+    delete_bucket(bucket)
+    exists = bucket_exists(s3_client, bucket)
+    assert not exists
+
+
+@pytest.fixture(scope="function")
 def directory_bucket(s3_client) -> Generator[Bucket, None, None]:
     bucket = None
     try:
@@ -328,6 +350,21 @@ class TestBucket:
     def test_basic(self, basic_bucket):
         # Existance assertions are handled by the fixture
         assert basic_bucket
+
+    def test_create_with_tags(self, s3_resource, tagged_bucket):
+        """Tags declared in spec.tagging must be present on the bucket right
+        after creation: they are passed in the CreateBucket call itself via
+        CreateBucketConfiguration.Tags, so that bucket creation succeeds under
+        IAM/SCP policies enforcing aws:RequestTag conditions on
+        s3:CreateBucket."""
+        latest = get_bucket(s3_resource, tagged_bucket.resource_name)
+        latest_tags = tags.clean(latest.Tagging().tag_set)
+
+        desired = tagged_bucket.resource_data["spec"]["tagging"]["tagSet"]
+        assert len(desired) == len(latest_tags)
+        for i in range(len(desired)):
+            assert desired[i]["key"] == latest_tags[i]["Key"]
+            assert desired[i]["value"] == latest_tags[i]["Value"]
 
     def test_put_fields(self, s3_client, s3_resource, basic_bucket):
         self._update_assert_accelerate(basic_bucket, s3_client)

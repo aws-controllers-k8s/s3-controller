@@ -1773,6 +1773,35 @@ func (rm *resourceManager) putTagging(
 	return nil
 }
 
+// addCreateBucketTags copies ko.Spec.Tagging.TagSet into
+// input.CreateBucketConfiguration.Tags so that tags are applied atomically at
+// bucket creation time. This lets CreateBucket succeed when IAM or SCP
+// policies require tags on the create request (aws:RequestTag conditions).
+// Requires the s3:TagResource permission for general purpose buckets and
+// s3express:TagResource for directory buckets.
+func addCreateBucketTags(
+	ko *svcapitypes.Bucket,
+	input *svcsdk.CreateBucketInput,
+) {
+	if ko.Spec.Tagging == nil || len(ko.Spec.Tagging.TagSet) == 0 {
+		return
+	}
+	tags := make([]svcsdktypes.Tag, 0, len(ko.Spec.Tagging.TagSet))
+	for _, t := range ko.Spec.Tagging.TagSet {
+		if t == nil {
+			continue
+		}
+		tags = append(tags, svcsdktypes.Tag{Key: t.Key, Value: t.Value})
+	}
+	if len(tags) == 0 {
+		return
+	}
+	if input.CreateBucketConfiguration == nil {
+		input.CreateBucketConfiguration = &svcsdktypes.CreateBucketConfiguration{}
+	}
+	input.CreateBucketConfiguration.Tags = tags
+}
+
 func (rm *resourceManager) deleteTagging(
 	ctx context.Context,
 	r *resource,
