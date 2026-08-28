@@ -4,8 +4,7 @@ go 1.25.0
 
 require (
 	github.com/aws-controllers-k8s/iam-controller v1.7.2
-	github.com/aws-controllers-k8s/runtime v0.62.0
-	github.com/aws/aws-sdk-go v1.49.0
+	github.com/aws-controllers-k8s/runtime v0.63.0
 	github.com/aws/aws-sdk-go-v2 v1.41.5
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.97.3
 	github.com/aws/aws-sdk-go-v2/service/s3control v1.68.4
@@ -21,6 +20,7 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go v1.49.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.8 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.28.6 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.47 // indirect
