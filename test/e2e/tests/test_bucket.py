@@ -449,7 +449,7 @@ class TestBucket:
         assert desired_rule["abortIncompleteMultipartUpload"]["daysAfterInitiation"] == latest_rule["AbortIncompleteMultipartUpload"]["DaysAfterInitiation"]
 
     def _update_assert_logging(self, bucket: Bucket, s3_resource):
-        replace_bucket_spec(bucket, "bucket_logging")
+        replace_bucket_spec(bucket, "bucket_logging", additional_replacements={"PARTITION_DATE_SOURCE": "EventTime"})
         
         latest = get_bucket(s3_resource, bucket.resource_name)
         logging = latest.Logging()
@@ -459,6 +459,15 @@ class TestBucket:
 
         assert desired["targetBucket"] == latest["TargetBucket"]
         assert desired["targetPrefix"] == latest["TargetPrefix"]
+        # PartitionedPrefix (community #2790): field is set on create and reaches AWS
+        assert desired["targetObjectKeyFormat"]["partitionedPrefix"]["partitionDateSource"] == \
+            latest["TargetObjectKeyFormat"]["PartitionedPrefix"]["PartitionDateSource"]
+        assert latest["TargetObjectKeyFormat"]["PartitionedPrefix"]["PartitionDateSource"] == "EventTime"
+
+        # ...and is mutable: flip EventTime -> DeliveryTime and re-verify against AWS
+        replace_bucket_spec(bucket, "bucket_logging", additional_replacements={"PARTITION_DATE_SOURCE": "DeliveryTime"})
+        updated = get_bucket(s3_resource, bucket.resource_name).Logging().logging_enabled
+        assert updated["TargetObjectKeyFormat"]["PartitionedPrefix"]["PartitionDateSource"] == "DeliveryTime"
 
     def _update_assert_notification(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_notification")

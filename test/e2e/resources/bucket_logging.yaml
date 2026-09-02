@@ -9,3 +9,6 @@ spec:
     loggingEnabled:
       targetBucket: $BUCKET_NAME
       targetPrefix: "logging-"
+      targetObjectKeyFormat:
+        partitionedPrefix:
+          partitionDateSource: $PARTITION_DATE_SOURCE

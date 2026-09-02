@@ -15,7 +15,6 @@ ignore:
     - "VersioningConfiguration.MFADelete"
     # This subfield struct has no members...
     - "NotificationConfiguration.EventBridgeConfiguration"
-    - LoggingEnabled.TargetObjectKeyFormat
     # Tags at creation are injected from Spec.Tagging by the
     # sdk_create_post_build_request hook (see
     # templates/hooks/bucket/sdk_create_post_build_request.go.tpl);

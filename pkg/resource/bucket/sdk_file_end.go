@@ -1692,6 +1692,17 @@ func (rm *resourceManager) newBucketLoggingStatus(
 		if r.ko.Spec.Logging.LoggingEnabled.TargetPrefix != nil {
 			resf0.TargetPrefix = r.ko.Spec.Logging.LoggingEnabled.TargetPrefix
 		}
+		if r.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat != nil {
+			resf0f3 := &svcsdktypes.TargetObjectKeyFormat{}
+			if r.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix != nil {
+				resf0f3f0 := &svcsdktypes.PartitionedPrefix{}
+				if r.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource != nil {
+					resf0f3f0.PartitionDateSource = svcsdktypes.PartitionDateSource(*r.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource)
+				}
+				resf0f3.PartitionedPrefix = resf0f3f0
+			}
+			resf0.TargetObjectKeyFormat = resf0f3
+		}
 		res.LoggingEnabled = resf0
 	}
 
@@ -1743,6 +1754,17 @@ func (rm *resourceManager) setResourceLogging(
 		}
 		if resp.LoggingEnabled.TargetPrefix != nil {
 			resf0.TargetPrefix = resp.LoggingEnabled.TargetPrefix
+		}
+		if resp.LoggingEnabled.TargetObjectKeyFormat != nil {
+			resf0f3 := &svcapitypes.TargetObjectKeyFormat{}
+			if resp.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix != nil {
+				resf0f3f0 := &svcapitypes.PartitionedPrefix{}
+				if resp.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource != "" {
+					resf0f3f0.PartitionDateSource = aws.String(string(resp.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource))
+				}
+				resf0f3.PartitionedPrefix = resf0f3f0
+			}
+			resf0.TargetObjectKeyFormat = resf0f3
 		}
 		res.LoggingEnabled = resf0
 	}

@@ -623,6 +623,24 @@ spec:
                               type: string
                           type: object
                         type: array
+                      targetObjectKeyFormat:
+                        description: |-
+                          Amazon S3 key format for log objects. Only one format, PartitionedPrefix
+                          or SimplePrefix, is allowed.
+                        properties:
+                          partitionedPrefix:
+                            description: |-
+                              Amazon S3 keys for log objects are partitioned in the following format:
+
+                              [DestinationPrefix][SourceAccountId]/[SourceRegion]/[SourceBucket]/[YYYY]/[MM]/[DD]/[YYYY]-[MM]-[DD]-[hh]-[mm]-[ss]-[UniqueString]
+
+                              PartitionedPrefix defaults to EventTime delivery when server access logs
+                              are delivered.
+                            properties:
+                              partitionDateSource:
+                                type: string
+                            type: object
+                        type: object
                       targetPrefix:
                         type: string
                     type: object

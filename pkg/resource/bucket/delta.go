@@ -228,6 +228,21 @@ func newResourceDelta(
 					delta.Add("Spec.Logging.LoggingEnabled.TargetGrants", a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants)
 				}
 			}
+			if ackcompare.HasNilDifference(a.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat, b.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat) {
+				delta.Add("Spec.Logging.LoggingEnabled.TargetObjectKeyFormat", a.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat, b.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat)
+			} else if a.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat != nil && b.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat != nil {
+				if ackcompare.HasNilDifference(a.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix) {
+					delta.Add("Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix", a.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix)
+				} else if a.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix != nil && b.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix != nil {
+					if ackcompare.HasNilDifference(a.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource, b.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource) {
+						delta.Add("Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource", a.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource, b.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource)
+					} else if a.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource != nil && b.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource != nil {
+						if *a.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource != *b.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource {
+							delta.Add("Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource", a.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource, b.ko.Spec.Logging.LoggingEnabled.TargetObjectKeyFormat.PartitionedPrefix.PartitionDateSource)
+						}
+					}
+				}
+			}
 			if ackcompare.HasNilDifference(a.ko.Spec.Logging.LoggingEnabled.TargetPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetPrefix) {
 				delta.Add("Spec.Logging.LoggingEnabled.TargetPrefix", a.ko.Spec.Logging.LoggingEnabled.TargetPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetPrefix)
 			} else if a.ko.Spec.Logging.LoggingEnabled.TargetPrefix != nil && b.ko.Spec.Logging.LoggingEnabled.TargetPrefix != nil {
