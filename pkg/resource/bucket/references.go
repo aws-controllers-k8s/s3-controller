@@ -51,6 +51,48 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 	return &resource{ko}
 }
 
+// EnsureReferences restores, onto a copy of `latest`, the cross-resource reference
+// (*Ref) fields it is missing, taking them from `desired`. Only reference fields are
+// written, so every concrete value on `latest` stands.
+//
+// A *Ref is a sibling of the concrete field it resolves into, so rebuilding the
+// containing struct from an AWS API response drops it. That disables
+// ClearResolvedReferences, which suppresses a resolved value only while the sibling
+// *Ref is visible, so the spec patch would otherwise delete the declared *Ref and
+// store the resolved value in its place.
+//
+// Only references reached through structs are restored, and each containing struct
+// is created on `latest` when `desired` has it and `latest` does not -- generated
+// set-output code nils a struct when the response omits it. A top-level *Ref needs
+// no help, since generated set-output code overwrites only the concrete field. One
+// reached through a list is not restored: it has no fixed address, and replacing the
+// whole list would discard whatever the service populated inside it.
+//
+// Nothing is written unless `desired` actually holds the reference, so a source that
+// declares none leaves `latest` untouched.
+func (rm *resourceManager) EnsureReferences(
+	desired acktypes.AWSResource,
+	latest acktypes.AWSResource,
+) acktypes.AWSResource {
+	// Deep copy the source as well, so a reference handed over below does not
+	// alias the caller's declared object.
+	desiredKO := rm.concreteResource(desired).ko.DeepCopy()
+	latestKO := rm.concreteResource(latest).ko.DeepCopy()
+
+	if desiredKO.Spec.Replication != nil {
+		if desiredKO.Spec.Replication.RoleRef != nil {
+			if latestKO.Spec.Replication == nil {
+				latestKO.Spec.Replication = &svcapitypes.ReplicationConfiguration{}
+			}
+			if latestKO.Spec.Replication.RoleRef == nil {
+				latestKO.Spec.Replication.RoleRef = desiredKO.Spec.Replication.RoleRef
+			}
+		}
+	}
+
+	return &resource{latestKO}
+}
+
 // ResolveReferences finds if there are any Reference field(s) present
 // inside AWSResource passed in the parameter and attempts to resolve those
 // reference field(s) into their respective target field(s). It returns a
