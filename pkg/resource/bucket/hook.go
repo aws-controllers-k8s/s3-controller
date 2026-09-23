@@ -773,9 +773,6 @@ func customPreCompare(
 	if a.ko.Spec.CORS == nil && b.ko.Spec.CORS != nil {
 		a.ko.Spec.CORS = &svcapitypes.CORSConfiguration{}
 	}
-	if a.ko.Spec.Encryption == nil && b.ko.Spec.Encryption != nil {
-		a.ko.Spec.Encryption = &svcapitypes.ServerSideEncryptionConfiguration{}
-	}
 	if a.ko.Spec.IntelligentTiering == nil && b.ko.Spec.IntelligentTiering != nil {
 		a.ko.Spec.IntelligentTiering = make([]*svcapitypes.IntelligentTieringConfiguration, 0)
 	}
@@ -810,14 +807,6 @@ func customPreCompare(
 	}
 	if a.ko.Spec.Tagging == nil && b.ko.Spec.Tagging != nil {
 		a.ko.Spec.Tagging = &svcapitypes.Tagging{}
-	}
-	if a.ko.Spec.Versioning == nil && b.ko.Spec.Versioning != nil {
-		a.ko.Spec.Versioning = &svcapitypes.VersioningConfiguration{}
-
-		if b.ko.Spec.Versioning.Status != nil &&
-			*b.ko.Spec.Versioning.Status == string(DefaultVersioningStatus) {
-			a.ko.Spec.Versioning.Status = aws.String(string(DefaultVersioningStatus))
-		}
 	}
 	if a.ko.Spec.Website == nil && b.ko.Spec.Website != nil {
 		a.ko.Spec.Website = &svcapitypes.WebsiteConfiguration{}
