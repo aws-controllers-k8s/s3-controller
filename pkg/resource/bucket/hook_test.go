@@ -385,6 +385,54 @@ func Test_lateInitializeFromReadOneOutput_ABAC(t *testing.T) {
 	assert.Equal("Enabled", *ko.Spec.Abac.Status)
 }
 
+func Test_lateInitializeFromReadOneOutput_EncryptionRulesAndVersioningStatus(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	rm := &resourceManager{}
+
+	observedRules := []*svcapitypes.ServerSideEncryptionRule{
+		{
+			ApplyServerSideEncryptionByDefault: &svcapitypes.ServerSideEncryptionByDefault{
+				SSEAlgorithm: strPtr("AES256"),
+			},
+		},
+	}
+
+	observed := newBucketResource("my-bucket")
+	observed.ko.Spec.Encryption = &svcapitypes.ServerSideEncryptionConfiguration{Rules: observedRules}
+	observed.ko.Spec.Versioning = &svcapitypes.VersioningConfiguration{Status: strPtr("Enabled")}
+
+	latest := newBucketResource("my-bucket")
+	res := rm.lateInitializeFromReadOneOutput(observed, latest)
+	ko := rm.concreteResource(res).ko
+	require.NotNil(ko.Spec.Encryption)
+	assert.Equal(observedRules, ko.Spec.Encryption.Rules)
+	require.NotNil(ko.Spec.Versioning)
+	require.NotNil(ko.Spec.Versioning.Status)
+	assert.Equal("Enabled", *ko.Spec.Versioning.Status)
+
+	// An already-persisted empty container must still be filled in, otherwise
+	// the nested delta can never close.
+	latest = newBucketResource("my-bucket")
+	latest.ko.Spec.Encryption = &svcapitypes.ServerSideEncryptionConfiguration{}
+	latest.ko.Spec.Versioning = &svcapitypes.VersioningConfiguration{}
+	res = rm.lateInitializeFromReadOneOutput(observed, latest)
+	ko = rm.concreteResource(res).ko
+	require.NotNil(ko.Spec.Encryption)
+	assert.Equal(observedRules, ko.Spec.Encryption.Rules)
+	require.NotNil(ko.Spec.Versioning)
+	require.NotNil(ko.Spec.Versioning.Status)
+	assert.Equal("Enabled", *ko.Spec.Versioning.Status)
+
+	latest = newBucketResource("my-bucket")
+	latest.ko.Spec.Versioning = &svcapitypes.VersioningConfiguration{Status: strPtr("Suspended")}
+	res = rm.lateInitializeFromReadOneOutput(observed, latest)
+	ko = rm.concreteResource(res).ko
+	require.NotNil(ko.Spec.Versioning.Status)
+	assert.Equal("Suspended", *ko.Spec.Versioning.Status)
+}
+
 func strPtr(s string) *string { return &s }
 
 func boolPtr(b bool) *bool { return &b }
