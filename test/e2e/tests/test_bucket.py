@@ -388,12 +388,18 @@ class TestBucket:
     def _update_assert_accelerate(self, bucket: Bucket, s3_client):
         replace_bucket_spec(bucket, "bucket_accelerate")
 
-        accelerate_configuration = s3_client.get_bucket_accelerate_configuration(Bucket=bucket.resource_name)
-
-        desired = bucket.resource_data["spec"]["accelerate"]
-        latest = accelerate_configuration
-
-        assert desired["status"] == latest["Status"]
+        desired = bucket.resource_data["spec"]["accelerate"]["status"]
+        # The new configuration is not always visible when the fixed wait in
+        # replace_bucket_spec ends, and until it is the response has no Status
+        # at all. Poll the AWS API, as test_bucket_abac_config does, rather
+        # than reading it once.
+        latest = None
+        for _ in range(12):
+            latest = s3_client.get_bucket_accelerate_configuration(Bucket=bucket.resource_name).get("Status")
+            if latest == desired:
+                break
+            time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        assert desired == latest
 
     def _update_assert_cors(self, bucket: Bucket, s3_resource):
         replace_bucket_spec(bucket, "bucket_cors")
