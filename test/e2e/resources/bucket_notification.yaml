@@ -5,6 +5,7 @@ metadata:
 spec:
   name: $BUCKET_NAME
   notification:
+    eventBridgeConfiguration: {}
     topicConfigurations:
     - id: "Publish new objects to SNS"
       topicARN: "$NOTIFICATION_TOPIC_ARN"
