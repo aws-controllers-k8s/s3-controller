@@ -1,3 +1,5 @@
+empty_shapes:
+  - EventBridgeConfiguration
 ignore:
   resource_names:
     - Object
@@ -13,8 +15,6 @@ ignore:
   field_paths:
     # We cannot support MFA, so if it is set we cannot unset
     - "VersioningConfiguration.MFADelete"
-    # This subfield struct has no members...
-    - "NotificationConfiguration.EventBridgeConfiguration"
     # Tags at creation are injected from Spec.Tagging by the
     # sdk_create_post_build_request hook (see
     # templates/hooks/bucket/sdk_create_post_build_request.go.tpl);

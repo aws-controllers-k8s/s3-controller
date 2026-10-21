@@ -648,6 +648,8 @@ type NoncurrentVersionTransition struct {
 // A container for specifying the notification configuration of the bucket.
 // If this element is empty, notifications are turned off for the bucket.
 type NotificationConfiguration struct {
+	// A container for specifying the configuration for Amazon EventBridge.
+	EventBridgeConfiguration     map[string]*string             `json:"eventBridgeConfiguration,omitempty"`
 	LambdaFunctionConfigurations []*LambdaFunctionConfiguration `json:"lambdaFunctionConfigurations,omitempty"`
 	QueueConfigurations          []*QueueConfiguration          `json:"queueConfigurations,omitempty"`
 	TopicConfigurations          []*TopicConfiguration          `json:"topicConfigurations,omitempty"`
