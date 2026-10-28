@@ -276,6 +276,10 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.Notification, b.ko.Spec.Notification) {
 		delta.Add("Spec.Notification", a.ko.Spec.Notification, b.ko.Spec.Notification)
 	} else if a.ko.Spec.Notification != nil && b.ko.Spec.Notification != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.Notification.EventBridgeConfiguration, b.ko.Spec.Notification.EventBridgeConfiguration) {
+			delta.Add("Spec.Notification.EventBridgeConfiguration", a.ko.Spec.Notification.EventBridgeConfiguration, b.ko.Spec.Notification.EventBridgeConfiguration)
+		} else if a.ko.Spec.Notification.EventBridgeConfiguration != nil && b.ko.Spec.Notification.EventBridgeConfiguration != nil {
+		}
 		if len(a.ko.Spec.Notification.LambdaFunctionConfigurations) != len(b.ko.Spec.Notification.LambdaFunctionConfigurations) {
 			delta.Add("Spec.Notification.LambdaFunctionConfigurations", a.ko.Spec.Notification.LambdaFunctionConfigurations, b.ko.Spec.Notification.LambdaFunctionConfigurations)
 		} else if len(a.ko.Spec.Notification.LambdaFunctionConfigurations) > 0 {

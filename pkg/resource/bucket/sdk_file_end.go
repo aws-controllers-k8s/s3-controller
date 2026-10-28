@@ -2234,6 +2234,9 @@ func (rm *resourceManager) newNotificationConfiguration(
 		}
 		res.TopicConfigurations = resf2
 	}
+	if r.ko.Spec.Notification.EventBridgeConfiguration != nil {
+		res.EventBridgeConfiguration = &svcsdktypes.EventBridgeConfiguration{}
+	}
 
 	return res
 }
@@ -2380,6 +2383,9 @@ func (rm *resourceManager) setResourceNotification(
 			resf2 = append(resf2, resf2elem)
 		}
 		res.TopicConfigurations = resf2
+	}
+	if resp.EventBridgeConfiguration != nil {
+		res.EventBridgeConfiguration = map[string]*string{}
 	}
 
 	return res

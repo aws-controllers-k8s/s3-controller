@@ -486,6 +486,7 @@ class TestBucket:
 
         assert desired_config["id"] == latest_config["Id"]
         assert desired_config["topicARN"] == latest_config["TopicArn"]
+        assert notification.event_bridge_configuration is not None
 
     def _update_assert_ownership_controls(self, bucket: Bucket, s3_client):
         replace_bucket_spec(bucket, "bucket_ownership_controls")

@@ -750,6 +750,12 @@ spec:
                   A container for specifying the notification configuration of the bucket.
                   If this element is empty, notifications are turned off for the bucket.
                 properties:
+                  eventBridgeConfiguration:
+                    additionalProperties:
+                      type: string
+                    description: A container for specifying the configuration for
+                      Amazon EventBridge.
+                    type: object
                   lambdaFunctionConfigurations:
                     items:
                       description: A container for specifying the configuration for
