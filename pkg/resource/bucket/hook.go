@@ -558,7 +558,8 @@ func (rm *resourceManager) addPutFieldsToSpec(
 		}
 		if getNotificationResponse.LambdaFunctionConfigurations != nil ||
 			getNotificationResponse.QueueConfigurations != nil ||
-			getNotificationResponse.TopicConfigurations != nil {
+			getNotificationResponse.TopicConfigurations != nil ||
+			getNotificationResponse.EventBridgeConfiguration != nil {
 
 			ko.Spec.Notification = rm.setResourceNotification(r, getNotificationResponse)
 		} else {

@@ -14,48 +14,70 @@
 package bucket
 
 import (
+	"context"
 	"testing"
 
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/s3"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/stretchr/testify/require"
 
 	svcapitypes "github.com/aws-controllers-k8s/s3-controller/apis/v1alpha1"
 )
 
-func TestNotificationEventBridgeConfigurationRoundTrip(t *testing.T) {
+func bucketWithNotification(n *svcapitypes.NotificationConfiguration) *resource {
+	r := newBucketResource("my-eventbridge-bucket")
+	r.ko.Spec.Notification = n
+	return r
+}
+
+func Test_newNotificationConfiguration_EventBridgeEnabled(t *testing.T) {
 	rm := &resourceManager{}
+	r := bucketWithNotification(&svcapitypes.NotificationConfiguration{EventBridgeConfiguration: map[string]*string{}})
+	require.NotNil(t, rm.newNotificationConfiguration(r).EventBridgeConfiguration)
+}
 
-	enabled := &resource{ko: &svcapitypes.Bucket{}}
-	enabled.ko.Spec.Notification = &svcapitypes.NotificationConfiguration{
-		EventBridgeConfiguration: map[string]*string{},
-	}
-	if rm.newNotificationConfiguration(enabled).EventBridgeConfiguration == nil {
-		t.Error("an eventBridgeConfiguration in the spec must be sent to PutBucketNotificationConfiguration")
-	}
+func Test_newNotificationConfiguration_EventBridgeUnset(t *testing.T) {
+	rm := &resourceManager{}
+	r := bucketWithNotification(&svcapitypes.NotificationConfiguration{})
+	require.Nil(t, rm.newNotificationConfiguration(r).EventBridgeConfiguration)
+}
 
-	disabled := &resource{ko: &svcapitypes.Bucket{}}
-	disabled.ko.Spec.Notification = &svcapitypes.NotificationConfiguration{}
-	if rm.newNotificationConfiguration(disabled).EventBridgeConfiguration != nil {
-		t.Error("a spec without eventBridgeConfiguration must not enable it")
-	}
-
-	observed := rm.setResourceNotification(enabled, &svcsdk.GetBucketNotificationConfigurationOutput{
+func Test_setResourceNotification_EventBridgeReadBack(t *testing.T) {
+	rm := &resourceManager{}
+	r := bucketWithNotification(&svcapitypes.NotificationConfiguration{EventBridgeConfiguration: map[string]*string{}})
+	observed := rm.setResourceNotification(r, &svcsdk.GetBucketNotificationConfigurationOutput{
 		EventBridgeConfiguration: &svcsdktypes.EventBridgeConfiguration{},
 	})
-	if observed.EventBridgeConfiguration == nil {
-		t.Error("an EventBridge configuration reported by AWS must be read back into the spec")
-	}
-	if rm.setResourceNotification(enabled, &svcsdk.GetBucketNotificationConfigurationOutput{}).EventBridgeConfiguration != nil {
-		t.Error("a bucket without EventBridge notifications must read back without the field")
+	require.NotNil(t, observed.EventBridgeConfiguration)
+	require.Nil(t, rm.setResourceNotification(r, &svcsdk.GetBucketNotificationConfigurationOutput{}).EventBridgeConfiguration)
+}
+
+func Test_newResourceDelta_EventBridgeConfiguration(t *testing.T) {
+	enabled := bucketWithNotification(&svcapitypes.NotificationConfiguration{EventBridgeConfiguration: map[string]*string{}})
+	disabled := bucketWithNotification(&svcapitypes.NotificationConfiguration{})
+	require.False(t, newResourceDelta(enabled, enabled).DifferentAt("Spec.Notification.EventBridgeConfiguration"))
+	require.True(t, newResourceDelta(enabled, disabled).DifferentAt("Spec.Notification.EventBridgeConfiguration"))
+}
+
+// An EventBridge-only configuration has to be read back through
+// addPutFieldsToSpec as well, or every reconcile sees a difference and calls
+// PutBucketNotificationConfiguration again.
+func Test_addPutFieldsToSpec_NotificationEventBridgeOnly(t *testing.T) {
+	require := require.New(t)
+
+	rm := &resourceManager{
+		sdkapi: newMockedSDKClient(map[string]opResult{
+			"GetBucketNotificationConfiguration": {output: &svcsdk.GetBucketNotificationConfigurationOutput{
+				EventBridgeConfiguration: &svcsdktypes.EventBridgeConfiguration{},
+			}},
+		}),
 	}
 
-	desired := enabled
-	latest := &resource{ko: &svcapitypes.Bucket{}}
-	latest.ko.Spec.Notification = observed
-	if newResourceDelta(desired, latest).DifferentAt("Spec.Notification.EventBridgeConfiguration") {
-		t.Error("an enabled configuration must not differ from the read back")
-	}
-	if !newResourceDelta(desired, disabled).DifferentAt("Spec.Notification.EventBridgeConfiguration") {
-		t.Error("enabling EventBridge must register as a difference")
-	}
+	desired := bucketWithNotification(&svcapitypes.NotificationConfiguration{EventBridgeConfiguration: map[string]*string{}})
+	ko := desired.ko.DeepCopy()
+
+	require.NoError(rm.addPutFieldsToSpec(context.Background(), desired, ko))
+	require.NotNil(ko.Spec.Notification)
+	require.NotNil(ko.Spec.Notification.EventBridgeConfiguration)
+	require.False(newResourceDelta(desired, &resource{ko: ko}).DifferentAt("Spec.Notification"))
 }
