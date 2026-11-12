@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=s3.services.k8s.aws,resources=buckets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=s3.services.k8s.aws,resources=buckets/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"Abac", "Encryption", "OwnershipControls"}
+var lateInitializeFieldNames = []string{"Abac", "Encryption", "Rules", "OwnershipControls", "Versioning", "Status"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -268,8 +268,21 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 	if observedKo.Spec.Encryption != nil && latestKo.Spec.Encryption == nil {
 		latestKo.Spec.Encryption = observedKo.Spec.Encryption
 	}
+	if observedKo.Spec.Encryption != nil && latestKo.Spec.Encryption != nil {
+		if observedKo.Spec.Encryption.Rules != nil && latestKo.Spec.Encryption.Rules == nil {
+			latestKo.Spec.Encryption.Rules = observedKo.Spec.Encryption.Rules
+		}
+	}
 	if observedKo.Spec.OwnershipControls != nil && latestKo.Spec.OwnershipControls == nil {
 		latestKo.Spec.OwnershipControls = observedKo.Spec.OwnershipControls
+	}
+	if observedKo.Spec.Versioning != nil && latestKo.Spec.Versioning == nil {
+		latestKo.Spec.Versioning = observedKo.Spec.Versioning
+	}
+	if observedKo.Spec.Versioning != nil && latestKo.Spec.Versioning != nil {
+		if observedKo.Spec.Versioning.Status != nil && latestKo.Spec.Versioning.Status == nil {
+			latestKo.Spec.Versioning.Status = observedKo.Spec.Versioning.Status
+		}
 	}
 	return &resource{latestKo}
 }

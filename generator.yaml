@@ -59,6 +59,10 @@ resources:
         from:
           operation: PutBucketEncryption
           path: ServerSideEncryptionConfiguration
+      # S3 always reports SSE-S3 (AES256), so Rules needs late-init too.
+      Encryption.Rules:
+        late_initialize:
+          skip_incomplete_check: {}
       IntelligentTiering:
         custom_field:
           list_of: IntelligentTieringConfiguration
@@ -123,9 +127,14 @@ resources:
           operation: PutBucketTagging
           path: Tagging
       Versioning:
+        late_initialize:
+          skip_incomplete_check: {}
         from:
           operation: PutBucketVersioning
           path: VersioningConfiguration
+      Versioning.Status:
+        late_initialize:
+          skip_incomplete_check: {}
       Website:
         from:
           operation: PutBucketWebsite
